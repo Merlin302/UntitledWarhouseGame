@@ -5,14 +5,16 @@ off what is done and name the exact function or field that satisfies it.
 
 ## Site
 
-- [x] At least 7 routes — _where:_ 15 routes: `index`, `start_game`,
+- [x] At least 7 routes — _where:_ 18 routes: `index`, `start_game`,
       `company_page`, `business_page`, `artifacts_page`, `organize_page`,
+      `casino_page`, `start_typing_round`, `submit_typing_round`,
       `save_goods`, `save_policies`, `run_expedition`, `save_artifact_grid`,
       `set_buy_amount`, `buy_item`, `raise_markup`, `lower_markup`, `tick`
 - [x] At least 5 pages — _where:_ start page (`index`), company page
       (`company_page`), Business page (`business_page`), Artifacts page
-      (`artifacts_page`), Organize page (`organize_page`)
-- [x] `State` dataclass with at least 4 fields — _where:_ `State` (21 fields)
+      (`artifacts_page`), Organize page (`organize_page`), Casino page
+      (`casino_page`)
+- [x] `State` dataclass with at least 4 fields — _where:_ `State` (24 fields)
 - [x] At least one State field is a list/dict of a second dataclass —
       _where:_ `State.owned_artifacts: list[Artifact]`,
       `State.buy_items: list[BuyItem]`,
@@ -24,19 +26,24 @@ off what is done and name the exact function or field that satisfies it.
       `sells_war_supplies` (`save_goods`), `policies` (`save_policies`),
       `strike_ticks_left` and `news_feed` (`tick`, through `run_strikes`),
       `owned_artifacts` (`run_expedition`, `save_artifact_grid`),
-      `expeditions_bought` and `last_expedition_finds` (`run_expedition`)
+      `expeditions_bought` and `last_expedition_finds` (`run_expedition`),
+      `tick_count` (`tick`), `typing_round` and `last_casino_result`
+      (`start_typing_round`, `submit_typing_round`)
 - [x] At least 3 input fields (TextBox, CheckBox, SelectBox, TextArea)
       — _where:_ `TextBox("company_name")` in `build_start_content`, one
       `CheckBox` per goods type in `build_goods_form`, one `CheckBox` per
       policy in `build_policy_form`, one `SelectBox` per grid slot in
-      `build_organize_form`
+      `build_organize_form`, `SelectBox("difficulty")` and `TextBox("bet")` in
+      `build_casino_setup_form`, `TextArea("typed_text")` in
+      `build_typing_form`
 - [x] At least 3 meaningful if statements — _where:_ `buy_item` (can afford),
       `build_buy_list` (`is_item_visible` unlock check), `build_buy_action`
       (sold out / can't afford), `clean_company_name` (blank name),
       `run_strikes` (strike running / new strike), `build_live_content`
       (which page is showing), `policy_label` (locked policy),
       `total_artifact_bonus` (placed or not), `add_artifact_copy` (duplicate
-      or new), `run_expedition` (can afford)
+      or new), `run_expedition` (can afford), `can_place_bet` (bet limits),
+      `roll_prompt` (difficulty), `start_typing_round` (bet accepted)
 - [x] At least 1 loop over the list/dict of dataclass instances, used in a
       meaningful way — _where (main answer):_ `total_artifact_bonus` loops
       over `state.owned_artifacts`, skips unplaced artifacts, and totals the
@@ -65,7 +72,10 @@ off what is done and name the exact function or field that satisfies it.
       is still tested with zero-risk States; `run_expedition` uses randomness
       (its docstring says so) and only its "can't afford" path is tested;
       `roll_rarity`, `roll_artifact_row`, and `collect_expedition_finds` are
-      random helpers, exempt, and say so in their docstrings
+      random helpers, exempt, and say so in their docstrings;
+      `start_typing_round` uses randomness (its docstring says so) and only
+      its rejected-bet paths are tested; `roll_prompt` is exempt; the scoring
+      function `calculate_payout` is pure and tested
 - [x] Lines under 80 characters (hard limit 120)
 - [x] Type hints on every function header
 - [x] A docstring as the first line of every function body

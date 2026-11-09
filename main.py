@@ -171,6 +171,37 @@ NOT_PLACED = -1
 # What the linear search returns when it finds nothing.
 NOT_FOUND = -1
 
+PAGE_CASINO = "casino"
+DIFFICULTY_EASY = "easy"
+DIFFICULTY_HARD = "hard"
+DIFFICULTY_OPTIONS = [DIFFICULTY_EASY, DIFFICULTY_HARD]
+DIFFICULTY_MULTIPLIERS = {DIFFICULTY_EASY: 1.0, DIFFICULTY_HARD: 2.0}
+
+# A bet can be at most this fraction of the player's current money.
+CASINO_MAX_BET_FRACTION = 0.8
+CHARACTERS_PER_WORD = 5
+INVALID_BET_MESSAGE = "The casino rejects that bet. Check the limit."
+
+# Each row: lowest value that earns the tier, and its payout multiplier.
+# Rows must go from lowest to highest.
+ACCURACY_TIERS = [[0.0, 0.0], [0.8, 0.5], [0.95, 1.0], [1.0, 1.5]]
+# The values here are words per minute.
+SPEED_TIERS = [[0.0, 0.5], [20.0, 1.0], [40.0, 1.5], [70.0, 2.0]]
+
+EASY_PROMPTS = [
+    "the box is on the big truck and the van is out",
+    "we move the goods to the store and then go back",
+    "please pack each order and put it near the door",
+    "all of our workers are happy and that is a rule",
+]
+# Hard prompts also go through swap_hard_characters before they are shown.
+HARD_PROMPTS = [
+    "Our Q4 Outlook is 100% positive and 0% audited.",
+    "Overtime is Optional, and Optional means 60 hours.",
+    "Our Office has an Open door policy and 0 doors.",
+    "Profits rose 200% Once we stopped buying chairs and desks.",
+]
+
 
 # ---------------------------------------------------------------------------
 # Dataclasses
@@ -269,6 +300,22 @@ class Artifact:
 
 
 @dataclass
+class TypingRound:
+    """One typing test, from when it starts until it is submitted.
+
+    Attributes:
+        prompt: The text to type; empty when no round is running.
+        difficulty: One of the DIFFICULTY_ constants.
+        bet: The money already paid to enter this round.
+        start_tick: The value of State.tick_count when the round began.
+    """
+    prompt: str
+    difficulty: str
+    bet: int
+    start_tick: int
+
+
+@dataclass
 class State:
     """Holds everything the website remembers between pages.
 
@@ -294,6 +341,9 @@ class State:
         expeditions_bought: Expeditions ever bought; raises their price.
         last_expedition_finds: One line per artifact from the last batch.
         controls_signature: Summary of the buttons the last tick drew.
+        tick_count: Ticks since the game began; times the typing test.
+        typing_round: The casino typing test in progress, if any.
+        last_casino_result: The message from the latest casino action.
     """
     company_name: str
     money: float
@@ -316,6 +366,18 @@ class State:
     expeditions_bought: int
     last_expedition_finds: list[str]
     controls_signature: str
+    tick_count: int
+    typing_round: TypingRound
+    last_casino_result: str
+
+
+def make_no_typing_round() -> TypingRound:
+    """Build the placeholder that means no typing test is running.
+
+    Returns:
+        A TypingRound with an empty prompt.
+    """
+    return TypingRound("", DIFFICULTY_EASY, 0, 0)
 
 
 def make_starting_items() -> list[BuyItem]:
@@ -384,6 +446,9 @@ def make_new_state() -> State:
         expeditions_bought=0,
         last_expedition_finds=[],
         controls_signature="",
+        tick_count=0,
+        typing_round=make_no_typing_round(),
+        last_casino_result="",
     )
 
 
@@ -496,6 +561,20 @@ def make_test_artifact(name: str, income_bonus: float, copies: int,
     """
     return Artifact("A", name, RARITY_COMMON, income_bonus, "Test", copies,
                     slot)
+
+
+def make_typing_state() -> State:
+    """Build a Casino page State three ticks into a typing round.
+
+    Returns:
+        A State with Ŧ400 left after betting 100 on the easy prompt "hello".
+    """
+    state = make_new_state()
+    state.current_page = PAGE_CASINO
+    state.money = 400.0
+    state.tick_count = 3
+    state.typing_round = TypingRound("hello", DIFFICULTY_EASY, 100, 0)
+    return state
 
 
 def make_rich_state() -> State:
@@ -1823,6 +1902,252 @@ def set_policy_choices(policies: list[Policy], choices: list[bool],
 
 
 # ---------------------------------------------------------------------------
+# Casino: the typing test
+# ---------------------------------------------------------------------------
+
+def swap_hard_characters(text: str) -> str:
+    """Apply the hard difficulty's character swaps.
+
+    "and" must become "&" before "a" becomes "@", or "and" would be broken
+    up first. 0 and O trade places, so they are swapped one at a time.
+
+    Args:
+        text: The original prompt.
+
+    Returns:
+        The prompt with and->&, a->@, 0->O, and O->0 applied.
+    """
+    swapped = text.replace("and", "&").replace("a", "@")
+    result = ""
+    for character in swapped:
+        if character == "0":
+            result = result + "O"
+        elif character == "O":
+            result = result + "0"
+        else:
+            result = result + character
+    return result
+
+
+assert_equal(swap_hard_characters("sand a 0 O"), "s& @ O 0")
+assert_equal(swap_hard_characters(""), "")
+
+
+def roll_prompt(difficulty: str) -> str:
+    """Randomly choose a prompt for a difficulty.
+
+    Uses randomness, so it has no unit test.
+
+    Args:
+        difficulty: One of the DIFFICULTY_ constants.
+
+    Returns:
+        The prompt the player must type.
+    """
+    if difficulty == DIFFICULTY_HARD:
+        index = random.randint(0, len(HARD_PROMPTS) - 1)
+        return swap_hard_characters(HARD_PROMPTS[index])
+    return EASY_PROMPTS[random.randint(0, len(EASY_PROMPTS) - 1)]
+
+
+def score_accuracy(prompt: str, typed: str) -> float:
+    """Compare typed text to the prompt, one position at a time.
+
+    Spaces at the ends of the typed text are ignored. Missing or extra
+    characters count as wrong.
+
+    Args:
+        prompt: The text the player was asked to type.
+        typed: What the player typed.
+
+    Returns:
+        The fraction of positions that are correct, from 0 to 1.
+    """
+    cleaned = typed.strip()
+    total = max(len(prompt), len(cleaned))
+    if total == 0:
+        return 0.0
+    correct = 0
+    for index in range(min(len(prompt), len(cleaned))):
+        if prompt[index] == cleaned[index]:
+            correct = correct + 1
+    return correct / total
+
+
+assert_equal(score_accuracy("abcd", "abcd"), 1.0)
+assert_equal(score_accuracy("abcd", "  abcd\n"), 1.0)
+assert_equal(score_accuracy("abcd", "abXd"), 0.75)
+assert_equal(score_accuracy("abcd", "ab"), 0.5)
+assert_equal(score_accuracy("abcd", "abcdefgh"), 0.5)
+assert_equal(score_accuracy("abcd", "ABCD"), 0.0)
+assert_equal(score_accuracy("", ""), 0.0)
+
+
+def elapsed_seconds(ticks_passed: int, interval_ms: int) -> float:
+    """Convert a number of game ticks into seconds.
+
+    Args:
+        ticks_passed: How many ticks went by.
+        interval_ms: The milliseconds between ticks.
+
+    Returns:
+        The elapsed time in seconds.
+    """
+    return ticks_passed * interval_ms / 1000
+
+
+assert_equal(elapsed_seconds(3, 1000), 3.0)
+assert_equal(elapsed_seconds(0, 667), 0.0)
+
+
+def words_per_minute(character_count: int, seconds: float) -> float:
+    """Calculate typing speed using the standard 5 characters per word.
+
+    Args:
+        character_count: How many characters were typed.
+        seconds: How long the typing took.
+
+    Returns:
+        The speed in words per minute, or 0 if no time was measured.
+    """
+    if seconds <= 0:
+        return 0.0
+    return (character_count / CHARACTERS_PER_WORD) / (seconds / 60)
+
+
+assert_equal(words_per_minute(50, 60.0), 10.0)
+assert_equal(words_per_minute(5, 2.0), 30.0)
+assert_equal(words_per_minute(50, 0.0), 0.0)
+
+
+def tier_multiplier(value: float, tiers: list[list[float]]) -> float:
+    """Find the multiplier of the highest tier a value reaches.
+
+    Args:
+        value: The score to look up.
+        tiers: Rows of [lowest value, multiplier], lowest tier first.
+
+    Returns:
+        The multiplier for that value.
+    """
+    multiplier = tiers[0][1]
+    for row in tiers:
+        if value >= row[0]:
+            multiplier = row[1]
+    return multiplier
+
+
+assert_equal(tier_multiplier(0.79, ACCURACY_TIERS), 0.0)
+assert_equal(tier_multiplier(0.8, ACCURACY_TIERS), 0.5)
+assert_equal(tier_multiplier(1.0, ACCURACY_TIERS), 1.5)
+assert_equal(tier_multiplier(0.0, SPEED_TIERS), 0.5)
+assert_equal(tier_multiplier(45.0, SPEED_TIERS), 1.5)
+assert_equal(tier_multiplier(200.0, SPEED_TIERS), 2.0)
+
+
+def calculate_payout(bet: int, accuracy: float, speed_wpm: float,
+                     difficulty: str) -> float:
+    """Calculate a typing test's winnings; this is the scoring function.
+
+    Args:
+        bet: The money that was bet.
+        accuracy: The fraction of characters correct.
+        speed_wpm: The typing speed in words per minute.
+        difficulty: One of the DIFFICULTY_ constants.
+
+    Returns:
+        The bet times the accuracy, speed, and difficulty multipliers.
+    """
+    return (bet * tier_multiplier(accuracy, ACCURACY_TIERS)
+            * tier_multiplier(speed_wpm, SPEED_TIERS)
+            * DIFFICULTY_MULTIPLIERS[difficulty])
+
+
+assert_equal(calculate_payout(100, 1.0, 30.0, DIFFICULTY_EASY), 150.0)
+assert_equal(calculate_payout(100, 1.0, 30.0, DIFFICULTY_HARD), 300.0)
+assert_equal(calculate_payout(100, 1.0, 75.0, DIFFICULTY_HARD), 600.0)
+assert_equal(calculate_payout(100, 0.96, 10.0, DIFFICULTY_EASY), 50.0)
+# Poor accuracy loses the whole bet, however fast the typing was.
+assert_equal(calculate_payout(100, 0.5, 200.0, DIFFICULTY_HARD), 0.0)
+
+
+def parse_bet(bet_text: str) -> int:
+    """Turn the text from the bet box into a number.
+
+    .isascii() rejects symbols such as a superscript 2, which .isdigit()
+    accepts but int() cannot convert.
+
+    Args:
+        bet_text: What the player typed.
+
+    Returns:
+        The whole-number bet, or 0 if the text isn't a whole number.
+    """
+    cleaned = bet_text.strip()
+    if cleaned.isdigit() and cleaned.isascii():
+        return int(cleaned)
+    return 0
+
+
+assert_equal(parse_bet("250"), 250)
+assert_equal(parse_bet(" 7 "), 7)
+assert_equal(parse_bet("abc"), 0)
+assert_equal(parse_bet("-5"), 0)
+assert_equal(parse_bet("1.5"), 0)
+assert_equal(parse_bet(""), 0)
+assert_equal(parse_bet("²"), 0)
+
+
+def can_place_bet(bet: int, money: float, goods_in_stock: int) -> bool:
+    """Check that a bet is positive, under the cap, and safe.
+
+    With an empty warehouse the player must also keep enough to stock one
+    unit, or nothing could be stocked or sold ever again.
+
+    Args:
+        bet: The whole-number bet.
+        money: The money available.
+        goods_in_stock: Units currently in the warehouse.
+
+    Returns:
+        True if the bet is allowed.
+    """
+    if bet <= 0 or bet > money * CASINO_MAX_BET_FRACTION:
+        return False
+    return goods_in_stock > 0 or bet + UNIT_COST <= money
+
+
+assert_equal(can_place_bet(0, 500.0, 5), False)
+assert_equal(can_place_bet(400, 500.0, 5), True)
+assert_equal(can_place_bet(401, 500.0, 5), False)
+# Within the 80% cap, but only 10 would be left for restocking.
+assert_equal(can_place_bet(40, 50.0, 0), False)
+assert_equal(can_place_bet(35, 50.0, 0), True)
+
+
+def settle_typing_round(state: State, typed_text: str) -> None:
+    """Score the running round, pay the player, and end the round.
+
+    Tested through the submit_typing_round route.
+
+    Args:
+        state: The current game state; its money and round are updated.
+        typed_text: What the player typed.
+    """
+    typing_round = state.typing_round
+    seconds = elapsed_seconds(state.tick_count - typing_round.start_tick,
+                              tick_interval(state))
+    accuracy = score_accuracy(typing_round.prompt, typed_text)
+    speed = words_per_minute(len(typed_text.strip()), seconds)
+    payout = calculate_payout(typing_round.bet, accuracy, speed,
+                              typing_round.difficulty)
+    state.money = state.money + payout
+    state.last_casino_result = describe_typing_result(
+        accuracy, speed, typing_round.bet, payout)
+    state.typing_round = make_no_typing_round()
+
+
+# ---------------------------------------------------------------------------
 # Page helpers
 # ---------------------------------------------------------------------------
 
@@ -1996,6 +2321,7 @@ def build_top_bar(state: State) -> Div:
         Button("Company", "company_page"),
         Button("Business", "business_page"),
         Button("Artifacts", "artifacts_page"),
+        Button("Casino", "casino_page"),
         Div(build_live_numbers(state), id="live_numbers"),
     )
 
@@ -2214,6 +2540,8 @@ def build_live_content(state: State) -> list:
     if state.current_page == PAGE_BUSINESS:
         return [build_top_bar(state)]
     if state.current_page == PAGE_ORGANIZE:
+        return [build_top_bar(state)]
+    if state.current_page == PAGE_CASINO:
         return [build_top_bar(state)]
     if state.current_page == PAGE_ARTIFACTS:
         return [build_top_bar(state), build_expedition_controls(state)]
@@ -2487,6 +2815,84 @@ def build_organize_content(state: State) -> list:
     return [
         Div(build_live_content(state), id="live_area"),
         build_organize_form(state),
+    ]
+
+
+def describe_typing_result(accuracy: float, speed_wpm: float, bet: int,
+                           payout: float) -> str:
+    """Write the message shown after a typing test.
+
+    Args:
+        accuracy: The fraction of characters correct.
+        speed_wpm: The typing speed in words per minute.
+        bet: The money that was bet.
+        payout: The money won.
+
+    Returns:
+        One line summarizing the round.
+    """
+    return ("Accuracy " + str(round(accuracy * 100)) + "%, "
+            + str(round(speed_wpm)) + " WPM. Bet " + format_money(bet)
+            + ", paid " + format_money(payout) + ".")
+
+
+assert_equal(describe_typing_result(0.5, 30.0, 100, 150.0),
+             "Accuracy 50%, 30 WPM. Bet Ŧ100.00, paid Ŧ150.00.")
+
+
+def build_casino_setup_form() -> Div:
+    """Build the form that starts a typing test.
+
+    Returns:
+        A Div holding the difficulty and bet inputs and the start button.
+    """
+    cap_text = str(round(CASINO_MAX_BET_FRACTION * 100))
+    return Div(
+        Header("Typing Test", 2),
+        "Difficulty: ",
+        SelectBox("difficulty", DIFFICULTY_OPTIONS, DIFFICULTY_EASY),
+        Div("Bet (up to " + cap_text + "% of your money): ",
+            TextBox("bet", "")),
+        Button("Start Typing", "start_typing_round"),
+    )
+
+
+def build_typing_form(typing_round: TypingRound) -> Div:
+    """Build the prompt and the box the player types into.
+
+    Args:
+        typing_round: The round in progress.
+
+    Returns:
+        A Div holding the prompt, the TextArea, and the submit button.
+    """
+    return Div(
+        Header("Type this exactly:", 2),
+        Div(typing_round.prompt),
+        TextArea("typed_text", ""),
+        Button("Submit", "submit_typing_round"),
+    )
+
+
+def build_casino_content(state: State) -> list:
+    """Build the Casino page's content.
+
+    The forms sit outside the live area so ticks can't erase typing.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A list of the page's components.
+    """
+    if state.typing_round.prompt == "":
+        form = build_casino_setup_form()
+    else:
+        form = build_typing_form(state.typing_round)
+    return [
+        Div(build_live_content(state), id="live_area"),
+        Div(state.last_casino_result),
+        form,
     ]
 
 
@@ -2899,6 +3305,139 @@ assert_equal(save_artifact_grid(make_artifact_state(), EMPTY_SLOT, EMPTY_SLOT,
 
 
 @route
+def casino_page(state: State) -> Page:
+    """Show the typing test's setup form or the round in progress.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The Casino page.
+    """
+    state.current_page = PAGE_CASINO
+    return Page(state, build_casino_content(state))
+
+
+def make_expected_casino_page(state: State) -> Page:
+    """Build the Casino page expected for a given State.
+
+    Args:
+        state: The State the page should show.
+
+    Returns:
+        The expected Casino page.
+    """
+    return Page(state, build_casino_content(state))
+
+
+def make_casino_view_state(message: str) -> State:
+    """Build a new-game State viewing the Casino page.
+
+    Args:
+        message: The casino result message to show.
+
+    Returns:
+        A new-game State with the Casino page showing and that message.
+    """
+    state = make_new_state()
+    state.current_page = PAGE_CASINO
+    state.last_casino_result = message
+    return state
+
+
+assert_equal(casino_page(make_new_state()),
+             make_expected_casino_page(make_casino_view_state("")))
+# Coming back during a round must show that same round.
+assert_equal(casino_page(make_typing_state()),
+             make_expected_casino_page(make_typing_state()))
+
+
+@route
+def start_typing_round(state: State, difficulty: str, bet: str) -> Page:
+    """Take the bet and begin a typing test with a random prompt.
+
+    Uses randomness when the bet is accepted, so only the rejected bet
+    path, which rolls nothing, has a unit test.
+
+    Args:
+        state: The current game state.
+        difficulty: The chosen difficulty.
+        bet: The text from the bet box.
+
+    Returns:
+        The refreshed Casino page.
+    """
+    bet_amount = parse_bet(bet)
+    if state.typing_round.prompt != "":
+        return casino_page(state)
+    if can_place_bet(bet_amount, state.money, state.goods_in_stock):
+        state.money = state.money - bet_amount
+        state.typing_round = TypingRound(roll_prompt(difficulty), difficulty,
+                                         bet_amount, state.tick_count)
+        state.last_casino_result = ""
+    else:
+        state.last_casino_result = INVALID_BET_MESSAGE
+    return casino_page(state)
+
+
+assert_equal(start_typing_round(make_new_state(), DIFFICULTY_EASY, "abc"),
+             make_expected_casino_page(
+                 make_casino_view_state(INVALID_BET_MESSAGE)))
+# 401 is over 80% of the starting 500.
+assert_equal(start_typing_round(make_new_state(), DIFFICULTY_EASY, "401"),
+             make_expected_casino_page(
+                 make_casino_view_state(INVALID_BET_MESSAGE)))
+# A second start during a round changes nothing.
+assert_equal(start_typing_round(make_typing_state(), DIFFICULTY_HARD, "50"),
+             make_expected_casino_page(make_typing_state()))
+
+
+@route
+def submit_typing_round(state: State, typed_text: str) -> Page:
+    """Score the typing test and pay out the winnings.
+
+    Args:
+        state: The current game state.
+        typed_text: What the player typed.
+
+    Returns:
+        The refreshed Casino page.
+    """
+    if state.typing_round.prompt != "":
+        settle_typing_round(state, typed_text)
+    return casino_page(state)
+
+
+def expected_after_typing(payout: float, message: str) -> State:
+    """Build the State expected after finishing the test typing round.
+
+    Args:
+        payout: The money the round should pay.
+        message: The result message that should be shown.
+
+    Returns:
+        The typing State with the payout added and the round finished.
+    """
+    state = make_typing_state()
+    state.money = state.money + payout
+    state.typing_round = make_no_typing_round()
+    state.last_casino_result = message
+    return state
+
+
+# 5 characters in 3 ticks (2.001 seconds) is about 30 WPM, the x1 tier.
+assert_equal(submit_typing_round(make_typing_state(), "hello"),
+             make_expected_casino_page(expected_after_typing(
+                 150.0, "Accuracy 100%, 30 WPM. Bet Ŧ100.00, paid Ŧ150.00.")))
+assert_equal(submit_typing_round(make_typing_state(), "nope"),
+             make_expected_casino_page(expected_after_typing(
+                 0.0, "Accuracy 0%, 24 WPM. Bet Ŧ100.00, paid Ŧ0.00.")))
+# With no round running, a stray submit changes nothing.
+assert_equal(submit_typing_round(make_casino_view_state(""), "hello"),
+             make_expected_casino_page(make_casino_view_state("")))
+
+
+@route
 def set_buy_amount(state: State, amount: int) -> Page:
     """Choose how many units one Buy click purchases.
 
@@ -3065,6 +3604,7 @@ def tick(state: State) -> Fragment:
     run_stocking(state)
     run_selling(state)
     run_loyalty_drift(state)
+    state.tick_count = state.tick_count + 1
     new_signature = controls_signature(state)
     if new_signature == state.controls_signature:
         return Fragment(state, build_live_numbers(state),
@@ -3085,6 +3625,7 @@ def expected_after_first_tick() -> State:
     state.goods_stocked_last_tick = 5
     state.goods_sold_last_tick = 5
     state.income_last_tick = 112.5
+    state.tick_count = 1
     state.controls_signature = controls_signature(state)
     return state
 
