@@ -21,10 +21,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Stay on Drafter v2 while still receiving v2 bug fixes.
-  # For semester-level reproducibility, replace this with an exact version,
-  # for example: drafter==2.0.2
-  DRAFTER_SPEC: "drafter>=2,<3"
+  # Pinned to the exact version the game was tested on, so a new Drafter
+  # release can't change the live site before submission.
+  DRAFTER_SPEC: "drafter==2.1.4"
   DIAGNOSTIC_VENV: ".venv"
   STUDENT_REQUIREMENTS: ".drafter-student-requirements.txt"
 
