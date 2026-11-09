@@ -5,43 +5,56 @@ off what is done and name the exact function or field that satisfies it.
 
 ## Site
 
-- [x] At least 7 routes — _where:_ 11 routes: `index`, `start_game`,
-      `company_page`, `business_page`, `save_goods`, `save_policies`,
+- [x] At least 7 routes — _where:_ 15 routes: `index`, `start_game`,
+      `company_page`, `business_page`, `artifacts_page`, `organize_page`,
+      `save_goods`, `save_policies`, `run_expedition`, `save_artifact_grid`,
       `set_buy_amount`, `buy_item`, `raise_markup`, `lower_markup`, `tick`
-- [ ] At least 5 pages — _where:_ 3 so far: start page (`index`), company page
-      (`company_page`), Business page (`business_page`)
-- [x] `State` dataclass with at least 4 fields — _where:_ `State` (17 fields)
+- [x] At least 5 pages — _where:_ start page (`index`), company page
+      (`company_page`), Business page (`business_page`), Artifacts page
+      (`artifacts_page`), Organize page (`organize_page`)
+- [x] `State` dataclass with at least 4 fields — _where:_ `State` (20 fields)
 - [x] At least one State field is a list/dict of a second dataclass —
-      _where:_ `State.buy_items: list[BuyItem]`,
+      _where:_ `State.owned_artifacts: list[Artifact]`,
+      `State.buy_items: list[BuyItem]`,
       `State.goods_types: list[GoodsType]`, `State.policies: list[Policy]`
 - [x] At least 4 State fields, including that list/dict, are meaningfully
       modified in at least one route — _where:_ `buy_items` (`.owned`, in
       `buy_item`), `money` (`buy_item`, `tick`), `markup` (`raise_markup`,
       `lower_markup`), `loyalty` (`tick`), `goods_types` and
       `sells_war_supplies` (`save_goods`), `policies` (`save_policies`),
-      `strike_ticks_left` and `news_feed` (`tick`, through `run_strikes`)
+      `strike_ticks_left` and `news_feed` (`tick`, through `run_strikes`),
+      `owned_artifacts` (`run_expedition`, `save_artifact_grid`),
+      `expeditions_bought` and `last_expedition_finds` (`run_expedition`)
 - [x] At least 3 input fields (TextBox, CheckBox, SelectBox, TextArea)
       — _where:_ `TextBox("company_name")` in `build_start_content`, one
       `CheckBox` per goods type in `build_goods_form`, one `CheckBox` per
-      policy in `build_policy_form`
+      policy in `build_policy_form`, one `SelectBox` per grid slot in
+      `build_organize_form`
 - [x] At least 3 meaningful if statements — _where:_ `buy_item` (can afford),
       `build_buy_list` (`is_item_visible` unlock check), `build_buy_action`
       (sold out / can't afford), `clean_company_name` (blank name),
       `run_strikes` (strike running / new strike), `build_live_content`
-      (which page is showing), `policy_label` (locked policy)
+      (which page is showing), `policy_label` (locked policy),
+      `total_artifact_bonus` (placed or not), `add_artifact_copy` (duplicate
+      or new), `run_expedition` (can afford)
 - [x] At least 1 loop over the list/dict of dataclass instances, used in a
-      meaningful way — _where:_ `total_item_effect` (loops over
+      meaningful way — _where (main answer):_ `total_artifact_bonus` loops
+      over `state.owned_artifacts`, skips unplaced artifacts, and totals the
+      bonuses that feed `calculate_total_bonus` and income. _Also:_
+      `total_item_effect` (loops over
       `state.buy_items` to total each stat), `build_buy_list`,
       `total_goods_bonus` (`state.goods_types`), `total_strike_risk` and the
       other `total_policy_...` helpers (`state.policies`)
 - [x] Legitimate purpose (entertainment: it's a game) — _where:_ the whole site
 - [x] No global variables; only ALL_CAPS constants, never mutated — _where:_
       constants block; `make_starting_items`, `make_starting_goods`,
-      `make_starting_policies`, and `make_new_state` copy them
+      `make_starting_policies`, `artifact_from_row`, and `make_new_state`
+      copy them
 - [x] Uses Drafter — _where:_ `main.py`, `start_server(make_new_state())`
 - [x] Any technique not covered in the course is explained in a comment or
       docstring — _where:_ `ADVANCED:` notes in `build_game_clock` (Clock),
-      `tick` (Fragment), and `roll_strike` (`random.random`)
+      `tick` (Fragment), `roll_strike` (`random.random`), and `roll_rarity`
+      (`random.randint`)
 
 ## Code quality
 
@@ -49,7 +62,10 @@ off what is done and name the exact function or field that satisfies it.
 - [x] Every route has at least one `assert_equal` unit test, unless it uses
       randomness (and its docstring says so) — _where:_ directly below each
       route in `main.py`; `tick` uses randomness (its docstring says so) but
-      is still tested with zero-risk States
+      is still tested with zero-risk States; `run_expedition` uses randomness
+      (its docstring says so) and only its "can't afford" path is tested;
+      `roll_rarity`, `roll_artifact_row`, and `collect_expedition_finds` are
+      random helpers, exempt, and say so in their docstrings
 - [x] Lines under 80 characters (hard limit 120)
 - [x] Type hints on every function header
 - [x] A docstring as the first line of every function body

@@ -27,7 +27,8 @@ DEFAULT_COMPANY_NAME = "Untitled Warehouse Inc."
 
 # The id shared by the one persistent Clock and its RemovePersistent.
 GAME_CLOCK_ID = "game_clock"
-TICK_INTERVAL_MS = 3000
+# A Clock needs whole milliseconds; 667 ms is about 1.5 ticks per second.
+TICK_INTERVAL_MS = 667
 
 STARTING_MONEY = 500.0
 UNIT_COST = 15
@@ -83,6 +84,8 @@ MAX_NEWS_ITEMS = 8
 # Which page is showing, so the tick refreshes the right content.
 PAGE_COMPANY = "company"
 PAGE_BUSINESS = "business"
+PAGE_ARTIFACTS = "artifacts"
+PAGE_ORGANIZE = "organize"
 
 # Each row: name, emoji, CheckBox name (must match a save_goods parameter),
 # and income bonus as a fraction.
@@ -109,6 +112,64 @@ STRIKE_DURATION_TICKS = 5
 # Stocking and delivery are multiplied by this during a strike.
 STRIKE_PENALTY_MULTIPLIER = 0.5
 STRIKE_NEWS = "Warehouse staff walk out! Management calls it 'unplanned rest'."
+
+RARITY_COMMON = "common"
+RARITY_RARE = "rare"
+RARITY_LEGENDARY = "legendary"
+# Each row: rarity and its weight. Weights add up to 100, so they read as %.
+RARITY_WEIGHTS = [
+    [RARITY_COMMON, 70],
+    [RARITY_RARE, 25],
+    [RARITY_LEGENDARY, 5],
+]
+
+# Each row: emoji, name, rarity, income bonus as a fraction, and description.
+ARTIFACT_ROWS = [
+    ["📎", "Ceremonial Paperclip", RARITY_COMMON, 0.01,
+     "Held the Q3 merger together. Also some receipts."],
+    ["🧾", "Infinite Receipt", RARITY_COMMON, 0.015,
+     "Legal confirms that it is, technically, still printing."],
+    ["☕", "Mug of Eternal Lukewarmness", RARITY_COMMON, 0.02,
+     "Never hot, never cold. Much like the benefits package."],
+    ["🪑", "Ergonomic Stool of Compliance", RARITY_COMMON, 0.02,
+     "Designed so that nobody sits for longer than policy allows."],
+    ["🏷️", "Clearance Sticker of Destiny", RARITY_COMMON, 0.025,
+     "Everything must go. Including, eventually, you."],
+    ["🖊️", "Pen Chained to the Desk", RARITY_COMMON, 0.03,
+     "Our most trusted long-term asset retention program."],
+    ["🗿", "Head of Human Resources", RARITY_RARE, 0.05,
+     "Stone-faced and unmoved by your complaint. Exceeds expectations."],
+    ["📠", "Fax Machine of the Ancients", RARITY_RARE, 0.06,
+     "Still the only device approved by the accounting department."],
+    ["🦆", "Senior Rubber Duck Consultant", RARITY_RARE, 0.07,
+     "Bills by the hour to listen. Has never once disagreed."],
+    ["📊", "Upward-Only Chart", RARITY_RARE, 0.08,
+     "The axes are unlabeled, so the investors are thrilled."],
+    ["🧿", "Eye of the Shift Supervisor", RARITY_RARE, 0.10,
+     "Sees every bathroom break. Forgives none of them."],
+    ["👑", "Crown of Synergy", RARITY_LEGENDARY, 0.20,
+     "Whoever wears it may say 'circle back' without consequence."],
+    ["🏆", "Employee of the Millennium", RARITY_LEGENDARY, 0.30,
+     "Awarded to the only worker who never requested a day off."],
+    ["💼", "Golden Parachute", RARITY_LEGENDARY, 0.40,
+     "Opens automatically the moment anyone asks about the audit."],
+]
+
+# Each duplicate adds this fraction of the artifact's base bonus.
+COPY_BONUS_FRACTION = 0.10
+
+EXPEDITION_AMOUNTS = [1, 5, 10, 100]
+EXPEDITION_BASE_COST = 500.0
+EXPEDITION_COST_GROWTH = 1.01
+
+GRID_ROWS = 2
+GRID_COLUMNS = 6
+GRID_SLOT_COUNT = GRID_ROWS * GRID_COLUMNS
+EMPTY_SLOT = "(empty)"
+# Artifact.slot holds this when the artifact isn't in the grid.
+NOT_PLACED = -1
+# What the linear search returns when it finds nothing.
+NOT_FOUND = -1
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +247,28 @@ class Policy:
 
 
 @dataclass
+class Artifact:
+    """An artifact the player owns.
+
+    Attributes:
+        emoji: The placeholder picture.
+        name: The artifact's name.
+        rarity: One of the RARITY_ constants.
+        income_bonus: The income bonus of one copy, as a fraction.
+        description: The funny corporate flavor text.
+        copies: How many copies the player has found.
+        slot: The grid slot it sits in (0-11), or NOT_PLACED.
+    """
+    emoji: str
+    name: str
+    rarity: str
+    income_bonus: float
+    description: str
+    copies: int
+    slot: int
+
+
+@dataclass
 class State:
     """Holds everything the website remembers between pages.
 
@@ -207,6 +290,9 @@ class State:
         sells_war_supplies: Whether War Supplies are being sold.
         strike_ticks_left: Ticks until the current strike ends (0 = none).
         current_page: Which PAGE_ constant the player is viewing.
+        owned_artifacts: Every artifact found so far.
+        expeditions_bought: Expeditions ever bought; raises their price.
+        last_expedition_finds: One line per artifact from the last batch.
     """
     company_name: str
     money: float
@@ -225,6 +311,9 @@ class State:
     sells_war_supplies: bool
     strike_ticks_left: int
     current_page: str
+    owned_artifacts: list[Artifact]
+    expeditions_bought: int
+    last_expedition_finds: list[str]
 
 
 def make_starting_items() -> list[BuyItem]:
@@ -289,6 +378,9 @@ def make_new_state() -> State:
         sells_war_supplies=False,
         strike_ticks_left=0,
         current_page=PAGE_COMPANY,
+        owned_artifacts=[],
+        expeditions_bought=0,
+        last_expedition_finds=[],
     )
 
 
@@ -383,6 +475,36 @@ def make_certain_strike_state() -> State:
     state = make_new_state()
     state.policies = [Policy("Riot", "R", "riot", 0.0, 0.0, 0.0, 0.0, 1.0,
                              False, True)]
+    return state
+
+
+def make_test_artifact(name: str, income_bonus: float, copies: int,
+                       slot: int) -> Artifact:
+    """Build a simple common Artifact for tests.
+
+    Args:
+        name: The artifact's name.
+        income_bonus: The income bonus of one copy.
+        copies: How many copies are owned.
+        slot: The grid slot, or NOT_PLACED.
+
+    Returns:
+        A new common Artifact with the emoji "A".
+    """
+    return Artifact("A", name, RARITY_COMMON, income_bonus, "Test", copies,
+                    slot)
+
+
+def make_artifact_state() -> State:
+    """Build a State owning two artifacts, with only Alpha placed.
+
+    Returns:
+        A new-game State where Alpha (+10%) is in slot 0 and Beta (+50%)
+        is not placed.
+    """
+    state = make_new_state()
+    state.owned_artifacts = [make_test_artifact("Alpha", 0.1, 1, 0),
+                             make_test_artifact("Beta", 0.5, 1, NOT_PLACED)]
     return state
 
 
@@ -577,6 +699,433 @@ def add_news(news_feed: list[str], headline: str) -> list[str]:
 
 assert_equal(add_news(["old"], "new"), ["new", "old"])
 assert_equal(len(add_news(["x"] * MAX_NEWS_ITEMS, "new")), MAX_NEWS_ITEMS)
+
+
+# ---------------------------------------------------------------------------
+# Artifacts: expeditions, copies, and the grid
+# ---------------------------------------------------------------------------
+
+def artifact_bonus(artifact: Artifact) -> float:
+    """Calculate an artifact's income bonus, including its duplicates.
+
+    Args:
+        artifact: The artifact to measure.
+
+    Returns:
+        The bonus as a fraction, where 0.5 means +50%.
+    """
+    extra_copies = artifact.copies - 1
+    return artifact.income_bonus * (1 + COPY_BONUS_FRACTION * extra_copies)
+
+
+assert_equal(artifact_bonus(make_test_artifact("A", 0.1, 1, 0)), 0.1)
+assert_equal(round(artifact_bonus(make_test_artifact("A", 0.1, 6, 0)), 3),
+             0.15)
+
+
+def total_artifact_bonus(owned_artifacts: list[Artifact]) -> float:
+    """Total the income bonuses of the artifacts placed in the grid.
+
+    REQUIREMENT: This is the project's main loop over a list of dataclass
+    instances. It visits each Artifact in state.owned_artifacts, skips any
+    that aren't in the grid, and adds the rest into the income bonus.
+
+    Args:
+        owned_artifacts: Every artifact the player owns.
+
+    Returns:
+        The combined bonus as a fraction.
+    """
+    total = 0.0
+    for artifact in owned_artifacts:
+        if artifact.slot != NOT_PLACED:
+            total = total + artifact_bonus(artifact)
+    return total
+
+
+assert_equal(total_artifact_bonus([]), 0.0)
+# Only Alpha is placed, so Beta's +50% must not count.
+assert_equal(total_artifact_bonus(make_artifact_state().owned_artifacts), 0.1)
+
+
+def expedition_cost(expeditions_bought: int) -> float:
+    """Calculate the price of the next single expedition.
+
+    Args:
+        expeditions_bought: Expeditions bought before this one.
+
+    Returns:
+        The price of one expedition.
+    """
+    return EXPEDITION_BASE_COST * EXPEDITION_COST_GROWTH ** expeditions_bought
+
+
+assert_equal(expedition_cost(0), EXPEDITION_BASE_COST)
+assert_equal(round(expedition_cost(1), 2), 505.0)
+
+
+def expedition_batch_cost(expeditions_bought: int, count: int) -> float:
+    """Add up the price of several expeditions bought together.
+
+    Args:
+        expeditions_bought: Expeditions bought before this batch.
+        count: How many expeditions are in the batch.
+
+    Returns:
+        The total price of the batch.
+    """
+    total = 0.0
+    for index in range(count):
+        total = total + expedition_cost(expeditions_bought + index)
+    return total
+
+
+assert_equal(expedition_batch_cost(0, 0), 0.0)
+assert_equal(round(expedition_batch_cost(0, 2), 2), 1005.0)
+
+
+def expedition_money_required(expeditions_bought: int, count: int,
+                              goods_in_stock: int) -> float:
+    """Calculate the money needed to safely buy an expedition batch.
+
+    Like money_required, this stops the player spending the last of their
+    money with an empty warehouse, which would end the game.
+
+    Args:
+        expeditions_bought: Expeditions bought before this batch.
+        count: How many expeditions are in the batch.
+        goods_in_stock: Units currently in the warehouse.
+
+    Returns:
+        The batch price, plus one unit's cost if the warehouse is empty.
+    """
+    price = expedition_batch_cost(expeditions_bought, count)
+    if goods_in_stock == 0:
+        return price + UNIT_COST
+    return price
+
+
+assert_equal(expedition_money_required(0, 1, 5), 500.0)
+assert_equal(expedition_money_required(0, 1, 0), 500.0 + UNIT_COST)
+
+
+def can_afford_expedition(state: State, count: int) -> bool:
+    """Check whether a whole expedition batch can be bought right now.
+
+    Args:
+        state: The current game state.
+        count: How many expeditions are in the batch.
+
+    Returns:
+        True if the player has enough money for the batch.
+    """
+    required = expedition_money_required(state.expeditions_bought, count,
+                                         state.goods_in_stock)
+    return required <= state.money
+
+
+# A new game has 500 money and an empty warehouse, so it is 15 short.
+assert_equal(can_afford_expedition(make_new_state(), 1), False)
+
+
+def total_rarity_weight() -> int:
+    """Add up the weights of every rarity.
+
+    Returns:
+        The sum of the weights in RARITY_WEIGHTS.
+    """
+    total = 0
+    for row in RARITY_WEIGHTS:
+        total = total + row[1]
+    return total
+
+
+assert_equal(total_rarity_weight(), 100)
+
+
+def rarity_for_roll(roll: int) -> str:
+    """Turn a number from 1 to the total weight into a rarity.
+
+    Args:
+        roll: The number rolled.
+
+    Returns:
+        The rarity whose share of the weights contains the roll.
+    """
+    weight_so_far = 0
+    for row in RARITY_WEIGHTS:
+        weight_so_far = weight_so_far + row[1]
+        if roll <= weight_so_far:
+            return row[0]
+    return RARITY_COMMON
+
+
+assert_equal(rarity_for_roll(1), RARITY_COMMON)
+assert_equal(rarity_for_roll(70), RARITY_COMMON)
+assert_equal(rarity_for_roll(71), RARITY_RARE)
+assert_equal(rarity_for_roll(95), RARITY_RARE)
+assert_equal(rarity_for_roll(96), RARITY_LEGENDARY)
+assert_equal(rarity_for_roll(100), RARITY_LEGENDARY)
+
+
+def roll_rarity() -> str:
+    """Randomly choose a rarity using the weighted odds.
+
+    Uses randomness, so it has no unit test (rarity_for_roll is tested).
+
+    ADVANCED: random.randint(a, b) picks a whole number from a to b,
+    including both ends.
+
+    Returns:
+        One of the RARITY_ constants.
+    """
+    return rarity_for_roll(random.randint(1, total_rarity_weight()))
+
+
+def artifact_rows_of_rarity(rarity: str) -> list[list]:
+    """Find the catalog rows with a given rarity.
+
+    Args:
+        rarity: The rarity to look for.
+
+    Returns:
+        A list of the matching rows from ARTIFACT_ROWS.
+    """
+    matching_rows = []
+    for row in ARTIFACT_ROWS:
+        if row[2] == rarity:
+            matching_rows.append(row)
+    return matching_rows
+
+
+assert_equal(len(artifact_rows_of_rarity(RARITY_COMMON)), 6)
+assert_equal(len(artifact_rows_of_rarity(RARITY_RARE)), 5)
+assert_equal(len(artifact_rows_of_rarity(RARITY_LEGENDARY)), 3)
+assert_equal(artifact_rows_of_rarity("imaginary"), [])
+
+
+def roll_artifact_row(rarity: str) -> list:
+    """Randomly choose one catalog row of the given rarity.
+
+    Uses randomness, so it has no unit test.
+
+    Args:
+        rarity: The rarity to choose from.
+
+    Returns:
+        One row from ARTIFACT_ROWS.
+    """
+    rows = artifact_rows_of_rarity(rarity)
+    return rows[random.randint(0, len(rows) - 1)]
+
+
+def artifact_label(artifact: Artifact) -> str:
+    """Build the text that identifies an artifact in menus and the grid.
+
+    Args:
+        artifact: The artifact to label.
+
+    Returns:
+        The artifact's emoji and name.
+    """
+    return artifact.emoji + " " + artifact.name
+
+
+assert_equal(artifact_label(make_test_artifact("Alpha", 0.1, 1, 0)), "A Alpha")
+
+
+def find_artifact_index(owned_artifacts: list[Artifact], label: str) -> int:
+    """Linear search for the artifact with a given label.
+
+    Args:
+        owned_artifacts: Every artifact the player owns.
+        label: The artifact_label to look for.
+
+    Returns:
+        The artifact's position in the list, or NOT_FOUND.
+    """
+    for index in range(len(owned_artifacts)):
+        if artifact_label(owned_artifacts[index]) == label:
+            return index
+    return NOT_FOUND
+
+
+assert_equal(find_artifact_index(make_artifact_state().owned_artifacts,
+                                 "A Beta"), 1)
+assert_equal(find_artifact_index([], "A Beta"), NOT_FOUND)
+
+
+def artifact_from_row(row: list) -> Artifact:
+    """Build a one-copy, unplaced Artifact from a catalog row.
+
+    Args:
+        row: One row of ARTIFACT_ROWS.
+
+    Returns:
+        A new Artifact, so the global row is never modified.
+    """
+    return Artifact(row[0], row[1], row[2], row[3], row[4], 1, NOT_PLACED)
+
+
+assert_equal(artifact_from_row(["A", "Alpha", RARITY_COMMON, 0.1, "Test"]),
+             make_test_artifact("Alpha", 0.1, 1, NOT_PLACED))
+
+
+def add_artifact_copy(owned_artifacts: list[Artifact], row: list) -> None:
+    """Add a found artifact, or one more copy if it is a duplicate.
+
+    Args:
+        owned_artifacts: Every artifact the player owns; updated here.
+        row: The catalog row that was found.
+    """
+    found = artifact_from_row(row)
+    index = find_artifact_index(owned_artifacts, artifact_label(found))
+    if index == NOT_FOUND:
+        owned_artifacts.append(found)
+    else:
+        owned_artifacts[index].copies = owned_artifacts[index].copies + 1
+
+
+def added_twice_artifacts() -> list[Artifact]:
+    """Add the same catalog row to an empty collection twice.
+
+    Returns:
+        The resulting list of owned artifacts.
+    """
+    owned_artifacts = []
+    row = ["A", "Alpha", RARITY_COMMON, 0.1, "Test"]
+    add_artifact_copy(owned_artifacts, row)
+    add_artifact_copy(owned_artifacts, row)
+    return owned_artifacts
+
+
+assert_equal(added_twice_artifacts(),
+             [make_test_artifact("Alpha", 0.1, 2, NOT_PLACED)])
+
+
+def summarize_finds(find_texts: list[str]) -> list[str]:
+    """Combine repeated expedition finds into one line each.
+
+    Args:
+        find_texts: One line of text for every artifact found.
+
+    Returns:
+        One line per different find, such as "A Alpha x3".
+    """
+    counts = {}
+    for text in find_texts:
+        if text in counts:
+            counts[text] = counts[text] + 1
+        else:
+            counts[text] = 1
+    lines = []
+    for text in counts:
+        lines.append(text + " x" + str(counts[text]))
+    return lines
+
+
+assert_equal(summarize_finds([]), [])
+assert_equal(summarize_finds(["A", "B", "A"]), ["A x2", "B x1"])
+
+
+def collect_expedition_finds(state: State, count: int) -> None:
+    """Roll each expedition in a batch and record what was found.
+
+    Uses randomness, so it has no unit test.
+
+    Args:
+        state: The current game state; its artifacts and finds are updated.
+        count: How many expeditions to roll.
+    """
+    find_texts = []
+    for expedition in range(count):
+        rarity = roll_rarity()
+        row = roll_artifact_row(rarity)
+        add_artifact_copy(state.owned_artifacts, row)
+        find_texts.append(row[0] + " " + row[1] + " (" + rarity + ")")
+    state.last_expedition_finds = summarize_finds(find_texts)
+
+
+def slot_choice(owned_artifacts: list[Artifact], slot: int) -> str:
+    """Find the label of whatever occupies a grid slot.
+
+    Args:
+        owned_artifacts: Every artifact the player owns.
+        slot: The grid slot number.
+
+    Returns:
+        The artifact's label, or EMPTY_SLOT if nothing is there.
+    """
+    for artifact in owned_artifacts:
+        if artifact.slot == slot:
+            return artifact_label(artifact)
+    return EMPTY_SLOT
+
+
+assert_equal(slot_choice(make_artifact_state().owned_artifacts, 0), "A Alpha")
+assert_equal(slot_choice(make_artifact_state().owned_artifacts, 1), EMPTY_SLOT)
+
+
+def slot_options(owned_artifacts: list[Artifact]) -> list[str]:
+    """List the choices shown in each grid slot's SelectBox.
+
+    Args:
+        owned_artifacts: Every artifact the player owns.
+
+    Returns:
+        EMPTY_SLOT followed by the label of each owned artifact.
+    """
+    options = [EMPTY_SLOT]
+    for artifact in owned_artifacts:
+        options.append(artifact_label(artifact))
+    return options
+
+
+assert_equal(slot_options(make_artifact_state().owned_artifacts),
+             [EMPTY_SLOT, "A Alpha", "A Beta"])
+
+
+def place_artifacts(owned_artifacts: list[Artifact],
+                    choices: list[str]) -> None:
+    """Rearrange the grid to match the player's SelectBox choices.
+
+    Each artifact fits in one slot, so if it was chosen more than once,
+    the earliest slot keeps it and the later ones stay empty.
+
+    Args:
+        owned_artifacts: Every artifact the player owns; updated here.
+        choices: The label chosen for each slot, in slot order.
+    """
+    for artifact in owned_artifacts:
+        artifact.slot = NOT_PLACED
+    for slot in range(len(choices)):
+        index = find_artifact_index(owned_artifacts, choices[slot])
+        if index != NOT_FOUND and owned_artifacts[index].slot == NOT_PLACED:
+            owned_artifacts[index].slot = slot
+
+
+def artifacts_after_placing(choices: list[str]) -> list[Artifact]:
+    """Apply slot choices to the test artifacts.
+
+    Args:
+        choices: The label chosen for each slot, in slot order.
+
+    Returns:
+        The rearranged test artifacts.
+    """
+    owned_artifacts = make_artifact_state().owned_artifacts
+    place_artifacts(owned_artifacts, choices)
+    return owned_artifacts
+
+
+# Choosing Beta moves it in, and Alpha is taken out of the grid.
+assert_equal(artifacts_after_placing(["A Beta", EMPTY_SLOT]),
+             [make_test_artifact("Alpha", 0.1, 1, NOT_PLACED),
+              make_test_artifact("Beta", 0.5, 1, 0)])
+# An artifact chosen twice stays in the earliest slot.
+assert_equal(artifacts_after_placing([EMPTY_SLOT, "A Beta", "A Beta"]),
+             [make_test_artifact("Alpha", 0.1, 1, NOT_PLACED),
+              make_test_artifact("Beta", 0.5, 1, 1)])
 
 
 # ---------------------------------------------------------------------------
@@ -810,7 +1359,7 @@ assert_equal(calculate_sale_price(2.0), 30.0)
 
 
 def calculate_total_bonus(state: State) -> float:
-    """Add the income bonuses from goods types and policies.
+    """Add the income bonuses from goods, policies, and placed artifacts.
 
     Args:
         state: The current game state.
@@ -819,7 +1368,8 @@ def calculate_total_bonus(state: State) -> float:
         The bonus as a fraction, where 0.5 means +50%.
     """
     return (total_goods_bonus(state.goods_types)
-            + total_policy_income_bonus(state.policies))
+            + total_policy_income_bonus(state.policies)
+            + total_artifact_bonus(state.owned_artifacts))
 
 
 def make_state_with_income_bonuses() -> State:
@@ -837,6 +1387,7 @@ def make_state_with_income_bonuses() -> State:
 assert_equal(calculate_total_bonus(make_new_state()), 0.0)
 assert_equal(round(calculate_total_bonus(make_state_with_income_bonuses()), 2),
              0.3)
+assert_equal(calculate_total_bonus(make_artifact_state()), 0.1)
 
 
 def calculate_income(units_sold: int, sale_price: float,
@@ -1299,6 +1850,24 @@ assert_equal(percent_text(0.5), "+50%")
 assert_equal(percent_text(0.0), "+0%")
 
 
+def artifact_percent_text(fraction: float) -> str:
+    """Turn a small bonus into percent text with one decimal place.
+
+    One decimal is needed because a duplicate can add as little as +0.1%.
+
+    Args:
+        fraction: The fraction, where 0.011 means 1.1%.
+
+    Returns:
+        The text, such as "+1.1%".
+    """
+    return "+" + str(round(fraction * 100, 1)) + "%"
+
+
+assert_equal(artifact_percent_text(0.011), "+1.1%")
+assert_equal(artifact_percent_text(0.4), "+40.0%")
+
+
 def describe_policy(policy: Policy) -> str:
     """Describe every upside and downside of a policy.
 
@@ -1367,6 +1936,7 @@ def build_top_bar(state: State) -> Div:
         Header(state.company_name, 1),
         Button("Company", "company_page"),
         Button("Business", "business_page"),
+        Button("Artifacts", "artifacts_page"),
         " Money: " + format_money(state.money),
     )
 
@@ -1441,10 +2011,17 @@ def active_effect_lines(state: State) -> list[str]:
         if policy.is_active:
             lines.append(policy.emoji + " " + policy.name + ": "
                          + describe_policy(policy))
+    for artifact in state.owned_artifacts:
+        if artifact.slot != NOT_PLACED:
+            lines.append(artifact_label(artifact) + ": "
+                         + artifact_percent_text(artifact_bonus(artifact))
+                         + " income")
     return lines
 
 
 assert_equal(active_effect_lines(make_new_state()), [])
+assert_equal(active_effect_lines(make_artifact_state()),
+             ["A Alpha: +10.0% income"])
 assert_equal(active_effect_lines(make_state_with_income_bonuses()),
              ["📺 Electronics: +15% income",
               "💬 Aggressive Upselling: +15% income, -8 loyalty target"])
@@ -1577,6 +2154,10 @@ def build_live_content(state: State) -> list:
     """
     if state.current_page == PAGE_BUSINESS:
         return [build_top_bar(state)]
+    if state.current_page == PAGE_ORGANIZE:
+        return [build_top_bar(state)]
+    if state.current_page == PAGE_ARTIFACTS:
+        return [build_top_bar(state), build_expedition_controls(state)]
     return [
         build_top_bar(state),
         build_stats_panel(state),
@@ -1677,6 +2258,178 @@ def build_business_content(state: State) -> list:
         Div(build_live_content(state), id="live_area"),
         build_goods_form(state),
         build_policy_form(state),
+    ]
+
+
+def build_expedition_action(state: State, count: int) -> Div:
+    """Build one expedition button, or the money it still needs.
+
+    Args:
+        state: The current game state.
+        count: How many expeditions this button buys.
+
+    Returns:
+        A Div holding a button or a short message.
+    """
+    name = "X" + str(count)
+    if not can_afford_expedition(state, count):
+        required = expedition_money_required(state.expeditions_bought, count,
+                                             state.goods_in_stock)
+        return Div(name + ": need " + format_money(required))
+    price = expedition_batch_cost(state.expeditions_bought, count)
+    return Div(Button(name + " for " + format_money(price), "run_expedition",
+                      [Argument("count", count)]))
+
+
+def build_expedition_controls(state: State) -> Div:
+    """Build the expedition buttons, one for each batch size.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A Div holding a heading and the expedition buttons.
+    """
+    actions = [Header("Expeditions", 2)]
+    for count in EXPEDITION_AMOUNTS:
+        actions.append(build_expedition_action(state, count))
+    return Div(actions)
+
+
+def build_grid_rows(owned_artifacts: list[Artifact]) -> list[list[str]]:
+    """Lay out the artifact grid as a 2D list of cell text.
+
+    Args:
+        owned_artifacts: Every artifact the player owns.
+
+    Returns:
+        GRID_ROWS rows, each holding GRID_COLUMNS labels.
+    """
+    rows = []
+    for row_number in range(GRID_ROWS):
+        cells = []
+        for column in range(GRID_COLUMNS):
+            slot = row_number * GRID_COLUMNS + column
+            cells.append(slot_choice(owned_artifacts, slot))
+        rows.append(cells)
+    return rows
+
+
+assert_equal(len(build_grid_rows([])), GRID_ROWS)
+assert_equal(len(build_grid_rows([])[0]), GRID_COLUMNS)
+# Slot 7 is the second row, second column.
+assert_equal(build_grid_rows([make_test_artifact("Alpha", 0.1, 1, 7)])[1][1],
+             "A Alpha")
+
+
+def describe_artifact(artifact: Artifact) -> str:
+    """Describe an owned artifact in one line.
+
+    Args:
+        artifact: The artifact to describe.
+
+    Returns:
+        Its label, rarity, copies, bonus, and flavor text.
+    """
+    return (artifact_label(artifact) + " (" + artifact.rarity + ") x"
+            + str(artifact.copies) + ": "
+            + artifact_percent_text(artifact_bonus(artifact))
+            + " income when placed. " + artifact.description)
+
+
+assert_equal(describe_artifact(make_test_artifact("Alpha", 0.1, 1, 0)),
+             "A Alpha (common) x1: +10.0% income when placed. Test")
+
+
+def build_owned_artifact_list(state: State) -> Div:
+    """Build the list of every artifact the player owns.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A Div holding a heading and the artifact descriptions.
+    """
+    if len(state.owned_artifacts) == 0:
+        return Div(Header("Owned Artifacts", 2),
+                   "Nothing yet. Fund an expedition!")
+    lines = []
+    for artifact in state.owned_artifacts:
+        lines.append(describe_artifact(artifact))
+    return Div(Header("Owned Artifacts", 2), BulletedList(lines))
+
+
+def build_expedition_finds(state: State) -> Div:
+    """Build the list of what the latest expedition batch found.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A Div holding the finds, or an empty Div if there are none.
+    """
+    if len(state.last_expedition_finds) == 0:
+        return Div()
+    return Div(Header("Latest Finds", 2),
+               BulletedList(state.last_expedition_finds))
+
+
+def build_artifacts_content(state: State) -> list:
+    """Build the Artifacts page's content.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A list of the page's components.
+    """
+    return [
+        Div(build_live_content(state), id="live_area"),
+        build_expedition_finds(state),
+        Header("Artifact Grid", 2),
+        Table(build_grid_rows(state.owned_artifacts)),
+        Button("Organize", "organize_page"),
+        build_owned_artifact_list(state),
+    ]
+
+
+def build_organize_form(state: State) -> Div:
+    """Build one SelectBox for each slot in the grid.
+
+    Each SelectBox name must match a save_artifact_grid parameter.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A Div holding the SelectBoxes and the save button.
+    """
+    options = slot_options(state.owned_artifacts)
+    rows = [Header("Organize Artifacts", 2)]
+    for slot in range(GRID_SLOT_COUNT):
+        slot_number = str(slot + 1)
+        rows.append(Div("Slot " + slot_number + ": ",
+                        SelectBox("slot_" + slot_number, options,
+                                  slot_choice(state.owned_artifacts, slot))))
+    rows.append(Button("Save Layout", "save_artifact_grid"))
+    return Div(rows)
+
+
+def build_organize_content(state: State) -> list:
+    """Build the Organize page's content.
+
+    The form sits outside the live area so ticks can't reset a SelectBox
+    while the player is choosing.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A list of the page's components.
+    """
+    return [
+        Div(build_live_content(state), id="live_area"),
+        build_organize_form(state),
     ]
 
 
@@ -1938,6 +2691,154 @@ assert_equal(save_policies(make_new_state(), False, False, True),
              make_expected_business_page(make_business_state()))
 assert_equal(save_policies(make_unlocked_state(), False, False, True),
              make_expected_business_page(expected_after_quotas()))
+
+
+@route
+def artifacts_page(state: State) -> Page:
+    """Show the expeditions, the artifact grid, and owned artifacts.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The Artifacts page.
+    """
+    state.current_page = PAGE_ARTIFACTS
+    return Page(state, build_artifacts_content(state))
+
+
+def make_artifacts_view_state() -> State:
+    """Build the artifact test State while it views the Artifacts page.
+
+    Returns:
+        The artifact test State with the Artifacts page showing.
+    """
+    state = make_artifact_state()
+    state.current_page = PAGE_ARTIFACTS
+    return state
+
+
+def make_expected_artifacts_page(state: State) -> Page:
+    """Build the Artifacts page expected for a given State.
+
+    Args:
+        state: The State the page should show.
+
+    Returns:
+        The expected Artifacts page.
+    """
+    return Page(state, build_artifacts_content(state))
+
+
+assert_equal(artifacts_page(make_artifact_state()),
+             make_expected_artifacts_page(make_artifacts_view_state()))
+
+
+@route
+def organize_page(state: State) -> Page:
+    """Show one SelectBox per grid slot.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The Organize page.
+    """
+    state.current_page = PAGE_ORGANIZE
+    return Page(state, build_organize_content(state))
+
+
+def make_organize_view_state() -> State:
+    """Build the artifact test State while it views the Organize page.
+
+    Returns:
+        The artifact test State with the Organize page showing.
+    """
+    state = make_artifact_state()
+    state.current_page = PAGE_ORGANIZE
+    return state
+
+
+assert_equal(organize_page(make_artifact_state()),
+             Page(make_organize_view_state(),
+                  build_organize_content(make_organize_view_state())))
+
+
+@route
+def run_expedition(state: State, count: int) -> Page:
+    """Pay for a batch of expeditions and collect what they find.
+
+    Uses randomness when the batch is bought, so only the "can't afford
+    it" path, which rolls nothing, has a unit test.
+
+    Args:
+        state: The current game state.
+        count: How many expeditions to buy.
+
+    Returns:
+        The refreshed Artifacts page.
+    """
+    if can_afford_expedition(state, count):
+        state.money = state.money - expedition_batch_cost(
+            state.expeditions_bought, count)
+        state.expeditions_bought = state.expeditions_bought + count
+        collect_expedition_finds(state, count)
+    return artifacts_page(state)
+
+
+# The artifact test State has no money for 100 expeditions: nothing changes.
+assert_equal(run_expedition(make_artifact_state(), 100),
+             make_expected_artifacts_page(make_artifacts_view_state()))
+
+
+@route
+def save_artifact_grid(state: State, slot_1: str, slot_2: str, slot_3: str,
+                       slot_4: str, slot_5: str, slot_6: str, slot_7: str,
+                       slot_8: str, slot_9: str, slot_10: str, slot_11: str,
+                       slot_12: str) -> Page:
+    """Save which owned artifact sits in each grid slot.
+
+    Args:
+        state: The current game state.
+        slot_1: The label chosen for slot 1.
+        slot_2: The label chosen for slot 2.
+        slot_3: The label chosen for slot 3.
+        slot_4: The label chosen for slot 4.
+        slot_5: The label chosen for slot 5.
+        slot_6: The label chosen for slot 6.
+        slot_7: The label chosen for slot 7.
+        slot_8: The label chosen for slot 8.
+        slot_9: The label chosen for slot 9.
+        slot_10: The label chosen for slot 10.
+        slot_11: The label chosen for slot 11.
+        slot_12: The label chosen for slot 12.
+
+    Returns:
+        The refreshed Artifacts page.
+    """
+    place_artifacts(state.owned_artifacts,
+                    [slot_1, slot_2, slot_3, slot_4, slot_5, slot_6, slot_7,
+                     slot_8, slot_9, slot_10, slot_11, slot_12])
+    return artifacts_page(state)
+
+
+def expected_after_moving_beta() -> State:
+    """Build the State expected after swapping Alpha out for Beta.
+
+    Returns:
+        An Artifacts page State with only Beta placed, in slot 12.
+    """
+    state = make_artifacts_view_state()
+    state.owned_artifacts[0].slot = NOT_PLACED
+    state.owned_artifacts[1].slot = 11
+    return state
+
+
+assert_equal(save_artifact_grid(make_artifact_state(), EMPTY_SLOT, EMPTY_SLOT,
+                                EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT,
+                                EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT,
+                                EMPTY_SLOT, "A Beta"),
+             make_expected_artifacts_page(expected_after_moving_beta()))
 
 
 @route
