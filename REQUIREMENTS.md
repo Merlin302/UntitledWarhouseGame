@@ -59,16 +59,20 @@ off what is done and name the exact function or field that satisfies it.
       copy them
 - [x] Uses Drafter — _where:_ `main.py`, `start_server(make_new_state())`
 - [x] Any technique not covered in the course is explained in a comment or
-      docstring — _where:_ `ADVANCED:` notes in `build_game_clock` (Clock),
-      `tick` (Fragment), `roll_strike` (`random.random`), and `roll_rarity`
-      (`random.randint`)
+      docstring — _where:_ `# ADVANCED:` comments at the top of `main.py`
+      (Drafter site settings, `set_browser_history`), `build_game_clock`
+      (Clock), `tick` (Fragment), `build_start_content` (RemovePersistent),
+      `build_top_bar` (Div ids), `build_buy_amount_controls` (Argument),
+      `roll_strike` (`random.random`), `roll_rarity`, `roll_artifact_row`,
+      `roll_prompt` (`random.randint`), and `parse_bet` (`.isascii`)
 
 ## Code quality
 
 - [x] Good, descriptive variable and function names
 - [x] Every route has at least one `assert_equal` unit test, unless it uses
       randomness (and its docstring says so) — _where:_ directly below each
-      route in `main.py`; `tick` uses randomness (its docstring says so) but
+      route in `main.py`, with sample-data functions in the "Test helpers"
+      section; `tick` uses randomness (its docstring says so) but
       is still tested with zero-risk States; `run_expedition` uses randomness
       (its docstring says so) and only its "can't afford" path is tested;
       `roll_rarity`, `roll_artifact_row`, and `collect_expedition_finds` are
@@ -78,13 +82,14 @@ off what is done and name the exact function or field that satisfies it.
       function `calculate_payout` is pure and tested
 - [x] Lines under 80 characters (hard limit 120)
 - [x] Type hints on every function header
-- [x] A docstring as the first line of every function body
+- [x] A Google-format docstring as the first line of every function body
 - [x] Long functions broken into helper functions
 
 ## Repository
 
 - [x] `set_site_information(...)` called in `main.py` — _where:_ top of
-      `main.py` (`author` is still "TODO: your name")
+      `main.py` (`author` is the GitHub username; `links` is still empty
+      until the demo video exists)
 - [ ] Planning document in the repo (`docs/`) — _where:_
 - [ ] Linked demo video — _where:_
 - [ ] All AI conversations in the repo (`ai_conversations/`) — _where:_

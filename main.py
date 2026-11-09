@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from drafter import *
 
 
+# ADVANCED: These Drafter settings hide the debug panel, name the browser tab,
+# and let the game fill the whole window instead of a small frame.
 hide_debug_information()
 set_website_title("Untitled Warehouse Inc.")
 set_website_framed(False)
@@ -10,7 +12,7 @@ set_website_framed(False)
 # refresh would rerun the "tick" route on a blank page and crash.
 set_browser_history(False)
 set_site_information(
-    author="TODO: your name",
+    author="Merlin302",
     description="An incremental warehouse management game.",
     sources=["Drafter documentation"],
     planning=["docs/"],
@@ -601,6 +603,314 @@ def make_artifact_state() -> State:
     return state
 
 
+def make_state_with_income_bonuses() -> State:
+    """Build a State selling Electronics with Aggressive Upselling active.
+
+    Returns:
+        A new-game State with +15% from goods and +15% from policy.
+    """
+    state = make_new_state()
+    state.goods_types[2].is_selling = True
+    state.policies[1].is_active = True
+    return state
+
+
+def state_after_strikes(state: State) -> State:
+    """Run the strike step and hand back the State so tests can check it.
+
+    Args:
+        state: The game state to update.
+
+    Returns:
+        The same State after run_strikes.
+    """
+    run_strikes(state)
+    return state
+
+
+def expected_after_named_start() -> State:
+    """Build the State expected after starting a company named Boxes.
+
+    Returns:
+        A new-game State with the company name set.
+    """
+    state = make_new_state()
+    state.company_name = "Boxes"
+    return state
+
+
+def make_expected_company_page(state: State) -> Page:
+    """Build the company page expected for a given State.
+
+    Args:
+        state: The State the page should show.
+
+    Returns:
+        The expected company page.
+    """
+    return Page(state, build_company_content(state))
+
+
+def make_business_state() -> State:
+    """Build a new-game State that is viewing the Business page.
+
+    Returns:
+        A new-game State whose current page is the Business page.
+    """
+    state = make_new_state()
+    state.current_page = PAGE_BUSINESS
+    return state
+
+
+def make_expected_business_page(state: State) -> Page:
+    """Build the Business page expected for a given State.
+
+    Args:
+        state: The State the page should show.
+
+    Returns:
+        The expected Business page.
+    """
+    return Page(state, build_business_content(state))
+
+
+def expected_after_selling_war_supplies() -> State:
+    """Build the State expected after choosing only War Supplies.
+
+    Returns:
+        A Business page State selling only War Supplies, with the flag set.
+    """
+    state = make_business_state()
+    state.goods_types[3].is_selling = True
+    state.sells_war_supplies = True
+    return state
+
+
+def expected_after_overtime() -> State:
+    """Build the State expected after choosing only Unpaid Overtime.
+
+    Returns:
+        A Business page State with Unpaid Overtime active.
+    """
+    state = make_business_state()
+    state.policies[0].is_active = True
+    return state
+
+
+def make_unlocked_state() -> State:
+    """Build a new-game State that owns the policy unlock item.
+
+    Returns:
+        A new-game State with Next Generation Corporate Organization.
+    """
+    state = make_new_state()
+    state.buy_items[4].owned = 1
+    return state
+
+
+def expected_after_quotas() -> State:
+    """Build the State expected after enabling the unlocked policy.
+
+    Returns:
+        A Business page State with Algorithmic Route Quotas active.
+    """
+    state = make_unlocked_state()
+    state.current_page = PAGE_BUSINESS
+    state.policies[2].is_active = True
+    return state
+
+
+def make_artifacts_view_state() -> State:
+    """Build the artifact test State while it views the Artifacts page.
+
+    Returns:
+        The artifact test State with the Artifacts page showing.
+    """
+    state = make_artifact_state()
+    state.current_page = PAGE_ARTIFACTS
+    return state
+
+
+def make_expected_artifacts_page(state: State) -> Page:
+    """Build the Artifacts page expected for a given State.
+
+    Args:
+        state: The State the page should show.
+
+    Returns:
+        The expected Artifacts page.
+    """
+    return Page(state, build_artifacts_content(state))
+
+
+def make_organize_view_state() -> State:
+    """Build the artifact test State while it views the Organize page.
+
+    Returns:
+        The artifact test State with the Organize page showing.
+    """
+    state = make_artifact_state()
+    state.current_page = PAGE_ORGANIZE
+    return state
+
+
+def expected_after_moving_beta() -> State:
+    """Build the State expected after swapping Alpha out for Beta.
+
+    Returns:
+        An Artifacts page State with only Beta placed, in slot 12.
+    """
+    state = make_artifacts_view_state()
+    state.owned_artifacts[0].slot = NOT_PLACED
+    state.owned_artifacts[1].slot = 11
+    return state
+
+
+def make_expected_casino_page(state: State) -> Page:
+    """Build the Casino page expected for a given State.
+
+    Args:
+        state: The State the page should show.
+
+    Returns:
+        The expected Casino page.
+    """
+    return Page(state, build_casino_content(state))
+
+
+def make_casino_view_state(message: str) -> State:
+    """Build a new-game State viewing the Casino page.
+
+    Args:
+        message: The casino result message to show.
+
+    Returns:
+        A new-game State with the Casino page showing and that message.
+    """
+    state = make_new_state()
+    state.current_page = PAGE_CASINO
+    state.last_casino_result = message
+    return state
+
+
+def expected_after_typing(payout: float, message: str) -> State:
+    """Build the State expected after finishing the test typing round.
+
+    Args:
+        payout: The money the round should pay.
+        message: The result message that should be shown.
+
+    Returns:
+        The typing State with the payout added and the round finished.
+    """
+    state = make_typing_state()
+    state.money = state.money + payout
+    state.typing_round = make_no_typing_round()
+    state.last_casino_result = message
+    return state
+
+
+def expected_with_buy_amount(amount: int) -> State:
+    """Build a new-game State that has the given buy amount.
+
+    Args:
+        amount: The buy amount to set.
+
+    Returns:
+        A new-game State with that buy amount.
+    """
+    state = make_new_state()
+    state.buy_amount = amount
+    return state
+
+
+def expected_after_buying_van() -> State:
+    """Build the State expected after buying one Delivery Van.
+
+    Returns:
+        A new-game State with one van bought and paid for.
+    """
+    state = make_new_state()
+    state.money = 450.0
+    state.buy_items[1].owned = 1
+    return state
+
+
+def make_broke_state() -> State:
+    """Build a new-game State that cannot afford anything.
+
+    Returns:
+        A new-game State with almost no money.
+    """
+    state = make_new_state()
+    state.money = 1.0
+    return state
+
+
+def make_nearly_stranded_state() -> State:
+    """Build a State where buying a van would leave too little to stock.
+
+    Returns:
+        A new-game State with an empty warehouse and 60 money.
+    """
+    state = make_new_state()
+    state.money = 60.0
+    return state
+
+
+def expected_with_markup(markup: float) -> State:
+    """Build a new-game State that has the given markup.
+
+    Args:
+        markup: The markup to set.
+
+    Returns:
+        A new-game State with that markup.
+    """
+    state = make_new_state()
+    state.markup = markup
+    return state
+
+
+def expected_after_first_tick() -> State:
+    """Build the State expected after one tick of a brand new game.
+
+    Returns:
+        A new-game State updated by one tick's stocking and selling.
+    """
+    state = make_new_state()
+    state.money = 537.5
+    state.total_earned = 112.5
+    state.goods_stocked_last_tick = 5
+    state.goods_sold_last_tick = 5
+    state.income_last_tick = 112.5
+    state.tick_count = 1
+    state.controls_signature = controls_signature(state)
+    return state
+
+
+def make_settled_state() -> State:
+    """Build a new game whose buttons already match the next tick's.
+
+    Returns:
+        A new-game State holding the signature its first tick will produce.
+    """
+    state = make_new_state()
+    state.controls_signature = expected_after_first_tick().controls_signature
+    return state
+
+
+def expected_business_tick() -> State:
+    """Build the State expected after one tick on the Business page.
+
+    Returns:
+        The first-tick State, with the Business page showing.
+    """
+    state = expected_after_first_tick()
+    state.current_page = PAGE_BUSINESS
+    return state
+
+
 # ---------------------------------------------------------------------------
 # Business: goods and policy helper functions
 # ---------------------------------------------------------------------------
@@ -760,15 +1070,14 @@ assert_equal(strike_multiplier(3), STRIKE_PENALTY_MULTIPLIER)
 def roll_strike(strike_risk: float) -> bool:
     """Randomly decide whether a strike begins this tick.
 
-    ADVANCED: random.random() gives a decimal from 0 up to (but not
-    including) 1, so it lands below strike_risk with that probability.
-
     Args:
         strike_risk: The chance of a strike, from 0 to 1.
 
     Returns:
         True if a strike begins.
     """
+    # ADVANCED: random.random() gives a decimal from 0 up to (but not
+    # including) 1, so it lands below strike_risk with that probability.
     return random.random() < strike_risk
 
 
@@ -966,12 +1275,11 @@ def roll_rarity() -> str:
 
     Uses randomness, so it has no unit test (rarity_for_roll is tested).
 
-    ADVANCED: random.randint(a, b) picks a whole number from a to b,
-    including both ends.
-
     Returns:
         One of the RARITY_ constants.
     """
+    # ADVANCED: random.randint(a, b) picks a whole number from a to b,
+    # including both ends.
     return rarity_for_roll(random.randint(1, total_rarity_weight()))
 
 
@@ -1009,6 +1317,7 @@ def roll_artifact_row(rarity: str) -> list:
         One row from ARTIFACT_ROWS.
     """
     rows = artifact_rows_of_rarity(rarity)
+    # ADVANCED: random.randint picks a random valid index into rows.
     return rows[random.randint(0, len(rows) - 1)]
 
 
@@ -1465,18 +1774,6 @@ def calculate_total_bonus(state: State) -> float:
             + total_artifact_bonus(state.owned_artifacts))
 
 
-def make_state_with_income_bonuses() -> State:
-    """Build a State selling Electronics with Aggressive Upselling active.
-
-    Returns:
-        A new-game State with +15% from goods and +15% from policy.
-    """
-    state = make_new_state()
-    state.goods_types[2].is_selling = True
-    state.policies[1].is_active = True
-    return state
-
-
 assert_equal(calculate_total_bonus(make_new_state()), 0.0)
 assert_equal(round(calculate_total_bonus(make_state_with_income_bonuses()), 2),
              0.3)
@@ -1688,19 +1985,6 @@ def run_strikes(state: State) -> None:
     elif roll_strike(total_strike_risk(state.policies)):
         state.strike_ticks_left = STRIKE_DURATION_TICKS
         state.news_feed = add_news(state.news_feed, STRIKE_NEWS)
-
-
-def state_after_strikes(state: State) -> State:
-    """Run the strike step and hand back the State so tests can check it.
-
-    Args:
-        state: The game state to update.
-
-    Returns:
-        The same State after run_strikes.
-    """
-    run_strikes(state)
-    return state
 
 
 assert_equal(state_after_strikes(make_striking_state(3)).strike_ticks_left, 2)
@@ -1944,6 +2228,7 @@ def roll_prompt(difficulty: str) -> str:
     Returns:
         The prompt the player must type.
     """
+    # ADVANCED: random.randint picks a random valid index into a prompt list.
     if difficulty == DIFFICULTY_HARD:
         index = random.randint(0, len(HARD_PROMPTS) - 1)
         return swap_hard_characters(HARD_PROMPTS[index])
@@ -2084,6 +2369,8 @@ def parse_bet(bet_text: str) -> int:
         The whole-number bet, or 0 if the text isn't a whole number.
     """
     cleaned = bet_text.strip()
+    # ADVANCED: .isascii() is True only if every character is a plain
+    # keyboard character, which keeps symbols like a superscript 2 out of int.
     if cleaned.isdigit() and cleaned.isascii():
         return int(cleaned)
     return 0
@@ -2322,6 +2609,8 @@ def build_top_bar(state: State) -> Div:
         Button("Business", "business_page"),
         Button("Artifacts", "artifacts_page"),
         Button("Casino", "casino_page"),
+        # ADVANCED: A Div groups components. Its id is the name a Fragment
+        # uses to find and replace just this part of the page.
         Div(build_live_numbers(state), id="live_numbers"),
     )
 
@@ -2469,6 +2758,8 @@ def build_buy_amount_controls(state: State) -> Div:
     """
     buttons = ["Buying x" + str(state.buy_amount) + " per click: "]
     for amount in BUY_AMOUNTS:
+        # ADVANCED: An Argument makes a Button pass an extra value to its
+        # route, so one route can serve many Buttons.
         buttons.append(Button("X" + str(amount), "set_buy_amount",
                               [Argument("amount", amount)]))
     return Div(buttons)
@@ -2906,6 +3197,8 @@ def build_start_content(state: State) -> list:
         A list of the page's components.
     """
     return [
+        # ADVANCED: RemovePersistent stops the persistent Clock with this id,
+        # so a new game never has two clocks ticking at once.
         RemovePersistent(GAME_CLOCK_ID),
         Header("Untitled Warehouse Inc.", 1),
         "Every empire starts with a warehouse. What is yours called?",
@@ -2917,15 +3210,14 @@ def build_start_content(state: State) -> list:
 def build_game_clock(state: State) -> Clock:
     """Build the game's one persistent Clock.
 
-    ADVANCED: A Clock calls a route repeatedly. persistent=True keeps it
-    running across page changes, so only start_game should ever add it.
-
     Args:
         state: The current game state.
 
     Returns:
         A hidden Clock that calls the tick route.
     """
+    # ADVANCED: A Clock calls a route repeatedly. persistent=True keeps it
+    # running across page changes, so only start_game should ever add it.
     return Clock(tick_interval(state), "tick", show=False, persistent=True,
                  id=GAME_CLOCK_ID)
 
@@ -2967,17 +3259,6 @@ def start_game(state: State, company_name: str) -> Page:
                 + build_company_content(state))
 
 
-def expected_after_named_start() -> State:
-    """Build the State expected after starting a company named Boxes.
-
-    Returns:
-        A new-game State with the company name set.
-    """
-    state = make_new_state()
-    state.company_name = "Boxes"
-    return state
-
-
 assert_equal(start_game(make_new_state(), "  Boxes "),
              Page(expected_after_named_start(),
                   [build_game_clock(expected_after_named_start())]
@@ -2998,18 +3279,6 @@ def company_page(state: State) -> Page:
     return Page(state, build_company_content(state))
 
 
-def make_expected_company_page(state: State) -> Page:
-    """Build the company page expected for a given State.
-
-    Args:
-        state: The State the page should show.
-
-    Returns:
-        The expected company page.
-    """
-    return Page(state, build_company_content(state))
-
-
 assert_equal(company_page(make_new_state()),
              make_expected_company_page(make_new_state()))
 
@@ -3025,29 +3294,6 @@ def business_page(state: State) -> Page:
         The Business page.
     """
     state.current_page = PAGE_BUSINESS
-    return Page(state, build_business_content(state))
-
-
-def make_business_state() -> State:
-    """Build a new-game State that is viewing the Business page.
-
-    Returns:
-        A new-game State whose current page is the Business page.
-    """
-    state = make_new_state()
-    state.current_page = PAGE_BUSINESS
-    return state
-
-
-def make_expected_business_page(state: State) -> Page:
-    """Build the Business page expected for a given State.
-
-    Args:
-        state: The State the page should show.
-
-    Returns:
-        The expected Business page.
-    """
     return Page(state, build_business_content(state))
 
 
@@ -3076,18 +3322,6 @@ def save_goods(state: State, sell_household: bool, sell_canned_food: bool,
     return business_page(state)
 
 
-def expected_after_selling_war_supplies() -> State:
-    """Build the State expected after choosing only War Supplies.
-
-    Returns:
-        A Business page State selling only War Supplies, with the flag set.
-    """
-    state = make_business_state()
-    state.goods_types[3].is_selling = True
-    state.sells_war_supplies = True
-    return state
-
-
 assert_equal(save_goods(make_new_state(), False, False, False, True),
              make_expected_business_page(
                  expected_after_selling_war_supplies()))
@@ -3113,40 +3347,6 @@ def save_policies(state: State, unpaid_overtime: bool,
     return business_page(state)
 
 
-def expected_after_overtime() -> State:
-    """Build the State expected after choosing only Unpaid Overtime.
-
-    Returns:
-        A Business page State with Unpaid Overtime active.
-    """
-    state = make_business_state()
-    state.policies[0].is_active = True
-    return state
-
-
-def make_unlocked_state() -> State:
-    """Build a new-game State that owns the policy unlock item.
-
-    Returns:
-        A new-game State with Next Generation Corporate Organization.
-    """
-    state = make_new_state()
-    state.buy_items[4].owned = 1
-    return state
-
-
-def expected_after_quotas() -> State:
-    """Build the State expected after enabling the unlocked policy.
-
-    Returns:
-        A Business page State with Algorithmic Route Quotas active.
-    """
-    state = make_unlocked_state()
-    state.current_page = PAGE_BUSINESS
-    state.policies[2].is_active = True
-    return state
-
-
 assert_equal(save_policies(make_new_state(), True, False, False),
              make_expected_business_page(expected_after_overtime()))
 # The locked policy stays off until the unlock item is bought.
@@ -3170,29 +3370,6 @@ def artifacts_page(state: State) -> Page:
     return Page(state, build_artifacts_content(state))
 
 
-def make_artifacts_view_state() -> State:
-    """Build the artifact test State while it views the Artifacts page.
-
-    Returns:
-        The artifact test State with the Artifacts page showing.
-    """
-    state = make_artifact_state()
-    state.current_page = PAGE_ARTIFACTS
-    return state
-
-
-def make_expected_artifacts_page(state: State) -> Page:
-    """Build the Artifacts page expected for a given State.
-
-    Args:
-        state: The State the page should show.
-
-    Returns:
-        The expected Artifacts page.
-    """
-    return Page(state, build_artifacts_content(state))
-
-
 assert_equal(artifacts_page(make_artifact_state()),
              make_expected_artifacts_page(make_artifacts_view_state()))
 
@@ -3209,17 +3386,6 @@ def organize_page(state: State) -> Page:
     """
     state.current_page = PAGE_ORGANIZE
     return Page(state, build_organize_content(state))
-
-
-def make_organize_view_state() -> State:
-    """Build the artifact test State while it views the Organize page.
-
-    Returns:
-        The artifact test State with the Organize page showing.
-    """
-    state = make_artifact_state()
-    state.current_page = PAGE_ORGANIZE
-    return state
 
 
 assert_equal(organize_page(make_artifact_state()),
@@ -3285,18 +3451,6 @@ def save_artifact_grid(state: State, slot_1: str, slot_2: str, slot_3: str,
     return artifacts_page(state)
 
 
-def expected_after_moving_beta() -> State:
-    """Build the State expected after swapping Alpha out for Beta.
-
-    Returns:
-        An Artifacts page State with only Beta placed, in slot 12.
-    """
-    state = make_artifacts_view_state()
-    state.owned_artifacts[0].slot = NOT_PLACED
-    state.owned_artifacts[1].slot = 11
-    return state
-
-
 assert_equal(save_artifact_grid(make_artifact_state(), EMPTY_SLOT, EMPTY_SLOT,
                                 EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT,
                                 EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT,
@@ -3316,33 +3470,6 @@ def casino_page(state: State) -> Page:
     """
     state.current_page = PAGE_CASINO
     return Page(state, build_casino_content(state))
-
-
-def make_expected_casino_page(state: State) -> Page:
-    """Build the Casino page expected for a given State.
-
-    Args:
-        state: The State the page should show.
-
-    Returns:
-        The expected Casino page.
-    """
-    return Page(state, build_casino_content(state))
-
-
-def make_casino_view_state(message: str) -> State:
-    """Build a new-game State viewing the Casino page.
-
-    Args:
-        message: The casino result message to show.
-
-    Returns:
-        A new-game State with the Casino page showing and that message.
-    """
-    state = make_new_state()
-    state.current_page = PAGE_CASINO
-    state.last_casino_result = message
-    return state
 
 
 assert_equal(casino_page(make_new_state()),
@@ -3408,23 +3535,6 @@ def submit_typing_round(state: State, typed_text: str) -> Page:
     return casino_page(state)
 
 
-def expected_after_typing(payout: float, message: str) -> State:
-    """Build the State expected after finishing the test typing round.
-
-    Args:
-        payout: The money the round should pay.
-        message: The result message that should be shown.
-
-    Returns:
-        The typing State with the payout added and the round finished.
-    """
-    state = make_typing_state()
-    state.money = state.money + payout
-    state.typing_round = make_no_typing_round()
-    state.last_casino_result = message
-    return state
-
-
 # 5 characters in 3 ticks (2.001 seconds) is about 30 WPM, the x1 tier.
 assert_equal(submit_typing_round(make_typing_state(), "hello"),
              make_expected_casino_page(expected_after_typing(
@@ -3452,20 +3562,6 @@ def set_buy_amount(state: State, amount: int) -> Page:
     return company_page(state)
 
 
-def expected_with_buy_amount(amount: int) -> State:
-    """Build a new-game State that has the given buy amount.
-
-    Args:
-        amount: The buy amount to set.
-
-    Returns:
-        A new-game State with that buy amount.
-    """
-    state = make_new_state()
-    state.buy_amount = amount
-    return state
-
-
 assert_equal(set_buy_amount(make_new_state(), 10),
              make_expected_company_page(expected_with_buy_amount(10)))
 
@@ -3489,40 +3585,6 @@ def buy_item(state: State, item_index: int) -> Page:
     return company_page(state)
 
 
-def expected_after_buying_van() -> State:
-    """Build the State expected after buying one Delivery Van.
-
-    Returns:
-        A new-game State with one van bought and paid for.
-    """
-    state = make_new_state()
-    state.money = 450.0
-    state.buy_items[1].owned = 1
-    return state
-
-
-def make_broke_state() -> State:
-    """Build a new-game State that cannot afford anything.
-
-    Returns:
-        A new-game State with almost no money.
-    """
-    state = make_new_state()
-    state.money = 1.0
-    return state
-
-
-def make_nearly_stranded_state() -> State:
-    """Build a State where buying a van would leave too little to stock.
-
-    Returns:
-        A new-game State with an empty warehouse and 60 money.
-    """
-    state = make_new_state()
-    state.money = 60.0
-    return state
-
-
 assert_equal(buy_item(make_new_state(), 1),
              make_expected_company_page(expected_after_buying_van()))
 assert_equal(buy_item(make_broke_state(), 1),
@@ -3543,20 +3605,6 @@ def raise_markup(state: State) -> Page:
     """
     state.markup = change_markup(state.markup, MARKUP_STEP)
     return company_page(state)
-
-
-def expected_with_markup(markup: float) -> State:
-    """Build a new-game State that has the given markup.
-
-    Args:
-        markup: The markup to set.
-
-    Returns:
-        A new-game State with that markup.
-    """
-    state = make_new_state()
-    state.markup = markup
-    return state
 
 
 assert_equal(raise_markup(make_new_state()),
@@ -3585,11 +3633,6 @@ assert_equal(lower_markup(make_new_state()),
 def tick(state: State) -> Fragment:
     """Run one game tick and refresh only the live part of the page.
 
-    ADVANCED: A Fragment replaces one element instead of rebuilding the
-    whole page, which keeps the Clock from being restarted. Replacing a
-    button mid-click loses the click, so most ticks target only the
-    button-free #live_numbers. #live_area is redrawn when buttons change.
-
     Uses randomness through run_strikes, but with no strike risk (as in a
     new game) the result is predictable, so the tests use zero-risk States.
 
@@ -3606,28 +3649,15 @@ def tick(state: State) -> Fragment:
     run_loyalty_drift(state)
     state.tick_count = state.tick_count + 1
     new_signature = controls_signature(state)
+    # ADVANCED: A Fragment replaces one element instead of rebuilding the
+    # whole page, which keeps the Clock from being restarted. Replacing a
+    # button mid-click loses the click, so most ticks target only the
+    # button-free #live_numbers. #live_area is redrawn when buttons change.
     if new_signature == state.controls_signature:
         return Fragment(state, build_live_numbers(state),
                         target="#live_numbers")
     state.controls_signature = new_signature
     return Fragment(state, build_live_content(state), target="#live_area")
-
-
-def expected_after_first_tick() -> State:
-    """Build the State expected after one tick of a brand new game.
-
-    Returns:
-        A new-game State updated by one tick's stocking and selling.
-    """
-    state = make_new_state()
-    state.money = 537.5
-    state.total_earned = 112.5
-    state.goods_stocked_last_tick = 5
-    state.goods_sold_last_tick = 5
-    state.income_last_tick = 112.5
-    state.tick_count = 1
-    state.controls_signature = controls_signature(state)
-    return state
 
 
 assert_equal(tick(make_new_state()),
@@ -3636,33 +3666,11 @@ assert_equal(tick(make_new_state()),
                       target="#live_area"))
 
 
-def make_settled_state() -> State:
-    """Build a new game whose buttons already match the next tick's.
-
-    Returns:
-        A new-game State holding the signature its first tick will produce.
-    """
-    state = make_new_state()
-    state.controls_signature = expected_after_first_tick().controls_signature
-    return state
-
-
 # When no button changes, the tick must leave the buttons alone.
 assert_equal(tick(make_settled_state()),
              Fragment(expected_after_first_tick(),
                       build_live_numbers(expected_after_first_tick()),
                       target="#live_numbers"))
-
-
-def expected_business_tick() -> State:
-    """Build the State expected after one tick on the Business page.
-
-    Returns:
-        The first-tick State, with the Business page showing.
-    """
-    state = expected_after_first_tick()
-    state.current_page = PAGE_BUSINESS
-    return state
 
 
 # On the Business page, the tick must refresh only the top bar.
