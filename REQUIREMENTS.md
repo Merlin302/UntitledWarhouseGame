@@ -12,7 +12,7 @@ off what is done and name the exact function or field that satisfies it.
 - [x] At least 5 pages — _where:_ start page (`index`), company page
       (`company_page`), Business page (`business_page`), Artifacts page
       (`artifacts_page`), Organize page (`organize_page`)
-- [x] `State` dataclass with at least 4 fields — _where:_ `State` (20 fields)
+- [x] `State` dataclass with at least 4 fields — _where:_ `State` (21 fields)
 - [x] At least one State field is a list/dict of a second dataclass —
       _where:_ `State.owned_artifacts: list[Artifact]`,
       `State.buy_items: list[BuyItem]`,

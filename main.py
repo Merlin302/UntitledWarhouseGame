@@ -293,6 +293,7 @@ class State:
         owned_artifacts: Every artifact found so far.
         expeditions_bought: Expeditions ever bought; raises their price.
         last_expedition_finds: One line per artifact from the last batch.
+        controls_signature: Summary of the buttons the last tick drew.
     """
     company_name: str
     money: float
@@ -314,6 +315,7 @@ class State:
     owned_artifacts: list[Artifact]
     expeditions_bought: int
     last_expedition_finds: list[str]
+    controls_signature: str
 
 
 def make_starting_items() -> list[BuyItem]:
@@ -381,6 +383,7 @@ def make_new_state() -> State:
         owned_artifacts=[],
         expeditions_bought=0,
         last_expedition_finds=[],
+        controls_signature="",
     )
 
 
@@ -493,6 +496,17 @@ def make_test_artifact(name: str, income_bonus: float, copies: int,
     """
     return Artifact("A", name, RARITY_COMMON, income_bonus, "Test", copies,
                     slot)
+
+
+def make_rich_state() -> State:
+    """Build a new-game State that can afford anything.
+
+    Returns:
+        A new-game State with a huge amount of money.
+    """
+    state = make_new_state()
+    state.money = 1000000000.0
+    return state
 
 
 def make_artifact_state() -> State:
@@ -1923,6 +1937,51 @@ assert_equal(describe_effect(make_one_time_item(0)),
              "Unlocks a new corporate policy")
 
 
+def controls_signature(state: State) -> str:
+    """Summarize what the tick-refreshed buttons and news should show.
+
+    The tick compares this text with the previous tick's. If they match,
+    the buttons are left alone, so a tick can't interrupt a click.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        Text recording the visible items, what is affordable, and the news.
+    """
+    signature = str(state.news_feed)
+    for item in state.buy_items:
+        quantity = purchase_quantity(item, state.buy_amount)
+        signature = (signature + str(is_item_visible(item, state.total_earned))
+                     + str(can_afford(item, quantity, state.money,
+                                      state.goods_in_stock)))
+    for count in EXPEDITION_AMOUNTS:
+        signature = signature + str(can_afford_expedition(state, count))
+    return signature
+
+
+assert_equal(controls_signature(make_new_state()),
+             controls_signature(make_new_state()))
+assert_equal(controls_signature(make_new_state())
+             == controls_signature(make_rich_state()), False)
+
+
+def build_live_numbers(state: State) -> list:
+    """Build the text that changes every tick; it contains no buttons.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A list of the components inside the #live_numbers element.
+    """
+    money_line = "Money: " + format_money(state.money)
+    if state.current_page == PAGE_COMPANY:
+        return [money_line, build_stats_panel(state),
+                build_bonus_panel(state)]
+    return [money_line]
+
+
 def build_top_bar(state: State) -> Div:
     """Build the navigation bar and money display used by every page.
 
@@ -1930,14 +1989,14 @@ def build_top_bar(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A Div holding the company name, navigation, and money.
+        A Div holding the company name, navigation, and live numbers.
     """
     return Div(
         Header(state.company_name, 1),
         Button("Company", "company_page"),
         Button("Business", "business_page"),
         Button("Artifacts", "artifacts_page"),
-        " Money: " + format_money(state.money),
+        Div(build_live_numbers(state), id="live_numbers"),
     )
 
 
@@ -2144,7 +2203,7 @@ def build_news_feed(state: State) -> Div:
 
 
 def build_live_content(state: State) -> list:
-    """Build everything that the tick refreshes on the current page.
+    """Build everything a full tick refresh replaces on the current page.
 
     Args:
         state: The current game state.
@@ -2160,8 +2219,6 @@ def build_live_content(state: State) -> list:
         return [build_top_bar(state), build_expedition_controls(state)]
     return [
         build_top_bar(state),
-        build_stats_panel(state),
-        build_bonus_panel(state),
         build_markup_controls(state),
         build_buy_amount_controls(state),
         build_buy_list(state),
@@ -2990,7 +3047,9 @@ def tick(state: State) -> Fragment:
     """Run one game tick and refresh only the live part of the page.
 
     ADVANCED: A Fragment replaces one element instead of rebuilding the
-    whole page, which keeps the Clock from being restarted.
+    whole page, which keeps the Clock from being restarted. Replacing a
+    button mid-click loses the click, so most ticks target only the
+    button-free #live_numbers. #live_area is redrawn when buttons change.
 
     Uses randomness through run_strikes, but with no strike risk (as in a
     new game) the result is predictable, so the tests use zero-risk States.
@@ -2999,12 +3058,18 @@ def tick(state: State) -> Fragment:
         state: The current game state.
 
     Returns:
-        A Fragment that replaces the contents of #live_area.
+        A Fragment that replaces #live_numbers or, if the buttons or news
+        changed, all of #live_area.
     """
     run_strikes(state)
     run_stocking(state)
     run_selling(state)
     run_loyalty_drift(state)
+    new_signature = controls_signature(state)
+    if new_signature == state.controls_signature:
+        return Fragment(state, build_live_numbers(state),
+                        target="#live_numbers")
+    state.controls_signature = new_signature
     return Fragment(state, build_live_content(state), target="#live_area")
 
 
@@ -3020,6 +3085,7 @@ def expected_after_first_tick() -> State:
     state.goods_stocked_last_tick = 5
     state.goods_sold_last_tick = 5
     state.income_last_tick = 112.5
+    state.controls_signature = controls_signature(state)
     return state
 
 
@@ -3027,6 +3093,24 @@ assert_equal(tick(make_new_state()),
              Fragment(expected_after_first_tick(),
                       build_live_content(expected_after_first_tick()),
                       target="#live_area"))
+
+
+def make_settled_state() -> State:
+    """Build a new game whose buttons already match the next tick's.
+
+    Returns:
+        A new-game State holding the signature its first tick will produce.
+    """
+    state = make_new_state()
+    state.controls_signature = expected_after_first_tick().controls_signature
+    return state
+
+
+# When no button changes, the tick must leave the buttons alone.
+assert_equal(tick(make_settled_state()),
+             Fragment(expected_after_first_tick(),
+                      build_live_numbers(expected_after_first_tick()),
+                      target="#live_numbers"))
 
 
 def expected_business_tick() -> State:
