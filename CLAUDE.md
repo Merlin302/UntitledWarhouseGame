@@ -53,7 +53,12 @@ Code quality (graded by a TA):
   it uses randomness — then say so in its docstring.
 - Lines under 80 characters (hard limit 120).
 - Type hints on every function header.
-- A docstring as the first line of every function body.
+- A docstring as the first line of every function body, in Google format: a
+  description, then `Args:` and `Returns:` sections. Leave out `Args:` only if
+  the function has no parameters, and `Returns:` only if it returns `None`.
+- Each function's `assert_equal` tests go directly below that function, not
+  in a separate tests section. Sample data shared by tests goes in the "Test
+  helpers" section, above the code that uses it.
 - Long functions broken into helper functions.
 
 Repository:
@@ -114,7 +119,7 @@ other than `@dataclass` and `@route`, try/except, generators, JavaScript.
    everything else stays testable.
 5. **Group code by system** with section comments: constants, dataclasses,
    economy, purchases, business (goods/policies), artifacts, casino, page
-   helpers, routes, tests. Each future system (research, invest, decisions,
+   helpers, routes. Each future system (research, invest, decisions,
    war, an ending) should be addable without rewriting existing systems.
 6. **Shared page helpers**: one helper builds the top navigation bar
    (Company / Business / Artifacts / Casino) and the money display, used by
