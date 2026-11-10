@@ -124,6 +124,31 @@ other than `@dataclass` and `@route`, try/except, generators, JavaScript.
 6. **Shared page helpers**: one helper builds the top navigation bar
    (Company / Business / Artifacts / Casino) and the money display, used by
    every page.
+7. **Bounded State, small ticks.** Every list (or dict) stored in State must
+   have a maximum size, set by a constant (e.g. `MAX_NEWS_ITEMS`) or by a
+   fixed catalog (e.g. one entry per artifact type), and must be trimmed
+   wherever it grows. Per-tick work must stay small: `tick` may loop only
+   over those bounded lists, must not loop over a player-chosen count, and
+   should update `#live_numbers` rather than redraw `#live_area` whenever
+   no button has changed. The game runs in the browser (Pyodide), where
+   Python is much slower than on a desktop.
+8. **UI theme and layout** (see `docs/ui_theme.md` for the full guide).
+   - All styling lives in `THEME_CSS` (Theme section of `main.py`), added
+     with `add_website_css`. Components get styles only through
+     `classes="..."`; no inline styles, no other CSS files.
+   - Colors come from the CSS variables at the top of `THEME_CSS` (slate
+     top bar, amber accent, light gray page, white cards). Reuse them
+     rather than adding new colors.
+   - Reuse the existing building blocks: `build_top_bar` (sticky, holds
+     nav + money), `build_chip` (one labelled number), `build_card_head`
+     plus a `Div(..., classes="card")`, `.page`, `.dashboard`/`.two-col`
+     grids, `.buy-row`, `.check-row`, `.button-row`, `.muted`.
+   - Money must stay visible on every page (it is the first chip in
+     `#live_numbers`). New per-tick numbers go into `#live_numbers` as
+     chips; never put buttons there.
+   - Action buttons stay on screen even when unaffordable; the route
+     refuses the action. `controls_signature` must not depend on money.
+   - Check new pages at phone width (375 px): no sideways scrolling.
 
 ## Game design (current understanding — numbers are placeholders)
 

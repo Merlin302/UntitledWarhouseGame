@@ -206,6 +206,381 @@ HARD_PROMPTS = [
 
 
 # ---------------------------------------------------------------------------
+# Theme: colors and layout for every page
+# ---------------------------------------------------------------------------
+
+# Each row: button text, route, and the page it shows.
+NAV_ROWS = [
+    ["Company", "company_page", PAGE_COMPANY],
+    ["Business", "business_page", PAGE_BUSINESS],
+    ["Artifacts", "artifacts_page", PAGE_ARTIFACTS],
+    ["Casino", "casino_page", PAGE_CASINO],
+]
+
+# ADVANCED: This is CSS, the language browsers use to style a page. Each
+# rule names a CSS class (".card") and sets its colors, spacing, and layout.
+# Components get those class names through classes="..." in the page
+# helpers. "display: grid" and "display: flex" line things up in rows and
+# columns; the @media rule stacks the columns on narrow (phone) screens.
+THEME_CSS = """
+:root {
+  --ink: #1f2933;
+  --muted: #5f6b7a;
+  --paper: #eef0f2;
+  --card: #ffffff;
+  --line: #d8dde3;
+  --slate: #1f2a37;
+  --slate-light: #2d3b4d;
+  --amber: #f5b301;
+  --amber-dark: #c98f00;
+  --warn: #c0392b;
+}
+html, body {
+  background: var(--paper);
+}
+body .drafter-frame-- {
+  max-width: none;
+  margin: 0;
+}
+body .drafter-body-- {
+  font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+  padding: 0 0 24px 0;
+}
+body .drafter-body-- h1 {
+  font-size: 1.2rem !important;
+  letter-spacing: 0 !important;
+  margin: 0;
+}
+body .drafter-body-- h2 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0;
+}
+body .drafter-body-- button {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 5px 11px;
+  margin: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--slate);
+  background: var(--slate);
+  color: #ffffff;
+  box-shadow: none;
+}
+body .drafter-body-- button:hover {
+  background: var(--slate-light);
+}
+body .drafter-body-- input,
+body .drafter-body-- select,
+body .drafter-body-- textarea {
+  font: inherit;
+  padding: 5px 8px;
+  margin: 2px 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ink);
+}
+body .drafter-body-- input[type=checkbox] {
+  transform: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--amber-dark);
+}
+body .drafter-body-- ul {
+  margin: 0;
+  padding-left: 18px;
+}
+body .drafter-body-- li {
+  margin: 3px 0;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--slate);
+  color: #ffffff;
+  padding: 8px 16px 10px 16px;
+  border-bottom: 4px solid var(--amber);
+}
+.topbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.topbar-row h1 {
+  color: #ffffff;
+  margin-right: auto;
+}
+body .drafter-body-- .nav button {
+  background: transparent;
+  border-color: transparent;
+  color: #c9d2dc;
+}
+body .drafter-body-- .nav button:hover {
+  background: var(--slate-light);
+}
+body .drafter-body-- .nav button.current {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--slate);
+  font-weight: 600;
+}
+#live_numbers {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.chip {
+  display: flex;
+  flex-direction: column;
+  min-width: 88px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--slate-light);
+}
+.chip-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a9b4c1;
+}
+.chip-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.chip.money {
+  background: var(--amber);
+  color: var(--slate);
+}
+.chip.money .chip-label {
+  color: var(--slate);
+}
+.chip.money .chip-value {
+  font-size: 1.15rem;
+}
+.chip.warn {
+  background: var(--warn);
+}
+.chip.warn .chip-label {
+  color: #ffd7d2;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.tag {
+  font-size: 0.8rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--amber);
+  color: var(--amber);
+}
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 16px 0 16px;
+}
+.dashboard,
+.two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: start;
+}
+.two-col {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.card.narrow {
+  max-width: 640px;
+}
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.big-number {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+body .drafter-body-- .segmented button {
+  background: #ffffff;
+  border-color: var(--line);
+  color: var(--ink);
+  min-width: 44px;
+}
+body .drafter-body-- .segmented button.current {
+  background: var(--slate);
+  border-color: var(--slate);
+  color: #ffffff;
+}
+.buy-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+}
+.emoji {
+  font-size: 1.4rem;
+  text-align: center;
+}
+.item-name {
+  font-weight: 600;
+}
+body .drafter-body-- .buy-row button,
+body .drafter-body-- .expedition button {
+  background: var(--amber);
+  border-color: var(--amber-dark);
+  color: var(--slate);
+  font-weight: 600;
+  min-width: 150px;
+}
+body .drafter-body-- .buy-row button:hover,
+body .drafter-body-- .expedition button:hover {
+  background: var(--amber-dark);
+}
+body .drafter-body-- .check-row input[type=checkbox] {
+  flex-shrink: 0;
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+}
+body .drafter-body-- .artifact-grid table {
+  width: 100%;
+  table-layout: fixed;
+  margin: 4px 0 0 0;
+  box-shadow: none;
+}
+body .drafter-body-- .artifact-grid td {
+  padding: 8px 4px;
+  text-align: center;
+  font-size: 0.8rem;
+  border: 1px solid var(--line);
+}
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+body .drafter-body-- .slot-grid select {
+  width: 100%;
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+.prompt {
+  font-family: ui-monospace, Consolas, monospace;
+  background: var(--paper);
+  border-left: 4px solid var(--amber);
+  padding: 8px 10px;
+  margin: 6px 0;
+}
+body .drafter-body-- textarea {
+  width: 100%;
+  min-height: 90px;
+  box-sizing: border-box;
+}
+.result:empty {
+  display: none;
+}
+.result {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.card.start {
+  max-width: 460px;
+  margin: 12vh auto 0 auto;
+  text-align: center;
+}
+body .drafter-body-- .card.start h1 {
+  font-size: 1.7rem !important;
+  margin-bottom: 6px;
+}
+@media (max-width: 760px) {
+  .dashboard,
+  .two-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .slot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .chip {
+    min-width: 0;
+    padding: 2px 7px;
+  }
+  .chip-label {
+    font-size: 0.6rem;
+  }
+  .chip-value,
+  .chip.money .chip-value {
+    font-size: 0.85rem;
+  }
+  .tag {
+    font-size: 0.72rem;
+  }
+  body .drafter-body-- .buy-row button {
+    min-width: 0;
+    font-size: 0.82rem;
+  }
+  .topbar {
+    padding: 6px 10px 8px 10px;
+  }
+  .page {
+    padding: 12px 10px 0 10px;
+  }
+}
+"""
+add_website_css(THEME_CSS)
+
+
+# ---------------------------------------------------------------------------
 # Dataclasses
 # ---------------------------------------------------------------------------
 
@@ -908,6 +1283,17 @@ def expected_business_tick() -> State:
     """
     state = expected_after_first_tick()
     state.current_page = PAGE_BUSINESS
+    return state
+
+
+def make_veteran_state() -> State:
+    """Build a new-game State that has earned enough to unlock every item.
+
+    Returns:
+        A new-game State with huge lifetime earnings.
+    """
+    state = make_new_state()
+    state.total_earned = 1000000000.0
     return state
 
 
@@ -2550,100 +2936,96 @@ assert_equal(describe_effect(make_one_time_item(0)),
 
 
 def controls_signature(state: State) -> str:
-    """Summarize what the tick-refreshed buttons and news should show.
+    """Summarize what decides whether a tick must redraw the buttons.
 
-    The tick compares this text with the previous tick's. If they match,
-    the buttons are left alone, so a tick can't interrupt a click.
+    Buy and expedition buttons stay on screen whether or not the player
+    can afford them (buy_item and run_expedition refuse what can't be
+    afforded), so money changes never redraw them. Only a newly visible
+    item or a new headline does. The tick compares this text with the
+    previous tick's and leaves the buttons alone if they match, so a
+    tick can't interrupt a click.
 
     Args:
         state: The current game state.
 
     Returns:
-        Text recording the visible items, what is affordable, and the news.
+        Text recording the news and which items are visible.
     """
     signature = str(state.news_feed)
     for item in state.buy_items:
-        quantity = purchase_quantity(item, state.buy_amount)
-        signature = (signature + str(is_item_visible(item, state.total_earned))
-                     + str(can_afford(item, quantity, state.money,
-                                      state.goods_in_stock)))
-    for count in EXPEDITION_AMOUNTS:
-        signature = signature + str(can_afford_expedition(state, count))
+        signature = signature + str(is_item_visible(item, state.total_earned))
     return signature
 
 
+# Money alone never changes the signature; unlocking an item does.
 assert_equal(controls_signature(make_new_state()),
-             controls_signature(make_new_state()))
+             controls_signature(make_rich_state()))
 assert_equal(controls_signature(make_new_state())
-             == controls_signature(make_rich_state()), False)
+             == controls_signature(make_veteran_state()), False)
 
 
-def build_live_numbers(state: State) -> list:
-    """Build the text that changes every tick; it contains no buttons.
+def build_chip(label: str, value: str, chip_classes: str) -> Div:
+    """Build one small labelled number for the top bar.
 
     Args:
-        state: The current game state.
+        label: The small caption above the number.
+        value: The number, already formatted as text.
+        chip_classes: The CSS classes, such as "chip" or "chip money".
 
     Returns:
-        A list of the components inside the #live_numbers element.
+        A Div holding the label and the value.
     """
-    money_line = "Money: " + format_money(state.money)
-    if state.current_page == PAGE_COMPANY:
-        return [money_line, build_stats_panel(state),
-                build_bonus_panel(state)]
-    return [money_line]
+    # ADVANCED: classes= gives a component CSS class names. THEME_CSS uses
+    # those names to pick its colors, size, and position.
+    return Div(Span(label, classes="chip-label"),
+               Span(value, classes="chip-value"), classes=chip_classes)
 
 
-def build_top_bar(state: State) -> Div:
-    """Build the navigation bar and money display used by every page.
+def per_tick_text(actual: int, most: int) -> str:
+    """Show what happened last tick next to the most that was possible.
 
     Args:
-        state: The current game state.
+        actual: The amount last tick.
+        most: The most possible in one tick.
 
     Returns:
-        A Div holding the company name, navigation, and live numbers.
+        Text such as "5 / 10".
     """
-    return Div(
-        Header(state.company_name, 1),
-        Button("Company", "company_page"),
-        Button("Business", "business_page"),
-        Button("Artifacts", "artifacts_page"),
-        Button("Casino", "casino_page"),
-        # ADVANCED: A Div groups components. Its id is the name a Fragment
-        # uses to find and replace just this part of the page.
-        Div(build_live_numbers(state), id="live_numbers"),
-    )
+    return str(actual) + " / " + str(most)
 
 
-def build_stats_panel(state: State) -> Div:
-    """Build the panel of current company statistics.
+assert_equal(per_tick_text(5, 10), "5 / 10")
+
+
+def build_stat_chips(state: State) -> list[Div]:
+    """Build the company statistics shown in the top bar.
 
     Args:
         state: The current game state.
 
     Returns:
-        A Div holding a heading and the list of stats.
+        One chip per statistic.
     """
     capacity = calculate_warehouse_capacity(state.buy_items)
     capacity_percent = state.goods_in_stock * 100 // capacity
-    delivery_capacity = effective_delivery_capacity(state)
-    return Div(
-        Header("Company Stats", 2),
-        "Numbers in parentheses are the most possible per tick.",
-        BulletedList([
-            "Goods stocked last tick: " + str(state.goods_stocked_last_tick)
-            + " (" + str(effective_stocking_rate(state)) + ")",
-            "Goods sold last tick: " + str(state.goods_sold_last_tick)
-            + " (" + str(delivery_capacity) + ")",
-            "Income last tick: " + format_money(state.income_last_tick)
-            + " (" + format_money(max_income_per_tick(state)) + ")",
-            "Delivery capacity: " + str(delivery_capacity),
-            "Warehouse: " + str(state.goods_in_stock) + " / " + str(capacity)
-            + " (" + str(capacity_percent) + "%)",
-            "Customer loyalty: " + str(round(state.loyalty, 1)) + " / 100",
-            "Customer demand: " + str(calculate_demand(state.loyalty)),
-        ]),
-    )
+    income_text = (format_money(state.income_last_tick) + " / "
+                   + format_money(max_income_per_tick(state)))
+    warehouse_text = (str(state.goods_in_stock) + " / " + str(capacity)
+                      + " (" + str(capacity_percent) + "%)")
+    return [
+        build_chip("Stocked / tick",
+                   per_tick_text(state.goods_stocked_last_tick,
+                                 effective_stocking_rate(state)), "chip"),
+        build_chip("Sold / tick",
+                   per_tick_text(state.goods_sold_last_tick,
+                                 effective_delivery_capacity(state)), "chip"),
+        build_chip("Income / tick", income_text, "chip"),
+        build_chip("Warehouse", warehouse_text, "chip"),
+        build_chip("Loyalty", str(round(state.loyalty, 1)), "chip"),
+        build_chip("Demand", str(calculate_demand(state.loyalty)), "chip"),
+        build_chip("Income bonus",
+                   percent_text(calculate_total_bonus(state)), "chip"),
+    ]
 
 
 def strike_status_text(strike_ticks_left: int) -> str:
@@ -2665,6 +3047,44 @@ def strike_status_text(strike_ticks_left: int) -> str:
 assert_equal(strike_status_text(0), "No strike in progress")
 assert_equal(strike_status_text(2),
              "⚠️ STRIKE: stocking and delivery x0.5 for 2 more ticks")
+
+
+def build_policy_chips(state: State) -> list[Div]:
+    """Build chips for policy effects and strikes, skipping any that are 0.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A chip for each nonzero policy total, and a warning during a strike.
+    """
+    policies = state.policies
+    chips = []
+    stocking = total_policy_stocking_bonus(policies)
+    if stocking != 0:
+        chips.append(build_chip("Stocking bonus", percent_text(stocking),
+                                "chip"))
+    delivery = total_policy_delivery_bonus(policies)
+    if delivery != 0:
+        chips.append(build_chip("Delivery bonus", percent_text(delivery),
+                                "chip"))
+    loyalty_change = total_policy_loyalty_change(policies)
+    if loyalty_change != 0:
+        chips.append(build_chip("Loyalty target", str(round(loyalty_change)),
+                                "chip"))
+    strike_risk = total_strike_risk(policies)
+    if strike_risk != 0:
+        chips.append(build_chip("Strike risk / tick",
+                                percent_text(strike_risk), "chip"))
+    if state.strike_ticks_left > 0:
+        chips.append(build_chip("Labor unrest",
+                                strike_status_text(state.strike_ticks_left),
+                                "chip warn"))
+    return chips
+
+
+assert_equal(build_policy_chips(make_new_state()), [])
+assert_equal(len(build_policy_chips(make_striking_state(2))), 1)
 
 
 def active_effect_lines(state: State) -> list[str]:
@@ -2701,32 +3121,85 @@ assert_equal(active_effect_lines(make_state_with_income_bonuses()),
               "💬 Aggressive Upselling: +15% income, -8 loyalty target"])
 
 
-def build_bonus_panel(state: State) -> Div:
-    """Build the summary of goods, policy, and strike effects.
+def build_effect_tags(state: State) -> Div:
+    """Build one small tag for each active goods type, policy, and artifact.
 
     Args:
         state: The current game state.
 
     Returns:
-        A Div holding a heading and the list of effects.
+        A Div holding the tags (empty if nothing is active).
     """
-    policies = state.policies
+    tags = []
+    for line in active_effect_lines(state):
+        tags.append(Span(line, classes="tag"))
+    return Div(tags, classes="tags")
+
+
+def build_live_numbers(state: State) -> list:
+    """Build the numbers that change every tick; they contain no buttons.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A list of the components inside the #live_numbers element.
+    """
+    chips = [build_chip("Money", format_money(state.money), "chip money")]
+    if state.current_page != PAGE_COMPANY:
+        return [Div(chips, classes="chips")]
+    chips = chips + build_stat_chips(state) + build_policy_chips(state)
+    return [Div(chips, classes="chips"), build_effect_tags(state)]
+
+
+def build_nav(current_page: str) -> Div:
+    """Build the navigation buttons, marking the page being shown.
+
+    Args:
+        current_page: One of the PAGE_ constants.
+
+    Returns:
+        A Div holding one Button per main page.
+    """
+    buttons = []
+    for row in NAV_ROWS:
+        if row[2] == current_page:
+            buttons.append(Button(row[0], row[1], classes="current"))
+        else:
+            buttons.append(Button(row[0], row[1]))
+    return Div(buttons, classes="nav")
+
+
+def build_top_bar(state: State) -> Div:
+    """Build the navigation bar and live numbers used by every page.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A Div holding the company name, navigation, and live numbers.
+    """
     return Div(
-        Header("Bonus Summary", 2),
-        BulletedList(active_effect_lines(state) + [
-            "Total income bonus: "
-            + percent_text(calculate_total_bonus(state)),
-            "Policy stocking bonus: "
-            + percent_text(total_policy_stocking_bonus(policies)),
-            "Policy delivery bonus: "
-            + percent_text(total_policy_delivery_bonus(policies)),
-            "Policy loyalty target change: "
-            + str(round(total_policy_loyalty_change(policies))),
-            "Strike risk per tick: "
-            + percent_text(total_strike_risk(policies)),
-            strike_status_text(state.strike_ticks_left),
-        ]),
+        Div(Header(state.company_name, 1), build_nav(state.current_page),
+            classes="topbar-row"),
+        # ADVANCED: A Div groups components. Its id is the name a Fragment
+        # uses to find and replace just this part of the page.
+        Div(build_live_numbers(state), id="live_numbers"),
+        classes="topbar",
     )
+
+
+def build_card_head(title: str, controls: list) -> Div:
+    """Build a card's title row, with any controls on the right.
+
+    Args:
+        title: The card's title.
+        controls: Components to show beside the title (may be empty).
+
+    Returns:
+        A Div holding the title and controls.
+    """
+    return Div([Header(title, 2)] + controls, classes="card-head")
 
 
 def build_markup_controls(state: State) -> Div:
@@ -2736,37 +3209,49 @@ def build_markup_controls(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A Div holding the current markup and its buttons.
+        A card holding the current markup and its buttons.
     """
     return Div(
-        Header("Pricing", 2),
-        "Markup: x" + str(state.markup) + " (sale price "
-        + format_money(calculate_sale_price(state.markup)) + ") ",
-        Button("Lower Markup", "lower_markup"),
-        Button("Increase Markup", "raise_markup"),
+        build_card_head("Pricing", []),
+        Div("Markup x" + str(state.markup), classes="big-number"),
+        Div("Each unit sells for "
+            + format_money(calculate_sale_price(state.markup)),
+            classes="muted"),
+        Div(Button("▼ Lower", "lower_markup"),
+            Button("▲ Raise", "raise_markup"), classes="button-row"),
+        classes="card",
     )
 
 
 def build_buy_amount_controls(state: State) -> Div:
-    """Build the X1, X5, and X10 buttons that set the buy amount.
+    """Build the x1, x5, and x10 buttons, marking the chosen amount.
 
     Args:
         state: The current game state.
 
     Returns:
-        A Div holding the current amount and one button per choice.
+        A Div holding one button per choice.
     """
-    buttons = ["Buying x" + str(state.buy_amount) + " per click: "]
+    buttons = []
     for amount in BUY_AMOUNTS:
+        label = "x" + str(amount)
         # ADVANCED: An Argument makes a Button pass an extra value to its
         # route, so one route can serve many Buttons.
-        buttons.append(Button("X" + str(amount), "set_buy_amount",
-                              [Argument("amount", amount)]))
-    return Div(buttons)
+        arguments = [Argument("amount", amount)]
+        if amount == state.buy_amount:
+            buttons.append(Button(label, "set_buy_amount", arguments,
+                                  classes="current"))
+        else:
+            buttons.append(Button(label, "set_buy_amount", arguments))
+    return Div(buttons, classes="segmented")
 
 
 def build_buy_action(item: BuyItem, item_index: int, state: State) -> Div:
-    """Build the Buy button, or the reason the item can't be bought.
+    """Build the Buy button, or a note if a one-time item is bought.
+
+    The button is shown even when the player can't afford the batch;
+    buy_item then refuses the purchase. Keeping the button means a tick
+    never has to redraw it just because money went up or down.
 
     Args:
         item: The item this row is for.
@@ -2778,10 +3263,7 @@ def build_buy_action(item: BuyItem, item_index: int, state: State) -> Div:
     """
     quantity = purchase_quantity(item, state.buy_amount)
     if is_sold_out(item):
-        return Div("Purchased")
-    if not can_afford(item, quantity, state.money, state.goods_in_stock):
-        required = money_required(item, quantity, state.goods_in_stock)
-        return Div("Need " + format_money(required))
+        return Div("Purchased", classes="muted")
     price_text = format_money(batch_cost(item, quantity))
     return Div(Button("Buy x" + str(quantity) + " for " + price_text,
                       "buy_item", [Argument("item_index", item_index)]))
@@ -2794,17 +3276,20 @@ def build_buy_list(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A Div holding a heading and the visible item rows.
+        A card holding the buy amount buttons and the visible item rows.
     """
-    rows = [Header("Buy List", 2)]
+    rows = [build_card_head("Buy List", [build_buy_amount_controls(state)])]
     for item_index, item in enumerate(state.buy_items):
         if is_item_visible(item, state.total_earned):
             rows.append(Div(
-                item.emoji + " " + item.name + " (owned: " + str(item.owned)
-                + ") - " + describe_effect(item),
+                Span(item.emoji, classes="emoji"),
+                Div(Div(item.name, classes="item-name"),
+                    Div(describe_effect(item) + " · owned: "
+                        + str(item.owned), classes="muted")),
                 build_buy_action(item, item_index, state),
+                classes="buy-row",
             ))
-    return Div(rows)
+    return Div(rows, classes="card")
 
 
 def build_news_feed(state: State) -> Div:
@@ -2814,9 +3299,10 @@ def build_news_feed(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A Div holding a heading and the list of headlines.
+        A card holding the list of headlines.
     """
-    return Div(Header("World News", 2), BulletedList(state.news_feed))
+    return Div(build_card_head("World News", []),
+               BulletedList(state.news_feed), classes="card")
 
 
 def build_live_content(state: State) -> list:
@@ -2835,13 +3321,13 @@ def build_live_content(state: State) -> list:
     if state.current_page == PAGE_CASINO:
         return [build_top_bar(state)]
     if state.current_page == PAGE_ARTIFACTS:
-        return [build_top_bar(state), build_expedition_controls(state)]
+        return [build_top_bar(state),
+                Div(build_expedition_controls(state), classes="page")]
     return [
         build_top_bar(state),
-        build_markup_controls(state),
-        build_buy_amount_controls(state),
-        build_buy_list(state),
-        build_news_feed(state),
+        Div(Div(build_buy_list(state)),
+            Div(build_markup_controls(state), build_news_feed(state)),
+            classes="page dashboard"),
     ]
 
 
@@ -2864,17 +3350,19 @@ def build_goods_form(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A Div holding the goods choices.
+        A card holding the goods choices.
     """
-    rows = [Header("Goods to Sell", 2)]
+    rows = [build_card_head("Goods to Sell", [])]
     for goods in state.goods_types:
         rows.append(Div(
             CheckBox(goods.input_name, goods.is_selling),
-            " " + goods.emoji + " " + goods.name + " - "
-            + percent_text(goods.income_bonus) + " income",
+            Span(goods.emoji + " " + goods.name),
+            Span(percent_text(goods.income_bonus) + " income",
+                 classes="muted"),
+            classes="check-row",
         ))
     rows.append(Button("Save Goods", "save_goods"))
-    return Div(rows)
+    return Div(rows, classes="card")
 
 
 def policy_label(policy: Policy, items: list[BuyItem]) -> str:
@@ -2906,16 +3394,17 @@ def build_policy_form(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A Div holding the policy choices.
+        A card holding the policy choices.
     """
-    rows = [Header("Corporate Policies", 2)]
+    rows = [build_card_head("Corporate Policies", [])]
     for policy in state.policies:
         rows.append(Div(
             CheckBox(policy.input_name, policy.is_active),
-            " " + policy_label(policy, state.buy_items),
+            Span(policy_label(policy, state.buy_items)),
+            classes="check-row",
         ))
     rows.append(Button("Save Policies", "save_policies"))
-    return Div(rows)
+    return Div(rows, classes="card")
 
 
 def build_business_content(state: State) -> list:
@@ -2932,29 +3421,27 @@ def build_business_content(state: State) -> list:
     """
     return [
         Div(build_live_content(state), id="live_area"),
-        build_goods_form(state),
-        build_policy_form(state),
+        Div(build_goods_form(state), build_policy_form(state),
+            classes="page two-col"),
     ]
 
 
-def build_expedition_action(state: State, count: int) -> Div:
-    """Build one expedition button, or the money it still needs.
+def build_expedition_action(state: State, count: int) -> Button:
+    """Build one expedition button showing its price.
+
+    Like the Buy buttons, it is shown even when the player can't afford
+    the batch (run_expedition then refuses), so ticks never redraw it.
 
     Args:
         state: The current game state.
         count: How many expeditions this button buys.
 
     Returns:
-        A Div holding a button or a short message.
+        The button for this batch size.
     """
-    name = "X" + str(count)
-    if not can_afford_expedition(state, count):
-        required = expedition_money_required(state.expeditions_bought, count,
-                                             state.goods_in_stock)
-        return Div(name + ": need " + format_money(required))
     price = expedition_batch_cost(state.expeditions_bought, count)
-    return Div(Button(name + " for " + format_money(price), "run_expedition",
-                      [Argument("count", count)]))
+    return Button("X" + str(count) + " for " + format_money(price),
+                  "run_expedition", [Argument("count", count)])
 
 
 def build_expedition_controls(state: State) -> Div:
@@ -2964,12 +3451,14 @@ def build_expedition_controls(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A Div holding a heading and the expedition buttons.
+        A card holding the expedition buttons.
     """
-    actions = [Header("Expeditions", 2)]
+    buttons = []
     for count in EXPEDITION_AMOUNTS:
-        actions.append(build_expedition_action(state, count))
-    return Div(actions)
+        buttons.append(build_expedition_action(state, count))
+    return Div(build_card_head("Expeditions", []),
+               Div(buttons, classes="button-row expedition"),
+               classes="card")
 
 
 def build_grid_rows(owned_artifacts: list[Artifact]) -> list[list[str]]:
@@ -3024,15 +3513,16 @@ def build_owned_artifact_list(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A Div holding a heading and the artifact descriptions.
+        A card holding the artifact descriptions.
     """
+    head = build_card_head("Owned Artifacts", [])
     if len(state.owned_artifacts) == 0:
-        return Div(Header("Owned Artifacts", 2),
-                   "Nothing yet. Fund an expedition!")
+        return Div(head, Div("Nothing yet. Fund an expedition!",
+                             classes="muted"), classes="card")
     lines = []
     for artifact in state.owned_artifacts:
         lines.append(describe_artifact(artifact))
-    return Div(Header("Owned Artifacts", 2), BulletedList(lines))
+    return Div(head, BulletedList(lines), classes="card")
 
 
 def build_expedition_finds(state: State) -> Div:
@@ -3042,12 +3532,12 @@ def build_expedition_finds(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A Div holding the finds, or an empty Div if there are none.
+        A card holding the finds, or an empty Div if there are none.
     """
     if len(state.last_expedition_finds) == 0:
         return Div()
-    return Div(Header("Latest Finds", 2),
-               BulletedList(state.last_expedition_finds))
+    return Div(build_card_head("Latest Finds", []),
+               BulletedList(state.last_expedition_finds), classes="card")
 
 
 def build_artifacts_content(state: State) -> list:
@@ -3059,36 +3549,46 @@ def build_artifacts_content(state: State) -> list:
     Returns:
         A list of the page's components.
     """
+    grid_card = Div(
+        build_card_head("Artifact Grid",
+                        [Button("Organize", "organize_page")]),
+        Table(build_grid_rows(state.owned_artifacts)),
+        classes="card artifact-grid",
+    )
     return [
         Div(build_live_content(state), id="live_area"),
-        build_expedition_finds(state),
-        Header("Artifact Grid", 2),
-        Table(build_grid_rows(state.owned_artifacts)),
-        Button("Organize", "organize_page"),
-        build_owned_artifact_list(state),
+        Div(build_expedition_finds(state), grid_card,
+            build_owned_artifact_list(state), classes="page"),
     ]
 
 
 def build_organize_form(state: State) -> Div:
     """Build one SelectBox for each slot in the grid.
 
-    Each SelectBox name must match a save_artifact_grid parameter.
+    Each SelectBox name must match a save_artifact_grid parameter. The
+    slots are laid out like the grid itself (6 across, 2 down).
 
     Args:
         state: The current game state.
 
     Returns:
-        A Div holding the SelectBoxes and the save button.
+        A card holding the SelectBoxes and the save button.
     """
     options = slot_options(state.owned_artifacts)
-    rows = [Header("Organize Artifacts", 2)]
+    slots = []
     for slot in range(GRID_SLOT_COUNT):
         slot_number = str(slot + 1)
-        rows.append(Div("Slot " + slot_number + ": ",
-                        SelectBox("slot_" + slot_number, options,
-                                  slot_choice(state.owned_artifacts, slot))))
-    rows.append(Button("Save Layout", "save_artifact_grid"))
-    return Div(rows)
+        slots.append(Div(
+            Div("Slot " + slot_number, classes="muted"),
+            SelectBox("slot_" + slot_number, options,
+                      slot_choice(state.owned_artifacts, slot)),
+        ))
+    return Div(
+        build_card_head("Organize Artifacts",
+                        [Button("Save Layout", "save_artifact_grid")]),
+        Div(slots, classes="slot-grid"),
+        classes="card",
+    )
 
 
 def build_organize_content(state: State) -> list:
@@ -3105,7 +3605,7 @@ def build_organize_content(state: State) -> list:
     """
     return [
         Div(build_live_content(state), id="live_area"),
-        build_organize_form(state),
+        Div(build_organize_form(state), classes="page"),
     ]
 
 
@@ -3139,11 +3639,12 @@ def build_casino_setup_form() -> Div:
     """
     cap_text = str(round(CASINO_MAX_BET_FRACTION * 100))
     return Div(
-        Header("Typing Test", 2),
-        "Difficulty: ",
-        SelectBox("difficulty", DIFFICULTY_OPTIONS, DIFFICULTY_EASY),
-        Div("Bet (up to " + cap_text + "% of your money): ",
-            TextBox("bet", "")),
+        build_card_head("Typing Test", []),
+        Div("Difficulty",
+            SelectBox("difficulty", DIFFICULTY_OPTIONS, DIFFICULTY_EASY),
+            classes="form-row"),
+        Div("Bet (up to " + cap_text + "% of your money)",
+            TextBox("bet", ""), classes="form-row"),
         Button("Start Typing", "start_typing_round"),
     )
 
@@ -3158,8 +3659,8 @@ def build_typing_form(typing_round: TypingRound) -> Div:
         A Div holding the prompt, the TextArea, and the submit button.
     """
     return Div(
-        Header("Type this exactly:", 2),
-        Div(typing_round.prompt),
+        build_card_head("Type this exactly", []),
+        Div(typing_round.prompt, classes="prompt"),
         TextArea("typed_text", ""),
         Button("Submit", "submit_typing_round"),
     )
@@ -3182,8 +3683,8 @@ def build_casino_content(state: State) -> list:
         form = build_typing_form(state.typing_round)
     return [
         Div(build_live_content(state), id="live_area"),
-        Div(state.last_casino_result),
-        form,
+        Div(Div(Div(state.last_casino_result, classes="result"), form,
+                classes="card narrow"), classes="page"),
     ]
 
 
@@ -3200,10 +3701,14 @@ def build_start_content(state: State) -> list:
         # ADVANCED: RemovePersistent stops the persistent Clock with this id,
         # so a new game never has two clocks ticking at once.
         RemovePersistent(GAME_CLOCK_ID),
-        Header("Untitled Warehouse Inc.", 1),
-        "Every empire starts with a warehouse. What is yours called?",
-        TextBox("company_name", state.company_name),
-        Button("Open for Business", "start_game"),
+        Div(Div(
+            Header("Untitled Warehouse Inc.", 1),
+            Div("Every empire starts with a warehouse. What is yours called?",
+                classes="muted"),
+            TextBox("company_name", state.company_name),
+            Button("Open for Business", "start_game"),
+            classes="card start",
+        ), classes="page"),
     ]
 
 

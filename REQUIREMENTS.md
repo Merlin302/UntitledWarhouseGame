@@ -38,7 +38,9 @@ off what is done and name the exact function or field that satisfies it.
       `build_typing_form`
 - [x] At least 3 meaningful if statements — _where:_ `buy_item` (can afford),
       `build_buy_list` (`is_item_visible` unlock check), `build_buy_action`
-      (sold out / can't afford), `clean_company_name` (blank name),
+      (sold out), `build_nav` (which tab is current), `build_policy_chips`
+      (only nonzero effects, strike warning), `clean_company_name` (blank
+      name),
       `run_strikes` (strike running / new strike), `build_live_content`
       (which page is showing), `policy_label` (locked policy),
       `total_artifact_bonus` (placed or not), `add_artifact_copy` (duplicate
@@ -60,7 +62,8 @@ off what is done and name the exact function or field that satisfies it.
 - [x] Uses Drafter — _where:_ `main.py`, `start_server(make_new_state())`
 - [x] Any technique not covered in the course is explained in a comment or
       docstring — _where:_ `# ADVANCED:` comments at the top of `main.py`
-      (Drafter site settings, `set_browser_history`), `build_game_clock`
+      (Drafter site settings, `set_browser_history`), `THEME_CSS` (CSS
+      styling), `build_chip` (`classes=`), `build_game_clock`
       (Clock), `tick` (Fragment), `build_start_content` (RemovePersistent),
       `build_top_bar` (Div ids), `build_buy_amount_controls` (Argument),
       `roll_strike` (`random.random`), `roll_rarity`, `roll_artifact_row`,
