@@ -1,0 +1,5 @@
+# Local copy of Drafter 2.2.0 for trying the game on that version.
+# Not committed, so it is never part of the deployed site.
+drafter-2.2.0-preview/
+
+__pycache__/
