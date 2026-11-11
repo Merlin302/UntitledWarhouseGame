@@ -28,4 +28,4 @@ pass.
 |---|-------|------|-------|-----|
 | R1 | 2026-11-11, W1 | Business | Unsure whether goods selected before the war lose their bonus when sanctioned. Checked: `start_war` switches off every sanctioned goods type, so its bonus stops counting. A test was added (`make_veteran_electronics_state`). | 4278116 |
 | R2 | 2026-11-11, W2 | War | A failed dire wave reported "air defenses damaged" even when the 25% loss rounded down to 0 units. It now reports the real number lost. | 4278116 |
-| R3 | 2026-11-11, W3 | Debug | "End the war (win)" showed "Waves defended: 0 of 35". A debug win now counts every wave as defended. | W3 commit |
+| R3 | 2026-11-11, W3 | Debug | "End the war (win)" showed "Waves defended: 0 of 35". A debug win now counts every wave as defended. | ddd0672 |
