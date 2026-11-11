@@ -217,13 +217,33 @@ Components), and world research that buys out fleeing competitors (ParcelPro,
 then Ozonix). `war_goods_sold` adds the war goods' share of each tick's
 sales (`war_units_sold`). `threat` fills per real second (scaled by the tick
 length, x `DEBUG_WAR_SPEED`), faster with more war goods sold, capped at
-`MAX_THREAT_PER_SECOND`; at 100% it stays full (combat waves come in W2).
-Planned next: W2 air defense (War page, waves, equipment) and W3 the end of
-the war (win/lose pages from war goods sold).
+`MAX_THREAT_PER_SECOND`.
+
+**War page (phase W2 built: air defense):** the War nav button appears once
+the war starts (badge ❗ until the briefing is read, ⚠️ during a wave). A
+one-time briefing (`seen_war_tutorial`) must be dismissed before wave 1.
+Between waves the threat meter fills; when full, `start_wave` generates the
+next wave with `make_wave(wave_number)` (count, HP, and attacker mix grow;
+dire waves every `DIRE_WAVE_EVERY` and the last; capped at `MAX_ATTACKERS`)
+and empties the meter. `ATTACKER_ROWS`: Pengvin drones (low), Kalibar cruise
+missiles (medium/low), Mishka bombers (high). `DEFENSE_ROWS` (bought any
+time, kept between waves, flat cost): Zhalo MANPADS (medium/low), LoM-16SM
+fighter (mixed), MIN-400 Loyalist SAM (high); 2 MANPADS at the start. A
+wave lasts `WAVE_DURATION_MS / DEBUG_WAR_SPEED` real ms (`wave_ms_left` minus
+`tick_interval` each tick). `run_wave`: each altitude's damage hits the first
+living attacker there, leftovers carry over. Failing a wave (`end_wave` /
+`apply_raid_damage`): each survivor destroys stock and adds to
+`raid_ms_left`, a production penalty applied with strikes through
+`rate_penalty` -> `apply_rate_modifiers`; failing a dire wave also destroys
+`DIRE_EQUIPMENT_LOSS_FRACTION` of each defense. On the War page the top bar
+is not sticky and `#live_numbers` holds the whole battle board (Drafter
+2.1.4 Fragments update one element); the briefing and shop sit outside it.
+Planned next: W3 the end of the war (win/lose pages from war goods sold).
 
 **Debug page (🐞 in the nav, hidden when `DEBUG_TOOLS = False`):** buttons
 that add money and jump ahead (restart in peace, unlock peacetime research,
-start the war, fill the threat meter), for demos and play-testing.
+start the war, fill the threat meter, start the next wave now, skip to
+dire wave 10), for demos and play-testing.
 
 **Artifacts page (gacha):** pay for expeditions (buttons for X1, X5, X10,
 X100; price grows only slightly) to get random artifacts with rarity tiers

@@ -5,24 +5,27 @@ off what is done and name the exact function or field that satisfies it.
 
 ## Site
 
-- [x] At least 7 routes — _where:_ 23 routes: `index`, `start_game`,
+- [x] At least 7 routes — _where:_ 26 routes: `index`, `start_game`,
       `company_page`, `business_page`, `research_page`, `buy_research`,
       `artifacts_page`, `organize_page`,
       `casino_page`, `start_typing_round`, `submit_typing_round`,
       `save_goods`, `save_policies`, `run_expedition`, `save_artifact_grid`,
       `set_buy_amount`, `buy_item`, `raise_markup`, `lower_markup`, `tick`,
-      `debug_page`, `debug_add_money`, `debug_jump`
+      `debug_page`, `debug_add_money`, `debug_jump`, `war_page`,
+      `dismiss_war_tutorial`, `buy_defense`
 - [x] At least 5 pages — _where:_ start page (`index`), company page
       (`company_page`), Business page (`business_page`), Research page
       (`research_page`), Artifacts page
       (`artifacts_page`), Organize page (`organize_page`), Casino page
-      (`casino_page`), Debug page (`debug_page`, demo tool)
-- [x] `State` dataclass with at least 4 fields — _where:_ `State` (28 fields)
+      (`casino_page`), War page (`war_page`), Debug page (`debug_page`,
+      demo tool)
+- [x] `State` dataclass with at least 4 fields — _where:_ `State` (36 fields)
 - [x] At least one State field is a list/dict of a second dataclass —
       _where:_ `State.owned_artifacts: list[Artifact]`,
       `State.buy_items: list[BuyItem]`,
       `State.goods_types: list[GoodsType]`, `State.policies: list[Policy]`,
-      `State.research: list[Research]`
+      `State.research: list[Research]`, `State.attackers: list[Attacker]`,
+      `State.defenses: list[DefenseEquipment]`
 - [x] At least 4 State fields, including that list/dict, are meaningfully
       modified in at least one route — _where:_ `buy_items` (`.owned`, in
       `buy_item`), `money` (`buy_item`, `tick`), `markup` (`raise_markup`,
@@ -35,7 +38,11 @@ off what is done and name the exact function or field that satisfies it.
       (`start_typing_round`, `submit_typing_round`), `research` (`.is_done`),
       `money`, and `news_feed` (`buy_research`, through `complete_research`),
       `game_phase`, `war_goods_sold`, and `threat` (`tick`, through
-      `run_war_economy`; also `debug_jump`)
+      `run_war_economy`; also `debug_jump`), `attackers` (`.hp`, in `tick`
+      through `run_wave` / `damage_attackers`), `defenses` (`.owned`, in
+      `buy_defense`), `wave_number`, `wave_ms_left`, `waves_defended`,
+      `raid_ms_left`, `last_wave_report` (`tick`), `seen_war_tutorial`
+      (`dismiss_war_tutorial`)
 - [x] At least 3 input fields (TextBox, CheckBox, SelectBox, TextArea)
       — _where:_ `TextBox("company_name")` in `build_start_content`, one
       `CheckBox` per goods type in `build_goods_form`, one `CheckBox` per
@@ -57,7 +64,10 @@ off what is done and name the exact function or field that satisfies it.
       `nav_label` (research badge), `build_research_list` (available or
       none), `policy_label` (which lock applies), `run_war_economy` (war
       starts / threat full), `build_goods_row` (sanctioned goods),
-      `apply_debug_jump` (which shortcut)
+      `apply_debug_jump` (which shortcut), `run_intermission` (meter full,
+      briefing read), `run_wave` (wave won or out of time), `end_wave` (won
+      or broke through), `damage_attackers` (same altitude and alive),
+      `defense_dps` (which altitude), `buy_defense` (can afford)
 - [x] At least 1 loop over the list/dict of dataclass instances, used in a
       meaningful way — _where (main answer):_ `total_artifact_bonus` loops
       over `state.owned_artifacts`, skips unplaced artifacts, and totals the
@@ -68,7 +78,10 @@ off what is done and name the exact function or field that satisfies it.
       other `total_policy_...` helpers (`state.policies`),
       `count_available_research`, `is_research_done` (linear search), and
       the `total_research_...` helpers (`state.research`), `war_units_sold`
-      (`state.goods_types`, counts war goods being sold)
+      (`state.goods_types`, counts war goods being sold);
+      `damage_attackers` loops over `state.attackers` and carries leftover
+      damage to the next attacker (`enemy_hp`, `count_survivors` too);
+      `total_dps` loops over `state.defenses`
 - [x] Legitimate purpose (entertainment: it's a game) — _where:_ the whole site
 - [x] No global variables; only ALL_CAPS constants, never mutated — _where:_
       constants block; `make_starting_items`, `make_starting_goods`,
