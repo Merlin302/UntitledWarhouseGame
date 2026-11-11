@@ -293,6 +293,15 @@ RAID_PENALTY_MULTIPLIER = 0.6
 # Failing a dire wave also destroys this fraction of each defense type.
 DIRE_EQUIPMENT_LOSS_FRACTION = 0.25
 
+# --- W3: the end of the war ---
+PAGE_WAR_REPORT = "war_report"
+# War goods that must be sold during the war to win it.
+WAR_VICTORY_GOODS = 30000
+WAR_WON_NEWS = ("CEASEFIRE: The " + ENEMY_COUNTRY + " withdraws! The "
+                + "warehouse is declared a 'national hero'.")
+WAR_LOST_NEWS = ("CEASEFIRE: The " + HOME_COUNTRY + " signs a humiliating "
+                 + "treaty. The warehouse is blamed 'for vibes'.")
+
 # ---------------------------------------------------------------------------
 # Debug: shortcuts for demos and play-testing
 # ---------------------------------------------------------------------------
@@ -307,6 +316,9 @@ DEBUG_JUMP_WAR = "war"
 DEBUG_JUMP_THREAT = "threat"
 DEBUG_JUMP_WAVE = "wave"
 DEBUG_JUMP_DIRE = "dire"
+DEBUG_JUMP_LAST = "last"
+DEBUG_JUMP_WIN = "win"
+DEBUG_JUMP_LOSE = "lose"
 # Lifetime earnings that make every peacetime research appear.
 DEBUG_RESEARCH_EARNED = 25000.0
 
@@ -1893,6 +1905,54 @@ def expected_after_buying_manpads() -> State:
     return state
 
 
+def make_last_wave_state(war_goods_sold: int) -> State:
+    """Build a war State fighting the last wave, about to win it.
+
+    Args:
+        war_goods_sold: War goods sold so far.
+
+    Returns:
+        A war State in wave WAVE_COUNT with one weak drone left.
+    """
+    state = make_wave_state()
+    state.wave_number = WAVE_COUNT
+    state.waves_defended = WAVE_COUNT - 1
+    state.war_goods_sold = war_goods_sold
+    return state
+
+
+def make_finished_war_state(war_goods_sold: int) -> State:
+    """Build a State whose war is over.
+
+    Args:
+        war_goods_sold: War goods sold during the war.
+
+    Returns:
+        A war-over State after all WAVE_COUNT waves.
+    """
+    state = make_war_state()
+    state.game_phase = PHASE_WAR_OVER
+    state.seen_war_tutorial = True
+    state.wave_number = WAVE_COUNT
+    state.waves_defended = 30
+    state.war_goods_sold = war_goods_sold
+    return state
+
+
+def make_report_view_state(war_goods_sold: int) -> State:
+    """Build the finished war State while it views the war report.
+
+    Args:
+        war_goods_sold: War goods sold during the war.
+
+    Returns:
+        The finished war State with the war report page showing.
+    """
+    state = make_finished_war_state(war_goods_sold)
+    state.current_page = PAGE_WAR_REPORT
+    return state
+
+
 def make_war_view_state() -> State:
     """Build the war State while it views the War page.
 
@@ -2578,8 +2638,11 @@ def war_badge(state: State) -> str:
         state: The current game state.
 
     Returns:
-        " ⚠️" during a wave, " ❗" while the briefing is unread, else "".
+        " ⚠️" during a wave, " ❗" while the briefing is unread, " 📜"
+        after the war, else "".
     """
+    if state.game_phase == PHASE_WAR_OVER:
+        return " 📜"
     if is_wave_active(state):
         return " ⚠️"
     if state.game_phase == PHASE_WAR and not state.seen_war_tutorial:
@@ -2590,6 +2653,7 @@ def war_badge(state: State) -> str:
 assert_equal(war_badge(make_new_state()), "")
 assert_equal(war_badge(make_war_state()), " ❗")
 assert_equal(war_badge(make_wave_state()), " ⚠️")
+assert_equal(war_badge(make_finished_war_state(0)), " 📜")
 
 
 def wave_start_headline(wave_number: int, count: int) -> str:
@@ -2628,6 +2692,40 @@ def start_wave(state: State) -> None:
     state.threat = 0.0
     state.news_feed = add_news(state.news_feed, wave_start_headline(
         state.wave_number, len(state.attackers)))
+
+
+def is_war_won(war_goods_sold: int) -> bool:
+    """Check whether enough war goods were sold to win the war.
+
+    Args:
+        war_goods_sold: War goods sold during the war.
+
+    Returns:
+        True if it reached WAR_VICTORY_GOODS.
+    """
+    return war_goods_sold >= WAR_VICTORY_GOODS
+
+
+assert_equal(is_war_won(WAR_VICTORY_GOODS - 1), False)
+assert_equal(is_war_won(WAR_VICTORY_GOODS), True)
+
+
+def finish_war(state: State) -> None:
+    """End the war: switch to the war-over phase and post the outcome.
+
+    The economy keeps running afterwards.
+
+    Args:
+        state: The game state to update.
+    """
+    state.game_phase = PHASE_WAR_OVER
+    state.attackers = []
+    state.wave_ms_left = 0
+    state.threat = 0.0
+    if is_war_won(state.war_goods_sold):
+        state.news_feed = add_news(state.news_feed, WAR_WON_NEWS)
+    else:
+        state.news_feed = add_news(state.news_feed, WAR_LOST_NEWS)
 
 
 def raid_multiplier(raid_ms_left: int) -> float:
@@ -2701,6 +2799,8 @@ def apply_raid_damage(state: State, survivors: int) -> str:
 def end_wave(state: State) -> None:
     """Finish the current wave: record a win, or apply the raid damage.
 
+    After the last wave, this also ends the war.
+
     Args:
         state: The game state to update.
     """
@@ -2718,6 +2818,8 @@ def end_wave(state: State) -> None:
     state.news_feed = add_news(state.news_feed, state.last_wave_report)
     state.attackers = []
     state.wave_ms_left = 0
+    if state.wave_number >= WAVE_COUNT:
+        finish_war(state)
 
 
 def run_wave(state: State, interval_ms: int) -> None:
@@ -2761,6 +2863,13 @@ assert_equal(state_after_wave_tick(make_losing_wave_state()).raid_ms_left,
              RAID_PENALTY_MS_PER_SURVIVOR)
 assert_equal(state_after_wave_tick(make_losing_wave_state()).waves_defended,
              0)
+# Ending the last wave ends the war; war goods sold decide the outcome.
+assert_equal(state_after_wave_tick(
+    make_last_wave_state(WAR_VICTORY_GOODS)).game_phase, PHASE_WAR_OVER)
+assert_equal(state_after_wave_tick(
+    make_last_wave_state(WAR_VICTORY_GOODS)).news_feed[0], WAR_WON_NEWS)
+assert_equal(state_after_wave_tick(make_last_wave_state(0)).news_feed[0],
+             WAR_LOST_NEWS)
 
 
 def run_intermission(state: State, war_units: int, interval_ms: int) -> None:
@@ -2803,7 +2912,8 @@ def run_war_economy(state: State, interval_ms: int) -> None:
 
     During the war, this counts war goods sold, then either fights the
     current wave or fills the threat meter between waves (it uses
-    goods_sold_last_tick, so call it after run_selling).
+    goods_sold_last_tick, so call it after run_selling). After the war,
+    only the air raid penalty keeps counting down.
 
     Args:
         state: The game state to update.
@@ -2812,7 +2922,9 @@ def run_war_economy(state: State, interval_ms: int) -> None:
     if state.game_phase == PHASE_PEACE:
         if state.total_earned >= WAR_START_EARNED:
             start_war(state)
-    elif state.game_phase == PHASE_WAR:
+    elif state.game_phase == PHASE_WAR_OVER:
+        state.raid_ms_left = max(0, state.raid_ms_left - interval_ms)
+    else:
         war_units = war_units_sold(state.goods_sold_last_tick,
                                    state.goods_types)
         state.war_goods_sold = state.war_goods_sold + war_units
@@ -5387,6 +5499,61 @@ def build_defense_shop(state: State) -> Div:
     return Div(rows, classes="card")
 
 
+def war_report_lines(state: State) -> list[str]:
+    """Summarize the war for the victory and defeat pages.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        One line each for waves defended, waves lost, and war goods sold.
+    """
+    return [
+        "Waves defended: " + str(state.waves_defended) + " of "
+        + str(state.wave_number),
+        "Waves that broke through: "
+        + str(state.wave_number - state.waves_defended),
+        "War goods sold: " + str(state.war_goods_sold) + " (needed "
+        + str(WAR_VICTORY_GOODS) + " to win)",
+    ]
+
+
+assert_equal(war_report_lines(make_finished_war_state(100))[1],
+             "Waves that broke through: 5")
+
+
+def build_war_report_content(state: State, is_victory: bool) -> list:
+    """Build the victory or defeat page.
+
+    Args:
+        state: The current game state.
+        is_victory: Whether to show the victory page.
+
+    Returns:
+        A list of the page's components.
+    """
+    if is_victory:
+        title = "🏆 Victory"
+        message = ("The " + ENEMY_COUNTRY + " ran out of patience before "
+                   + "the warehouse ran out of war goods.")
+    else:
+        title = "🏳️ Defeat"
+        message = ("The front collapsed for lack of supplies. Somewhere, a "
+                   + "spreadsheet says it was not our fault.")
+    return [
+        Div(build_live_content(state), id="live_area"),
+        Div(Div(build_card_head(title, []), Div(message),
+                BulletedList(war_report_lines(state)), classes="card"),
+            Div(build_card_head("Epilogue", []),
+                Div("The ending of Untitled Warehouse Inc. arrives in a "
+                    + "later update. The warehouse keeps running.",
+                    classes="muted"),
+                Button("Back to the Company", "company_page"),
+                classes="card"),
+            classes="page two-col"),
+    ]
+
+
 def build_war_content(state: State) -> list:
     """Build the War page's content.
 
@@ -5439,10 +5606,13 @@ def nav_section(current_page: str) -> str:
         current_page: One of the PAGE_ constants.
 
     Returns:
-        PAGE_BUSINESS for the Research sub-page, otherwise the page itself.
+        PAGE_BUSINESS for Research, PAGE_WAR for the war report, otherwise
+        the page itself.
     """
     if current_page == PAGE_RESEARCH:
         return PAGE_BUSINESS
+    if current_page == PAGE_WAR_REPORT:
+        return PAGE_WAR
     return current_page
 
 
@@ -5676,6 +5846,8 @@ def build_live_content(state: State) -> list:
     if state.current_page == PAGE_DEBUG:
         return [build_top_bar(state)]
     if state.current_page == PAGE_WAR:
+        return [build_top_bar(state)]
+    if state.current_page == PAGE_WAR_REPORT:
         return [build_top_bar(state)]
     if state.current_page == PAGE_ARTIFACTS:
         return [build_top_bar(state),
@@ -6402,8 +6574,50 @@ assert_equal(save_policies(make_finished_research_state(5), False, False,
 
 
 @route
+def war_victory_page(state: State) -> Page:
+    """Show the victory page with a summary of the war.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The victory page.
+    """
+    state.current_page = PAGE_WAR_REPORT
+    return Page(state, build_war_report_content(state, True))
+
+
+assert_equal(war_victory_page(make_finished_war_state(WAR_VICTORY_GOODS)),
+             Page(make_report_view_state(WAR_VICTORY_GOODS),
+                  build_war_report_content(
+                      make_report_view_state(WAR_VICTORY_GOODS), True)))
+
+
+@route
+def war_defeat_page(state: State) -> Page:
+    """Show the defeat page with a summary of the war.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The defeat page.
+    """
+    state.current_page = PAGE_WAR_REPORT
+    return Page(state, build_war_report_content(state, False))
+
+
+assert_equal(war_defeat_page(make_finished_war_state(0)),
+             Page(make_report_view_state(0),
+                  build_war_report_content(make_report_view_state(0),
+                                           False)))
+
+
+@route
 def war_page(state: State) -> Page:
     """Show the War page: the battle board, briefing, and defense shop.
+
+    After the war, it shows the victory or defeat page instead.
 
     Args:
         state: The current game state.
@@ -6411,12 +6625,21 @@ def war_page(state: State) -> Page:
     Returns:
         The War page.
     """
+    if state.game_phase == PHASE_WAR_OVER:
+        if is_war_won(state.war_goods_sold):
+            return war_victory_page(state)
+        return war_defeat_page(state)
     state.current_page = PAGE_WAR
     return Page(state, build_war_content(state))
 
 
 assert_equal(war_page(make_war_state()),
              make_expected_war_page(make_war_view_state()))
+# After the war, the War page shows the right report.
+assert_equal(war_page(make_finished_war_state(WAR_VICTORY_GOODS)),
+             war_victory_page(make_finished_war_state(WAR_VICTORY_GOODS)))
+assert_equal(war_page(make_finished_war_state(0)),
+             war_defeat_page(make_finished_war_state(0)))
 
 
 @route
@@ -6783,21 +7006,50 @@ assert_equal(lower_markup(make_new_state()),
 # Debug: shortcuts for demos (hidden when DEBUG_TOOLS is False)
 # ---------------------------------------------------------------------------
 
-def debug_start_wave(state: State, skip_to_dire: bool) -> None:
-    """Start the war if needed, skip the briefing, and start a wave now.
+def debug_ensure_war(state: State) -> None:
+    """Start the war if it hasn't started, and skip the briefing.
 
     Args:
         state: The game state to update.
-        skip_to_dire: Whether to jump to the first dire wave.
     """
     state.total_earned = max(state.total_earned, WAR_START_EARNED)
     if state.game_phase == PHASE_PEACE:
         start_war(state)
     state.seen_war_tutorial = True
+
+
+def debug_start_wave(state: State, waves_before: int) -> None:
+    """Start the war if needed and start a wave right now.
+
+    Args:
+        state: The game state to update.
+        waves_before: Skip ahead so this many waves count as started
+            (0 = just start the next wave). Never goes backwards.
+    """
+    debug_ensure_war(state)
     if state.game_phase == PHASE_WAR and not is_wave_active(state):
-        if skip_to_dire:
-            state.wave_number = DIRE_WAVE_EVERY - 1
+        if waves_before > state.wave_number:
+            state.wave_number = waves_before
         start_wave(state)
+
+
+def debug_end_war(state: State, is_victory: bool) -> None:
+    """End the war right now with the chosen outcome.
+
+    Args:
+        state: The game state to update.
+        is_victory: Whether the war should be won.
+    """
+    debug_ensure_war(state)
+    if state.game_phase == PHASE_WAR:
+        if is_victory:
+            state.war_goods_sold = max(state.war_goods_sold,
+                                       WAR_VICTORY_GOODS)
+            state.waves_defended = WAVE_COUNT
+        else:
+            state.war_goods_sold = 0
+        state.wave_number = WAVE_COUNT
+        finish_war(state)
 
 
 def apply_debug_jump(state: State, target: str) -> State:
@@ -6822,8 +7074,14 @@ def apply_debug_jump(state: State, target: str) -> State:
             start_war(state)
     elif target == DEBUG_JUMP_THREAT and state.game_phase == PHASE_WAR:
         state.threat = MAX_THREAT - 1
-    elif target == DEBUG_JUMP_WAVE or target == DEBUG_JUMP_DIRE:
-        debug_start_wave(state, target == DEBUG_JUMP_DIRE)
+    elif target == DEBUG_JUMP_WAVE:
+        debug_start_wave(state, 0)
+    elif target == DEBUG_JUMP_DIRE:
+        debug_start_wave(state, DIRE_WAVE_EVERY - 1)
+    elif target == DEBUG_JUMP_LAST:
+        debug_start_wave(state, WAVE_COUNT - 1)
+    elif target == DEBUG_JUMP_WIN or target == DEBUG_JUMP_LOSE:
+        debug_end_war(state, target == DEBUG_JUMP_WIN)
     return state
 
 
@@ -6840,6 +7098,12 @@ assert_equal(apply_debug_jump(make_new_state(), DEBUG_JUMP_WAVE).wave_number,
              1)
 assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_DIRE).wave_number,
              DIRE_WAVE_EVERY)
+assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_LAST).wave_number,
+             WAVE_COUNT)
+assert_equal(apply_debug_jump(make_new_state(), DEBUG_JUMP_WIN).news_feed[0],
+             WAR_WON_NEWS)
+assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_LOSE).game_phase,
+             PHASE_WAR_OVER)
 
 
 def build_debug_card() -> Div:
@@ -6872,6 +7136,12 @@ def build_debug_card() -> Div:
                    [Argument("target", DEBUG_JUMP_WAVE)]),
             Button("Skip to dire wave " + str(DIRE_WAVE_EVERY), "debug_jump",
                    [Argument("target", DEBUG_JUMP_DIRE)]),
+            Button("Skip to the last wave", "debug_jump",
+                   [Argument("target", DEBUG_JUMP_LAST)]),
+            Button("End the war (win)", "debug_jump",
+                   [Argument("target", DEBUG_JUMP_WIN)]),
+            Button("End the war (lose)", "debug_jump",
+                   [Argument("target", DEBUG_JUMP_LOSE)]),
             classes="button-row"),
         classes="card narrow",
     )

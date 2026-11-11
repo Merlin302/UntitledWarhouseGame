@@ -27,6 +27,8 @@ to a TA. Read this whole file before every task.
 - **Keep `REQUIREMENTS.md` updated**: a checklist mapping each assignment
   requirement to the exact function/field that satisfies it. I'll use it for my
   video and to double-check before submitting.
+- **Keep `docs/playtest_issues.md` updated**: add issues noticed while
+  play-testing (yours or mine), and move fixed ones to "Resolved".
 
 ## Assignment requirements (missing more than 2 = zero credit)
 
@@ -238,12 +240,20 @@ living attacker there, leftovers carry over. Failing a wave (`end_wave` /
 `DIRE_EQUIPMENT_LOSS_FRACTION` of each defense. On the War page the top bar
 is not sticky and `#live_numbers` holds the whole battle board (Drafter
 2.1.4 Fragments update one element); the briefing and shop sit outside it.
-Planned next: W3 the end of the war (win/lose pages from war goods sold).
+**End of the war (phase W3 built):** when wave `WAVE_COUNT` ends,
+`end_wave` calls `finish_war`: `game_phase` becomes war_over and a ceasefire
+headline is posted. The war is won if `war_goods_sold >= WAR_VICTORY_GOODS`
+(`is_war_won`); failed waves matter because their production penalty means
+fewer war goods sold. The War button becomes "War 📜", and `war_page` then
+shows `war_victory_page` or `war_defeat_page` (waves defended, waves that
+broke through, war goods sold, and an Epilogue placeholder for the ending
+that comes later). The economy keeps running after the war.
 
 **Debug page (🐞 in the nav, hidden when `DEBUG_TOOLS = False`):** buttons
 that add money and jump ahead (restart in peace, unlock peacetime research,
 start the war, fill the threat meter, start the next wave now, skip to
-dire wave 10), for demos and play-testing.
+dire wave 10, skip to the last wave, end the war with a win or a loss), for
+demos and play-testing.
 
 **Artifacts page (gacha):** pay for expeditions (buttons for X1, X5, X10,
 X100; price grows only slightly) to get random artifacts with rarity tiers

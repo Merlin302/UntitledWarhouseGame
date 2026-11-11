@@ -5,20 +5,22 @@ off what is done and name the exact function or field that satisfies it.
 
 ## Site
 
-- [x] At least 7 routes — _where:_ 26 routes: `index`, `start_game`,
+- [x] At least 7 routes — _where:_ 28 routes: `index`, `start_game`,
       `company_page`, `business_page`, `research_page`, `buy_research`,
       `artifacts_page`, `organize_page`,
       `casino_page`, `start_typing_round`, `submit_typing_round`,
       `save_goods`, `save_policies`, `run_expedition`, `save_artifact_grid`,
       `set_buy_amount`, `buy_item`, `raise_markup`, `lower_markup`, `tick`,
       `debug_page`, `debug_add_money`, `debug_jump`, `war_page`,
-      `dismiss_war_tutorial`, `buy_defense`
+      `dismiss_war_tutorial`, `buy_defense`, `war_victory_page`,
+      `war_defeat_page`
 - [x] At least 5 pages — _where:_ start page (`index`), company page
       (`company_page`), Business page (`business_page`), Research page
       (`research_page`), Artifacts page
       (`artifacts_page`), Organize page (`organize_page`), Casino page
-      (`casino_page`), War page (`war_page`), Debug page (`debug_page`,
-      demo tool)
+      (`casino_page`), War page (`war_page`), victory page
+      (`war_victory_page`), defeat page (`war_defeat_page`), Debug page
+      (`debug_page`, demo tool)
 - [x] `State` dataclass with at least 4 fields — _where:_ `State` (36 fields)
 - [x] At least one State field is a list/dict of a second dataclass —
       _where:_ `State.owned_artifacts: list[Artifact]`,
@@ -66,7 +68,9 @@ off what is done and name the exact function or field that satisfies it.
       starts / threat full), `build_goods_row` (sanctioned goods),
       `apply_debug_jump` (which shortcut), `run_intermission` (meter full,
       briefing read), `run_wave` (wave won or out of time), `end_wave` (won
-      or broke through), `damage_attackers` (same altitude and alive),
+      or broke through; last wave ends the war), `finish_war` (won or
+      lost), `war_page` (war over: which report), `damage_attackers` (same
+      altitude and alive),
       `defense_dps` (which altitude), `buy_defense` (can afford)
 - [x] At least 1 loop over the list/dict of dataclass instances, used in a
       meaningful way — _where (main answer):_ `total_artifact_bonus` loops
