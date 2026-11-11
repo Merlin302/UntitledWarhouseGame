@@ -5,18 +5,19 @@ off what is done and name the exact function or field that satisfies it.
 
 ## Site
 
-- [x] At least 7 routes — _where:_ 20 routes: `index`, `start_game`,
+- [x] At least 7 routes — _where:_ 23 routes: `index`, `start_game`,
       `company_page`, `business_page`, `research_page`, `buy_research`,
       `artifacts_page`, `organize_page`,
       `casino_page`, `start_typing_round`, `submit_typing_round`,
       `save_goods`, `save_policies`, `run_expedition`, `save_artifact_grid`,
-      `set_buy_amount`, `buy_item`, `raise_markup`, `lower_markup`, `tick`
+      `set_buy_amount`, `buy_item`, `raise_markup`, `lower_markup`, `tick`,
+      `debug_page`, `debug_add_money`, `debug_jump`
 - [x] At least 5 pages — _where:_ start page (`index`), company page
       (`company_page`), Business page (`business_page`), Research page
       (`research_page`), Artifacts page
       (`artifacts_page`), Organize page (`organize_page`), Casino page
-      (`casino_page`)
-- [x] `State` dataclass with at least 4 fields — _where:_ `State` (25 fields)
+      (`casino_page`), Debug page (`debug_page`, demo tool)
+- [x] `State` dataclass with at least 4 fields — _where:_ `State` (28 fields)
 - [x] At least one State field is a list/dict of a second dataclass —
       _where:_ `State.owned_artifacts: list[Artifact]`,
       `State.buy_items: list[BuyItem]`,
@@ -32,7 +33,9 @@ off what is done and name the exact function or field that satisfies it.
       `expeditions_bought` and `last_expedition_finds` (`run_expedition`),
       `tick_count` (`tick`), `typing_round` and `last_casino_result`
       (`start_typing_round`, `submit_typing_round`), `research` (`.is_done`),
-      `money`, and `news_feed` (`buy_research`, through `complete_research`)
+      `money`, and `news_feed` (`buy_research`, through `complete_research`),
+      `game_phase`, `war_goods_sold`, and `threat` (`tick`, through
+      `run_war_economy`; also `debug_jump`)
 - [x] At least 3 input fields (TextBox, CheckBox, SelectBox, TextArea)
       — _where:_ `TextBox("company_name")` in `build_start_content`, one
       `CheckBox` per goods type in `build_goods_form`, one `CheckBox` per
@@ -52,7 +55,9 @@ off what is done and name the exact function or field that satisfies it.
       `roll_prompt` (difficulty), `start_typing_round` (bet accepted),
       `buy_research` (can buy), `is_requirement_met` (research needed),
       `nav_label` (research badge), `build_research_list` (available or
-      none), `policy_label` (which lock applies)
+      none), `policy_label` (which lock applies), `run_war_economy` (war
+      starts / threat full), `build_goods_row` (sanctioned goods),
+      `apply_debug_jump` (which shortcut)
 - [x] At least 1 loop over the list/dict of dataclass instances, used in a
       meaningful way — _where (main answer):_ `total_artifact_bonus` loops
       over `state.owned_artifacts`, skips unplaced artifacts, and totals the
@@ -62,7 +67,8 @@ off what is done and name the exact function or field that satisfies it.
       `total_goods_bonus` (`state.goods_types`), `total_strike_risk` and the
       other `total_policy_...` helpers (`state.policies`),
       `count_available_research`, `is_research_done` (linear search), and
-      the `total_research_...` helpers (`state.research`)
+      the `total_research_...` helpers (`state.research`), `war_units_sold`
+      (`state.goods_types`, counts war goods being sold)
 - [x] Legitimate purpose (entertainment: it's a game) — _where:_ the whole site
 - [x] No global variables; only ALL_CAPS constants, never mutated — _where:_
       constants block; `make_starting_items`, `make_starting_goods`,

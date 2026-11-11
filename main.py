@@ -75,6 +75,9 @@ IMPORT_LICENSES = "Import Licenses"
 LABOR_CONSULTANCY = "Labor Relations Consultancy"
 TUSHONKA_BUYOUT = "Buy Out Tushonka Canning Co."
 BOXLY_ACQUISITION = "Acquire Rival: Boxly Logistics"
+DEFENSE_LICENSE = "Defense Procurement License"
+PARCELPRO_ABSORPTION = "Absorb Fleeing Rival: ParcelPro"
+OZONIX_NATIONALIZATION = "Nationalize Ozonix Marketplace"
 NO_REQUIREMENT = ""
 
 # Each row: name, emoji, base cost, effect kind, effect amount,
@@ -114,14 +117,24 @@ PAGE_RESEARCH = "research"
 CANNED_FOOD = "Canned Food"
 
 # Each row: name, emoji, CheckBox name (must match a save_goods parameter),
-# income bonus as a fraction, and the research it requires.
+# income bonus as a fraction, the research it requires, whether it is a
+# war good, whether wartime sanctions ban it, and the extra income bonus it
+# gets during the war (when the company is the only supplier left).
 STARTING_GOODS_ROWS = [
-    ["Household Goods", "🧺", "sell_household", 0.05, NO_REQUIREMENT],
-    [CANNED_FOOD, "🥫", "sell_canned_food", 0.10, NO_REQUIREMENT],
-    ["Electronics", "📺", "sell_electronics", 0.15, NO_REQUIREMENT],
-    ["War Supplies", "💣", "sell_war_supplies", 1.00, NO_REQUIREMENT],
+    ["Household Goods", "🧺", "sell_household", 0.05, NO_REQUIREMENT,
+     False, False, 0.10],
+    [CANNED_FOOD, "🥫", "sell_canned_food", 0.10, NO_REQUIREMENT,
+     False, False, 0.25],
+    ["Electronics", "📺", "sell_electronics", 0.15, NO_REQUIREMENT,
+     False, True, 0.0],
+    ["War Supplies", "💣", "sell_war_supplies", 1.00, NO_REQUIREMENT,
+     True, False, 0.0],
     ["Imported Luxuries", "💎", "sell_imported_luxuries", 0.25,
-     IMPORT_LICENSES],
+     IMPORT_LICENSES, False, True, 0.0],
+    ["Body Armor", "🦺", "sell_body_armor", 0.60, DEFENSE_LICENSE,
+     True, False, 0.0],
+    ["Drone Components", "🔧", "sell_drone_parts", 0.80, DEFENSE_LICENSE,
+     True, False, 0.0],
 ]
 
 # Each row: name, emoji, CheckBox name (must match a save_policies parameter),
@@ -147,43 +160,106 @@ CATEGORY_WORLD = "world"
 # Each row: name, emoji, description, category, cost, stocking bonus,
 # delivery bonus (both fractions), market size bonus, the goods type it
 # boosts ("" for none) and that goods bonus, the prerequisite research
-# (NO_REQUIREMENT if none), lifetime earnings needed to appear, and the
-# World News headline posted when it is completed.
+# (NO_REQUIREMENT if none), lifetime earnings needed to appear, the World
+# News headline posted when it is completed, and whether it only appears
+# once the war has started.
 RESEARCH_ROWS = [
     [LEAN_PROCUREMENT, "📉",
      "Consultants remove three chairs and call it a methodology.",
      CATEGORY_STAT, 800.0, 0.10, 0.0, 0, "", 0.0, NO_REQUIREMENT, 500.0,
-     "Procurement team goes lean; snacks reclassified as 'waste'."],
+     "Procurement team goes lean; snacks reclassified as 'waste'.", False],
     [ROUTE_OPTIMIZATION, "🧭",
      "An app that tells drivers the road is shorter than they think.",
      CATEGORY_STAT, 1000.0, 0.0, 0.10, 0, "", 0.0, NO_REQUIREMENT, 800.0,
-     "Drivers report the app keeps routing them through a lake."],
+     "Drivers report the app keeps routing them through a lake.", False],
     [PICKUP_TRUCK_STUDY, "🛻",
      "A 40-page study concludes that bigger trucks hold more boxes.",
      CATEGORY_EQUIPMENT, 1500.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT,
-     1500.0, "Study confirms trucks are 'like vans, but more so'."],
+     1500.0, "Study confirms trucks are 'like vans, but more so'.", False],
     [CONVEYOR_RESEARCH, "⚙️",
      "Engineers discover that belts can move boxes without lunch breaks.",
      CATEGORY_EQUIPMENT, 2500.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT,
-     3000.0, "New conveyor belt prototype eats only one intern."],
+     3000.0, "New conveyor belt prototype eats only one intern.", False],
     [IMPORT_LICENSES, "📜",
      "Paperwork so thick it is itself a taxable import.",
      CATEGORY_UNLOCK, 3000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 3000.0,
-     "Customs office approves licenses after a 'gift basket'."],
+     "Customs office approves licenses after a 'gift basket'.", False],
     [LABOR_CONSULTANCY, "🤝",
      "Experts in making 'no' sound like 'great question'.",
      CATEGORY_UNLOCK, 4000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 5000.0,
-     "Consultants rename workers 'independent box partners'."],
+     "Consultants rename workers 'independent box partners'.", False],
     [TUSHONKA_BUYOUT, "🥫",
      "Own the cans, own the soup, own the supply chain of soup.",
      CATEGORY_WORLD, 8000.0, 0.0, 0.0, 0, CANNED_FOOD, 0.15,
      IMPORT_LICENSES, 8000.0,
-     "Tushonka Canning Co. acquired; stew prices 'stable for now'."],
+     "Tushonka Canning Co. acquired; stew prices 'stable for now'.", False],
     [BOXLY_ACQUISITION, "📦",
      "Buy the competition, then politely forget it ever existed.",
      CATEGORY_WORLD, 25000.0, 0.0, 0.0, 50, "", 0.0, NO_REQUIREMENT,
-     15000.0, "Boxly Logistics absorbed; its customers 'welcomed home'."],
+     15000.0, "Boxly Logistics absorbed; its customers 'welcomed home'.",
+     False],
+    [DEFENSE_LICENSE, "🎖️",
+     "A stamp that turns a warehouse into a 'strategic asset'.",
+     CATEGORY_UNLOCK, 20000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 0.0,
+     "Ministry of Defense approves warehouse as 'basically a fort'.", True],
+    [PARCELPRO_ABSORPTION, "🏃",
+     "Its foreign owners left in a hurry. Their customers did not.",
+     CATEGORY_WORLD, 30000.0, 0.0, 0.0, 40, "", 0.0, NO_REQUIREMENT, 0.0,
+     "ParcelPro warehouses 'find a new home' after owners flee.", True],
+    [OZONIX_NATIONALIZATION, "🏛️",
+     "Patriotic duty requires that we own the second-biggest marketplace.",
+     CATEGORY_WORLD, 60000.0, 0.0, 0.0, 60, "", 0.0, PARCELPRO_ABSORPTION,
+     0.0, "Ozonix nationalized; shareholders thanked for their service.",
+     True],
 ]
+
+# ---------------------------------------------------------------------------
+# War: numbers for the war (W1: the war economy)
+# ---------------------------------------------------------------------------
+
+PHASE_PEACE = "peace"
+PHASE_WAR = "war"
+PHASE_WAR_OVER = "war_over"
+
+HOME_COUNTRY = "Republic of Varnia"
+ENEMY_COUNTRY = "Kalyxian Federation"
+
+# Lifetime earnings at which the war breaks out.
+WAR_START_EARNED = 40000.0
+WAR_START_NEWS = ("BREAKING: The " + ENEMY_COUNTRY + " invades the "
+                  + HOME_COUNTRY + "! Markets 'mildly concerned'.")
+SANCTIONS_NEWS = ("Sanctions ban electronics and luxury imports; the "
+                  + "company is now the only supplier of soup.")
+SIRENS_NEWS = "Air raid sirens tested citywide. Nothing happens. Yet."
+
+WAVE_COUNT = 35
+# Every 10th wave, and the last wave, is a dire wave.
+DIRE_WAVE_EVERY = 10
+# Raise this (e.g. to 10) to make waves and intermissions 10x shorter
+# while testing. Keep it at 1 for the real game.
+DEBUG_WAR_SPEED = 1
+
+MAX_THREAT = 100.0
+# Threat added per second, plus a little more for each war good sold in
+# the latest tick. The cap keeps intermissions from getting too short.
+THREAT_PER_SECOND = 2.0
+THREAT_PER_WAR_UNIT = 0.05
+MAX_THREAT_PER_SECOND = 5.0
+
+# ---------------------------------------------------------------------------
+# Debug: shortcuts for demos and play-testing
+# ---------------------------------------------------------------------------
+
+# Set to False before submitting to hide the 🐞 Debug page.
+DEBUG_TOOLS = True
+PAGE_DEBUG = "debug"
+DEBUG_MONEY_AMOUNTS = [10000, 100000, 1000000]
+DEBUG_JUMP_PEACE = "peace"
+DEBUG_JUMP_RESEARCH = "research"
+DEBUG_JUMP_WAR = "war"
+DEBUG_JUMP_THREAT = "threat"
+# Lifetime earnings that make every peacetime research appear.
+DEBUG_RESEARCH_EARNED = 25000.0
 
 STRIKE_DURATION_TICKS = 5
 # Stocking and delivery are multiplied by this during a strike.
@@ -695,6 +771,9 @@ class GoodsType:
         input_name: The name of its CheckBox on the Business page.
         income_bonus: The income bonus as a fraction while selling it.
         required_research: Research needed for it to appear ("" = none).
+        is_war_good: Whether its sales count as war goods sold.
+        is_sanctioned: Whether wartime sanctions stop it being sold.
+        war_bonus: Extra income bonus during the war.
         is_selling: Whether the company currently sells it.
     """
     name: str
@@ -702,6 +781,9 @@ class GoodsType:
     input_name: str
     income_bonus: float
     required_research: str
+    is_war_good: bool
+    is_sanctioned: bool
+    war_bonus: float
     is_selling: bool
 
 
@@ -754,6 +836,7 @@ class Research:
         prerequisite: Research that must be done first ("" for none).
         unlock_at_earned: Lifetime earnings needed for it to appear.
         headline: The World News headline posted when it is done.
+        requires_war: Whether it only appears once the war has started.
         is_done: Whether the player has completed it.
     """
     name: str
@@ -769,6 +852,7 @@ class Research:
     prerequisite: str
     unlock_at_earned: float
     headline: str
+    requires_war: bool
     is_done: bool
 
 
@@ -840,6 +924,9 @@ class State:
         typing_round: The casino typing test in progress, if any.
         last_casino_result: The message from the latest casino action.
         research: Every research project and whether it is done.
+        game_phase: One of the PHASE_ constants (peace, war, war over).
+        war_goods_sold: War goods sold since the war started.
+        threat: How close the next enemy attack is, from 0 to MAX_THREAT.
     """
     company_name: str
     money: float
@@ -866,6 +953,9 @@ class State:
     typing_round: TypingRound
     last_casino_result: str
     research: list[Research]
+    game_phase: str
+    war_goods_sold: int
+    threat: float
 
 
 def make_no_typing_round() -> TypingRound:
@@ -899,7 +989,7 @@ def make_starting_goods() -> list[GoodsType]:
     goods_types = []
     for row in STARTING_GOODS_ROWS:
         goods_types.append(GoodsType(row[0], row[1], row[2], row[3], row[4],
-                                     False))
+                                     row[5], row[6], row[7], False))
     return goods_types
 
 
@@ -926,7 +1016,8 @@ def make_starting_research() -> list[Research]:
     for row in RESEARCH_ROWS:
         research.append(Research(row[0], row[1], row[2], row[3], row[4],
                                  row[5], row[6], row[7], row[8], row[9],
-                                 row[10], row[11], row[12], False))
+                                 row[10], row[11], row[12], row[13],
+                                 False))
     return research
 
 
@@ -962,6 +1053,9 @@ def make_new_state() -> State:
         typing_round=make_no_typing_round(),
         last_casino_result="",
         research=make_starting_research(),
+        game_phase=PHASE_PEACE,
+        war_goods_sold=0,
+        threat=0.0,
     )
 
 
@@ -1009,7 +1103,7 @@ def make_test_goods(income_bonus: float, is_selling: bool) -> GoodsType:
         A GoodsType with those values.
     """
     return GoodsType("Test", "T", "sell_test", income_bonus, NO_REQUIREMENT,
-                     is_selling)
+                     False, False, 0.0, is_selling)
 
 
 def make_test_policy(is_active: bool) -> Policy:
@@ -1449,7 +1543,7 @@ def make_test_research(name: str, prerequisite: str,
     """
     return Research(name, "R", "Testing.", CATEGORY_STAT, 100.0, 0.1, 0.2,
                     10, "Test", 0.5, prerequisite, 100.0, "Test done.",
-                    is_done)
+                    False, is_done)
 
 
 def make_research_state() -> State:
@@ -1526,6 +1620,55 @@ def expected_after_luxuries() -> State:
     state.current_page = PAGE_BUSINESS
     state.goods_types[4].is_selling = True
     return state
+
+
+def make_war_state() -> State:
+    """Build a State in the war that sells War Supplies and Household Goods.
+
+    Returns:
+        A wartime State with 10 units sold in the latest tick.
+    """
+    state = make_new_state()
+    state.game_phase = PHASE_WAR
+    state.total_earned = WAR_START_EARNED
+    state.goods_types[0].is_selling = True
+    state.goods_types[3].is_selling = True
+    state.goods_sold_last_tick = 10
+    return state
+
+
+def make_nearly_threatened_state() -> State:
+    """Build the war State with the threat meter almost full.
+
+    Returns:
+        The war State with the threat one point below full.
+    """
+    state = make_war_state()
+    state.threat = MAX_THREAT - 1
+    return state
+
+
+def make_debug_state() -> State:
+    """Build a new-game State that is viewing the Debug page.
+
+    Returns:
+        A new-game State whose current page is the Debug page.
+    """
+    state = make_new_state()
+    state.current_page = PAGE_DEBUG
+    return state
+
+
+def make_expected_debug_page(state: State) -> Page:
+    """Build the Debug page expected for a given State.
+
+    Args:
+        state: The State the page should show.
+
+    Returns:
+        The expected Debug page.
+    """
+    return Page(state, build_debug_content(state))
 
 
 def expected_after_gig_policy() -> State:
@@ -1667,20 +1810,23 @@ assert_equal(total_strike_risk(
 
 
 def set_goods_choices(goods_types: list[GoodsType], choices: list[bool],
-                      research: list[Research]) -> None:
+                      research: list[Research], game_phase: str) -> None:
     """Record which goods types the player chose to sell.
 
-    Goods whose required research isn't done stay unsold.
+    Goods whose required research isn't done, or that sanctions ban,
+    stay unsold.
 
     Args:
         goods_types: The goods types to update.
         choices: One True or False per goods type, in the same order.
         research: Every research project.
+        game_phase: One of the PHASE_ constants.
     """
     for index, goods in enumerate(goods_types):
         goods.is_selling = (choices[index]
                             and is_requirement_met(goods.required_research,
-                                                   research))
+                                                   research)
+                            and not is_sanctioned_now(goods, game_phase))
 
 
 def strike_multiplier(strike_ticks_left: int) -> float:
@@ -1738,6 +1884,214 @@ assert_equal(len(add_news(["x"] * MAX_NEWS_ITEMS, "new")), MAX_NEWS_ITEMS)
 
 
 # ---------------------------------------------------------------------------
+# War: the war economy (sanctions, war goods, and the threat meter)
+# ---------------------------------------------------------------------------
+
+def is_wartime(game_phase: str) -> bool:
+    """Check whether the war has started (it may already be over).
+
+    Sanctions and wartime bonuses stay after the war ends.
+
+    Args:
+        game_phase: One of the PHASE_ constants.
+
+    Returns:
+        True unless the game is still at peace.
+    """
+    return game_phase != PHASE_PEACE
+
+
+assert_equal(is_wartime(PHASE_PEACE), False)
+assert_equal(is_wartime(PHASE_WAR), True)
+assert_equal(is_wartime(PHASE_WAR_OVER), True)
+
+
+def goods_war_bonus(goods: GoodsType, game_phase: str) -> float:
+    """Find the extra income bonus a goods type gets during the war.
+
+    Args:
+        goods: The goods type.
+        game_phase: One of the PHASE_ constants.
+
+    Returns:
+        Its war bonus in wartime, otherwise 0.
+    """
+    if is_wartime(game_phase):
+        return goods.war_bonus
+    return 0.0
+
+
+assert_equal(goods_war_bonus(make_new_state().goods_types[1], PHASE_PEACE),
+             0.0)
+assert_equal(goods_war_bonus(make_new_state().goods_types[1], PHASE_WAR),
+             0.25)
+
+
+def is_sanctioned_now(goods: GoodsType, game_phase: str) -> bool:
+    """Check whether sanctions stop a goods type from being sold.
+
+    Args:
+        goods: The goods type.
+        game_phase: One of the PHASE_ constants.
+
+    Returns:
+        True if it is a sanctioned goods type and the war has started.
+    """
+    return goods.is_sanctioned and is_wartime(game_phase)
+
+
+assert_equal(is_sanctioned_now(make_new_state().goods_types[2], PHASE_PEACE),
+             False)
+assert_equal(is_sanctioned_now(make_new_state().goods_types[2], PHASE_WAR),
+             True)
+
+
+def war_units_sold(units_sold: int, goods_types: list[GoodsType]) -> int:
+    """Estimate how many of the units sold were war goods.
+
+    Sales are one combined number, so the war goods' share is the number
+    of war goods types being sold out of all goods types being sold.
+
+    Args:
+        units_sold: Units sold in a tick.
+        goods_types: Every goods type.
+
+    Returns:
+        The war goods' share of the units, rounded down.
+    """
+    selling_count = 0
+    war_count = 0
+    for goods in goods_types:
+        if goods.is_selling:
+            selling_count = selling_count + 1
+            if goods.is_war_good:
+                war_count = war_count + 1
+    if selling_count == 0:
+        return 0
+    return units_sold * war_count // selling_count
+
+
+assert_equal(war_units_sold(10, make_war_state().goods_types), 5)
+assert_equal(war_units_sold(10, make_new_state().goods_types), 0)
+
+
+def threat_per_second(war_units: int) -> float:
+    """Calculate how fast the threat meter fills.
+
+    Args:
+        war_units: War goods sold in the latest tick.
+
+    Returns:
+        Threat points per second, capped, times DEBUG_WAR_SPEED.
+    """
+    rate = THREAT_PER_SECOND + war_units * THREAT_PER_WAR_UNIT
+    if rate > MAX_THREAT_PER_SECOND:
+        rate = MAX_THREAT_PER_SECOND
+    return rate * DEBUG_WAR_SPEED
+
+
+assert_equal(threat_per_second(0), THREAT_PER_SECOND * DEBUG_WAR_SPEED)
+assert_equal(threat_per_second(20),
+             (THREAT_PER_SECOND + 1.0) * DEBUG_WAR_SPEED)
+assert_equal(threat_per_second(100000),
+             MAX_THREAT_PER_SECOND * DEBUG_WAR_SPEED)
+
+
+def add_threat(threat: float, per_second: float, interval_ms: int) -> float:
+    """Fill the threat meter for one tick, stopping at MAX_THREAT.
+
+    Using the tick length in milliseconds keeps the fill speed the same
+    in real seconds even if ticks get faster.
+
+    Args:
+        threat: The current threat.
+        per_second: Threat points added per second.
+        interval_ms: The length of one tick in milliseconds.
+
+    Returns:
+        The new threat value.
+    """
+    new_threat = threat + per_second * interval_ms / 1000
+    if new_threat > MAX_THREAT:
+        return MAX_THREAT
+    return new_threat
+
+
+assert_equal(add_threat(10.0, 2.0, 500), 11.0)
+assert_equal(add_threat(99.5, 2.0, 1000), MAX_THREAT)
+
+
+def start_war(state: State) -> None:
+    """Start the war: change the phase, apply sanctions, post the news.
+
+    Args:
+        state: The game state to update.
+    """
+    state.game_phase = PHASE_WAR
+    for goods in state.goods_types:
+        if goods.is_sanctioned:
+            goods.is_selling = False
+    state.news_feed = add_news(state.news_feed, SANCTIONS_NEWS)
+    state.news_feed = add_news(state.news_feed, WAR_START_NEWS)
+
+
+def run_war_economy(state: State, interval_ms: int) -> None:
+    """Start the war when earnings are high enough, or run its economy.
+
+    During the war, this counts war goods sold and fills the threat meter
+    (it uses goods_sold_last_tick, so call it after run_selling).
+
+    Args:
+        state: The game state to update.
+        interval_ms: The length of one tick in milliseconds.
+    """
+    if state.game_phase == PHASE_PEACE:
+        if state.total_earned >= WAR_START_EARNED:
+            start_war(state)
+    elif state.game_phase == PHASE_WAR:
+        war_units = war_units_sold(state.goods_sold_last_tick,
+                                   state.goods_types)
+        state.war_goods_sold = state.war_goods_sold + war_units
+        old_threat = state.threat
+        state.threat = add_threat(old_threat, threat_per_second(war_units),
+                                  interval_ms)
+        if old_threat < MAX_THREAT and state.threat == MAX_THREAT:
+            state.news_feed = add_news(state.news_feed, SIRENS_NEWS)
+
+
+def state_after_war_economy(state: State) -> State:
+    """Run the war economy for one 1000 ms tick and return the State.
+
+    Args:
+        state: The State to update.
+
+    Returns:
+        The same State, after run_war_economy.
+    """
+    run_war_economy(state, 1000)
+    return state
+
+
+# Too little earned: still at peace.
+assert_equal(state_after_war_economy(make_new_state()).game_phase,
+             PHASE_PEACE)
+# Enough earned: war starts, Electronics is banned, and the news says so.
+assert_equal(state_after_war_economy(make_veteran_state()).game_phase,
+             PHASE_WAR)
+assert_equal(state_after_war_economy(make_veteran_state()).news_feed[0],
+             WAR_START_NEWS)
+# During the war: 5 of 10 units were war goods, and the threat fills.
+assert_equal(state_after_war_economy(make_war_state()).war_goods_sold, 5)
+assert_equal(state_after_war_economy(make_war_state()).threat,
+             threat_per_second(5))
+# The meter tops out at MAX_THREAT and the sirens headline is posted once.
+assert_equal(state_after_war_economy(make_nearly_threatened_state()).threat,
+             MAX_THREAT)
+assert_equal(state_after_war_economy(
+    make_nearly_threatened_state()).news_feed[0], SIRENS_NEWS)
+
+
+# ---------------------------------------------------------------------------
 # Research: one-time projects that add bonuses and unlock new options
 # ---------------------------------------------------------------------------
 
@@ -1789,36 +2143,43 @@ assert_equal(is_requirement_met("A", [make_test_research("A", "", False)]),
 
 
 def is_research_available(project: Research, research: list[Research],
-                          total_earned: float) -> bool:
+                          total_earned: float, game_phase: str) -> bool:
     """Check whether a project can be researched now, ignoring money.
 
     Args:
         project: The project to check.
         research: Every research project, to look up the prerequisite.
         total_earned: The player's lifetime earnings.
+        game_phase: One of the PHASE_ constants.
 
     Returns:
-        True if it is unfinished, its prerequisite is done, and the
-        player has earned enough for it to appear.
+        True if it is unfinished, its prerequisite is done, the player
+        has earned enough, and (for war research) the war has started.
     """
     return (not project.is_done
             and total_earned >= project.unlock_at_earned
-            and is_requirement_met(project.prerequisite, research))
+            and is_requirement_met(project.prerequisite, research)
+            and (not project.requires_war or is_wartime(game_phase)))
 
 
 assert_equal(is_research_available(make_test_research("A", "", False), [],
-                                   99.0), False)
+                                   99.0, PHASE_PEACE), False)
 assert_equal(is_research_available(make_test_research("A", "", False), [],
-                                   100.0), True)
+                                   100.0, PHASE_PEACE), True)
 assert_equal(is_research_available(make_test_research("A", "", True), [],
-                                   100.0), False)
+                                   100.0, PHASE_PEACE), False)
 assert_equal(is_research_available(
     make_test_research("B", "A", False),
-    [make_test_research("A", "", False)], 100.0), False)
+    [make_test_research("A", "", False)], 100.0, PHASE_PEACE), False)
+# The Defense Procurement License only appears once the war starts.
+assert_equal(is_research_available(make_new_state().research[8], [],
+                                   WAR_START_EARNED, PHASE_PEACE), False)
+assert_equal(is_research_available(make_new_state().research[8], [],
+                                   WAR_START_EARNED, PHASE_WAR), True)
 
 
-def count_available_research(research: list[Research],
-                             total_earned: float) -> int:
+def count_available_research(research: list[Research], total_earned: float,
+                             game_phase: str) -> int:
     """Count the projects that can be researched now, ignoring money.
 
     The Business nav badge shows this number. It ignores money so the
@@ -1827,19 +2188,23 @@ def count_available_research(research: list[Research],
     Args:
         research: Every research project.
         total_earned: The player's lifetime earnings.
+        game_phase: One of the PHASE_ constants.
 
     Returns:
         How many projects are available.
     """
     count = 0
     for project in research:
-        if is_research_available(project, research, total_earned):
+        if is_research_available(project, research, total_earned,
+                                 game_phase):
             count = count + 1
     return count
 
 
-assert_equal(count_available_research(make_new_state().research, 0.0), 0)
-assert_equal(count_available_research(make_new_state().research, 1000.0), 2)
+assert_equal(count_available_research(make_new_state().research, 0.0,
+                                      PHASE_PEACE), 0)
+assert_equal(count_available_research(make_new_state().research, 1000.0,
+                                      PHASE_PEACE), 2)
 
 
 def research_money_required(cost: float, goods_in_stock: int) -> float:
@@ -1876,8 +2241,9 @@ def can_buy_research(state: State, research_index: int) -> bool:
     """
     project = state.research[research_index]
     required = research_money_required(project.cost, state.goods_in_stock)
-    return (is_research_available(project, state.research, state.total_earned)
-            and required <= state.money)
+    available = is_research_available(project, state.research,
+                                      state.total_earned, state.game_phase)
+    return available and required <= state.money
 
 
 assert_equal(can_buy_research(make_research_state(), 0), True)
@@ -1961,17 +2327,20 @@ assert_equal(total_research_market_bonus(
     20)
 
 
-def goods_income_bonus(goods: GoodsType, research: list[Research]) -> float:
-    """Find a goods type's income bonus, including research boosts.
+def goods_income_bonus(goods: GoodsType, research: list[Research],
+                       game_phase: str) -> float:
+    """Find a goods type's income bonus, including research and the war.
 
     Args:
         goods: The goods type.
         research: Every research project.
+        game_phase: One of the PHASE_ constants.
 
     Returns:
-        Its own bonus plus the bonus of each completed research for it.
+        Its own bonus, plus each completed research for it, plus its
+        wartime bonus.
     """
-    total = goods.income_bonus
+    total = goods.income_bonus + goods_war_bonus(goods, game_phase)
     for project in research:
         if project.is_done and project.goods_name == goods.name:
             total = total + project.goods_bonus
@@ -1979,37 +2348,48 @@ def goods_income_bonus(goods: GoodsType, research: list[Research]) -> float:
 
 
 assert_equal(goods_income_bonus(make_test_goods(0.25, True),
-                                [make_test_research("A", "", True)]), 0.75)
+                                [make_test_research("A", "", True)],
+                                PHASE_PEACE), 0.75)
 assert_equal(goods_income_bonus(make_test_goods(0.25, True),
-                                [make_test_research("A", "", False)]), 0.25)
+                                [make_test_research("A", "", False)],
+                                PHASE_PEACE), 0.25)
+assert_equal(goods_income_bonus(make_new_state().goods_types[1], [],
+                                PHASE_WAR), 0.35)
 
 
-def total_research_goods_bonus(research: list[Research],
-                               goods_types: list[GoodsType]) -> float:
-    """Add up the research boosts for every goods type being sold.
+def total_extra_goods_bonus(research: list[Research],
+                            goods_types: list[GoodsType],
+                            game_phase: str) -> float:
+    """Add up the research and wartime boosts for goods being sold.
 
     total_goods_bonus already counts each goods type's own bonus, so this
-    adds only the extra part that research gives.
+    adds only the extra part that research and the war give.
 
     Args:
         research: Every research project.
         goods_types: Every goods type.
+        game_phase: One of the PHASE_ constants.
 
     Returns:
-        The extra income bonus from research, as a fraction.
+        The extra income bonus, as a fraction.
     """
     total = 0.0
     for goods in goods_types:
         if goods.is_selling:
-            total = (total + goods_income_bonus(goods, research)
+            total = (total + goods_income_bonus(goods, research, game_phase)
                      - goods.income_bonus)
     return total
 
 
-assert_equal(total_research_goods_bonus([make_test_research("A", "", True)],
-                                        [make_test_goods(0.25, True)]), 0.5)
-assert_equal(total_research_goods_bonus([make_test_research("A", "", True)],
-                                        [make_test_goods(0.25, False)]), 0.0)
+assert_equal(total_extra_goods_bonus([make_test_research("A", "", True)],
+                                     [make_test_goods(0.25, True)],
+                                     PHASE_PEACE), 0.5)
+assert_equal(total_extra_goods_bonus([make_test_research("A", "", True)],
+                                     [make_test_goods(0.25, False)],
+                                     PHASE_PEACE), 0.0)
+# War Supplies gets no war bonus; Household Goods gets +10%.
+assert_equal(round(total_extra_goods_bonus([], make_war_state().goods_types,
+                                           PHASE_WAR), 2), 0.1)
 
 
 # ---------------------------------------------------------------------------
@@ -2749,7 +3129,8 @@ def calculate_total_bonus(state: State) -> float:
         The bonus as a fraction, where 0.5 means +50%.
     """
     return (total_goods_bonus(state.goods_types)
-            + total_research_goods_bonus(state.research, state.goods_types)
+            + total_extra_goods_bonus(state.research, state.goods_types,
+                                      state.game_phase)
             + total_policy_income_bonus(state.policies)
             + total_artifact_bonus(state.owned_artifacts))
 
@@ -3671,7 +4052,7 @@ def controls_signature(state: State) -> str:
         research projects are available (the Business badge).
     """
     signature = (str(state.news_feed) + str(count_available_research(
-        state.research, state.total_earned)))
+        state.research, state.total_earned, state.game_phase)))
     for item in state.buy_items:
         signature = signature + str(is_item_visible(item, state.total_earned,
                                                     state.research))
@@ -3825,8 +4206,8 @@ def active_effect_lines(state: State) -> list[str]:
     for goods in state.goods_types:
         if goods.is_selling:
             lines.append(goods.emoji + " " + goods.name + ": "
-                         + percent_text(goods_income_bonus(goods,
-                                                           state.research))
+                         + percent_text(goods_income_bonus(
+                             goods, state.research, state.game_phase))
                          + " income")
     for policy in state.policies:
         if policy.is_active:
@@ -3869,6 +4250,52 @@ def build_effect_tags(state: State) -> Div:
     return Div(tags, classes="tags")
 
 
+def threat_text(state: State) -> str:
+    """Describe the threat meter and how fast it is filling.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        Text like "40% (+2.5/s)".
+    """
+    war_units = war_units_sold(state.goods_sold_last_tick, state.goods_types)
+    rate = threat_per_second(war_units)
+    return (str(int(state.threat * 100 // MAX_THREAT)) + "% (+"
+            + str(round(rate, 1)) + "/s)")
+
+
+assert_equal(threat_text(make_nearly_threatened_state()),
+             "99% (+" + str(round(threat_per_second(5), 1)) + "/s)")
+
+
+def build_war_chips(state: State) -> list[Div]:
+    """Build the war chips shown on every page once the war starts.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The threat and war goods chips (none during peace).
+    """
+    if not is_wartime(state.game_phase):
+        return []
+    chips = []
+    if state.game_phase == PHASE_WAR:
+        if state.threat >= MAX_THREAT:
+            chips.append(build_chip("⚠️ Threat", threat_text(state),
+                                    "chip warn"))
+        else:
+            chips.append(build_chip("⚠️ Threat", threat_text(state), "chip"))
+    chips.append(build_chip("War goods sold", str(state.war_goods_sold),
+                            "chip"))
+    return chips
+
+
+assert_equal(build_war_chips(make_new_state()), [])
+assert_equal(len(build_war_chips(make_war_state())), 2)
+
+
 def build_live_numbers(state: State) -> list:
     """Build the numbers that change every tick; they contain no buttons.
 
@@ -3878,7 +4305,8 @@ def build_live_numbers(state: State) -> list:
     Returns:
         A list of the components inside the #live_numbers element.
     """
-    chips = [build_chip("Money", format_money(state.money), "chip money")]
+    chips = ([build_chip("Money", format_money(state.money), "chip money")]
+             + build_war_chips(state))
     if state.current_page != PAGE_COMPANY:
         return [Div(chips, classes="chips")]
     chips = chips + build_stat_chips(state) + build_policy_chips(state)
@@ -3932,7 +4360,8 @@ def build_nav(state: State) -> Div:
     Returns:
         A Div holding one Button per main page.
     """
-    available = count_available_research(state.research, state.total_earned)
+    available = count_available_research(state.research, state.total_earned,
+                                         state.game_phase)
     buttons = []
     for row in NAV_ROWS:
         label = nav_label(row, available)
@@ -3940,6 +4369,11 @@ def build_nav(state: State) -> Div:
             buttons.append(Button(label, row[1], classes="current"))
         else:
             buttons.append(Button(label, row[1]))
+    if DEBUG_TOOLS:
+        if state.current_page == PAGE_DEBUG:
+            buttons.append(Button("🐞", "debug_page", classes="current"))
+        else:
+            buttons.append(Button("🐞", "debug_page"))
     return Div(buttons, classes="nav")
 
 
@@ -4093,6 +4527,8 @@ def build_live_content(state: State) -> list:
         return [build_top_bar(state)]
     if state.current_page == PAGE_CASINO:
         return [build_top_bar(state)]
+    if state.current_page == PAGE_DEBUG:
+        return [build_top_bar(state)]
     if state.current_page == PAGE_ARTIFACTS:
         return [build_top_bar(state),
                 Div(build_expedition_controls(state), classes="page")]
@@ -4133,15 +4569,53 @@ def build_goods_form(state: State) -> Div:
     rows = [build_card_head("Goods to Sell", [])]
     for goods in state.goods_types:
         if is_requirement_met(goods.required_research, state.research):
-            rows.append(Div(
-                CheckBox(goods.input_name, goods.is_selling),
-                Span(goods.emoji + " " + goods.name),
-                Span(percent_text(goods_income_bonus(goods, state.research))
-                     + " income", classes="muted"),
-                classes="check-row",
-            ))
+            rows.append(build_goods_row(goods, state))
     rows.append(Button("Save Goods", "save_goods"))
     return Div(rows, classes="card")
+
+
+def goods_detail_text(goods: GoodsType, state: State) -> str:
+    """Build the small text beside a goods type's name.
+
+    Args:
+        goods: The goods type.
+        state: The current game state.
+
+    Returns:
+        Its income bonus, and a note if it is a war good.
+    """
+    text = (percent_text(goods_income_bonus(goods, state.research,
+                                            state.game_phase)) + " income")
+    if goods.is_war_good:
+        return text + " · ⚔️ war good"
+    return text
+
+
+assert_equal(goods_detail_text(make_new_state().goods_types[0],
+                               make_new_state()), "+5% income")
+assert_equal(goods_detail_text(make_new_state().goods_types[3],
+                               make_new_state()),
+             "+100% income · ⚔️ war good")
+
+
+def build_goods_row(goods: GoodsType, state: State) -> Div:
+    """Build one goods type's CheckBox row, or a note if it's sanctioned.
+
+    Args:
+        goods: The goods type.
+        state: The current game state.
+
+    Returns:
+        A check row for the goods type.
+    """
+    name_text = goods.emoji + " " + goods.name
+    if is_sanctioned_now(goods, state.game_phase):
+        return Div(Span("🚫"), Span(name_text),
+                   Span("Sanctioned: can't be sold", classes="muted"),
+                   classes="check-row")
+    return Div(CheckBox(goods.input_name, goods.is_selling), Span(name_text),
+               Span(goods_detail_text(goods, state), classes="muted"),
+               classes="check-row")
 
 
 def policy_label(policy: Policy, items: list[BuyItem],
@@ -4267,7 +4741,8 @@ def build_research_list(state: State) -> Div:
     rows = [build_card_head("Research Lab", [Button("← Business",
                                                     "business_page")])]
     for research_index, project in enumerate(state.research):
-        if is_research_available(project, state.research, state.total_earned):
+        if is_research_available(project, state.research, state.total_earned,
+                                 state.game_phase):
             rows.append(build_research_row(project, research_index, state))
     if len(rows) == 1:
         rows.append(Div("No research available. Earn more to attract "
@@ -4689,12 +5164,16 @@ assert_equal(business_page(make_new_state()),
 
 
 # ADVANCED: "= False" gives a parameter a default value. A goods type that
-# is still locked has no CheckBox on the page, so the browser sends no value
-# for it, and Drafter uses the default instead.
+# is locked or sanctioned has no CheckBox on the page, so the browser sends
+# no value for it, and Drafter uses the default instead.
 @route
-def save_goods(state: State, sell_household: bool, sell_canned_food: bool,
-               sell_electronics: bool, sell_war_supplies: bool,
-               sell_imported_luxuries: bool = False) -> Page:
+def save_goods(state: State, sell_household: bool = False,
+               sell_canned_food: bool = False,
+               sell_electronics: bool = False,
+               sell_war_supplies: bool = False,
+               sell_imported_luxuries: bool = False,
+               sell_body_armor: bool = False,
+               sell_drone_parts: bool = False) -> Page:
     """Save which goods types the company sells.
 
     Args:
@@ -4704,14 +5183,17 @@ def save_goods(state: State, sell_household: bool, sell_canned_food: bool,
         sell_electronics: Whether Electronics is checked.
         sell_war_supplies: Whether War Supplies is checked.
         sell_imported_luxuries: Whether Imported Luxuries is checked.
+        sell_body_armor: Whether Body Armor is checked.
+        sell_drone_parts: Whether Drone Components is checked.
 
     Returns:
         The refreshed Business page.
     """
     set_goods_choices(state.goods_types,
                       [sell_household, sell_canned_food, sell_electronics,
-                       sell_war_supplies, sell_imported_luxuries],
-                      state.research)
+                       sell_war_supplies, sell_imported_luxuries,
+                       sell_body_armor, sell_drone_parts],
+                      state.research, state.game_phase)
     state.sells_war_supplies = sell_war_supplies
     return business_page(state)
 
@@ -4725,6 +5207,9 @@ assert_equal(save_goods(make_new_state(), False, False, False, False, True),
 assert_equal(save_goods(make_finished_research_state(4), False, False, False,
                         False, True),
              make_expected_business_page(expected_after_luxuries()))
+# During the war, sanctioned Electronics can't be sold.
+assert_equal(save_goods(make_war_state(), False, False, True,
+                        False).state.goods_types[2].is_selling, False)
 
 
 # ADVANCED: "= False" is a default value, as in save_goods, in case the
@@ -5085,6 +5570,149 @@ assert_equal(lower_markup(make_new_state()),
              make_expected_company_page(expected_with_markup(1.4)))
 
 
+# ---------------------------------------------------------------------------
+# Debug: shortcuts for demos (hidden when DEBUG_TOOLS is False)
+# ---------------------------------------------------------------------------
+
+def apply_debug_jump(state: State, target: str) -> State:
+    """Move the game forward to a point that is useful for a demo.
+
+    Args:
+        state: The game state to update.
+        target: One of the DEBUG_JUMP_ constants.
+
+    Returns:
+        The updated State (a brand new one for DEBUG_JUMP_PEACE).
+    """
+    if target == DEBUG_JUMP_PEACE:
+        new_state = make_new_state()
+        new_state.company_name = state.company_name
+        return new_state
+    if target == DEBUG_JUMP_RESEARCH:
+        state.total_earned = max(state.total_earned, DEBUG_RESEARCH_EARNED)
+    elif target == DEBUG_JUMP_WAR:
+        state.total_earned = max(state.total_earned, WAR_START_EARNED)
+        if state.game_phase == PHASE_PEACE:
+            start_war(state)
+    elif target == DEBUG_JUMP_THREAT and state.game_phase == PHASE_WAR:
+        state.threat = MAX_THREAT - 1
+    return state
+
+
+assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_PEACE),
+             make_new_state())
+assert_equal(apply_debug_jump(make_new_state(),
+                              DEBUG_JUMP_RESEARCH).total_earned,
+             DEBUG_RESEARCH_EARNED)
+assert_equal(apply_debug_jump(make_new_state(), DEBUG_JUMP_WAR).game_phase,
+             PHASE_WAR)
+assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_THREAT).threat,
+             MAX_THREAT - 1)
+
+
+def build_debug_card() -> Div:
+    """Build the card of debug buttons.
+
+    Returns:
+        A card with money buttons and phase jump buttons.
+    """
+    money_buttons = []
+    for amount in DEBUG_MONEY_AMOUNTS:
+        money_buttons.append(Button("+" + format_money(amount),
+                                    "debug_add_money",
+                                    [Argument("amount", amount)]))
+    return Div(
+        build_card_head("🐞 Debug Tools", []),
+        Div("Shortcuts for demos. Set DEBUG_TOOLS = False to hide this page.",
+            classes="muted"),
+        Header("Add money", 3),
+        Div(money_buttons, classes="button-row"),
+        Header("Jump ahead", 3),
+        Div(Button("Restart in peace", "debug_jump",
+                   [Argument("target", DEBUG_JUMP_PEACE)]),
+            Button("Unlock peacetime research", "debug_jump",
+                   [Argument("target", DEBUG_JUMP_RESEARCH)]),
+            Button("Start the war", "debug_jump",
+                   [Argument("target", DEBUG_JUMP_WAR)]),
+            Button("Fill threat meter", "debug_jump",
+                   [Argument("target", DEBUG_JUMP_THREAT)]),
+            classes="button-row"),
+        classes="card narrow",
+    )
+
+
+def build_debug_content(state: State) -> list:
+    """Build the Debug page's content.
+
+    The buttons sit outside the live area so ticks can't swallow a click.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A list of the page's components.
+    """
+    return [Div(build_live_content(state), id="live_area"),
+            Div(build_debug_card(), classes="page")]
+
+
+@route
+def debug_page(state: State) -> Page:
+    """Show the Debug page.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The Debug page.
+    """
+    state.current_page = PAGE_DEBUG
+    return Page(state, build_debug_content(state))
+
+
+assert_equal(debug_page(make_new_state()),
+             make_expected_debug_page(make_debug_state()))
+
+
+@route
+def debug_add_money(state: State, amount: int) -> Page:
+    """Add money for demos (it does not count toward lifetime earnings).
+
+    Args:
+        state: The current game state.
+        amount: The money to add.
+
+    Returns:
+        The refreshed Debug page.
+    """
+    state.money = state.money + amount
+    return debug_page(state)
+
+
+assert_equal(debug_add_money(make_new_state(), 10000).state.money,
+             STARTING_MONEY + 10000)
+
+
+@route
+def debug_jump(state: State, target: str) -> Page:
+    """Jump the game ahead for demos.
+
+    Args:
+        state: The current game state.
+        target: One of the DEBUG_JUMP_ constants.
+
+    Returns:
+        The Debug page for the updated game.
+    """
+    return debug_page(apply_debug_jump(state, target))
+
+
+assert_equal(debug_jump(make_war_state(), DEBUG_JUMP_PEACE),
+             make_expected_debug_page(make_debug_state()))
+assert_equal(debug_jump(make_new_state(), DEBUG_JUMP_WAR).state.game_phase,
+             PHASE_WAR)
+
+
 @route
 def tick(state: State) -> Fragment:
     """Run one game tick and refresh only the live part of the page.
@@ -5102,6 +5730,7 @@ def tick(state: State) -> Fragment:
     run_strikes(state)
     run_stocking(state)
     run_selling(state)
+    run_war_economy(state, tick_interval(state))
     run_loyalty_drift(state)
     state.tick_count = state.tick_count + 1
     new_signature = controls_signature(state)

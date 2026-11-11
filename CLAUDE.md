@@ -203,6 +203,28 @@ Research bonuses feed `total_stocking_bonus` / `total_delivery_bonus` (into
 `total_research_goods_bonus` (into `calculate_total_bonus`). The Better
 Conveyor Belt uses `EFFECT_DELIVERY_BOOST` (a % per unit).
 
+**The War (phase W1 built: war economy):** `State.game_phase` goes
+peace -> war -> war_over (`PHASE_` constants). The war starts when
+total_earned reaches `WAR_START_EARNED` (`start_war`, run by
+`run_war_economy` in the tick), posting headlines. The Kalyxian Federation
+invades the Republic of Varnia (fictional). In wartime, sanctioned goods
+(`GoodsType.is_sanctioned`: Electronics, Imported Luxuries) are shown as
+"🚫 Sanctioned" and forced off, and goods with a `war_bonus` (Household,
+Canned Food) earn more as the only supplier (both feed
+`goods_income_bonus`). War research (`Research.requires_war`): Defense
+Procurement License (unlocks the war goods Body Armor and Drone
+Components), and world research that buys out fleeing competitors (ParcelPro,
+then Ozonix). `war_goods_sold` adds the war goods' share of each tick's
+sales (`war_units_sold`). `threat` fills per real second (scaled by the tick
+length, x `DEBUG_WAR_SPEED`), faster with more war goods sold, capped at
+`MAX_THREAT_PER_SECOND`; at 100% it stays full (combat waves come in W2).
+Planned next: W2 air defense (War page, waves, equipment) and W3 the end of
+the war (win/lose pages from war goods sold).
+
+**Debug page (🐞 in the nav, hidden when `DEBUG_TOOLS = False`):** buttons
+that add money and jump ahead (restart in peace, unlock peacetime research,
+start the war, fill the threat meter), for demos and play-testing.
+
 **Artifacts page (gacha):** pay for expeditions (buttons for X1, X5, X10,
 X100; price grows only slightly) to get random artifacts with rarity tiers
 (e.g. common / rare / legendary with weighted odds). Artifacts are NOT
@@ -223,6 +245,7 @@ multiplier), more research projects, HOI4-style
 decisions (pay a cost now, effect lands N ticks later), more casino games
 (pick-a-color pixel game on a code-generated colored grid, AI-image
 geoguessr parody), stock market, artifact adjacency bonuses, the war
-mechanic (missile strikes, air defense, the front) that eventually changes
+mechanic's later phases (air defense waves, the end of the war) that
+eventually change
 how the game is played (like Universal Paperclips' phases), and a game
 ending.
