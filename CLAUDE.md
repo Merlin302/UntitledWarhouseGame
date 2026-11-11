@@ -188,6 +188,21 @@ war), and checkboxes for policies (each has an upside and a downside, e.g.
 unpaid overtime: +stocking, -loyalty, raises strike risk). Strikes (labor
 unrest from policies) cause temporary penalties.
 
+**Research page (sub-page of Business):** reached from the "Open
+Research Lab" button on the Business page. The Business nav button shows a
+badge ("Business 🔬2") counting research that is available (prerequisite
+done and unlocked by total_earned; money is ignored, per rule 8). Each
+`Research` (catalog: `RESEARCH_ROWS`) is bought once with money and takes
+effect instantly, posting a World News headline. Categories: stat (%
+stocking/delivery), equipment (unlocks a buy item), unlock (unlocks a goods
+type or policy), world (market size, or a goods type's bonus). Buy items,
+goods types, and policies have a `required_research` field ("" = none):
+locked buy items and goods are hidden, locked policies are shown locked.
+Research bonuses feed `total_stocking_bonus` / `total_delivery_bonus` (into
+`apply_rate_modifiers`), `current_market_size` (into `calculate_demand`), and
+`total_research_goods_bonus` (into `calculate_total_bonus`). The Better
+Conveyor Belt uses `EFFECT_DELIVERY_BOOST` (a % per unit).
+
 **Artifacts page (gacha):** pay for expeditions (buttons for X1, X5, X10,
 X100; price grows only slightly) to get random artifacts with rarity tiers
 (e.g. common / rare / legendary with weighted odds). Artifacts are NOT
@@ -204,7 +219,7 @@ character swaps (a→@, and→&, 0↔O).
 
 **Later phases (don't build yet, but don't block them):** Invest → Company
 upgrades (Admin = tick speed, Input = stocking multiplier, Output = sales
-multiplier), research (one-time permanent bonuses/unlocks), HOI4-style
+multiplier), more research projects, HOI4-style
 decisions (pay a cost now, effect lands N ticks later), more casino games
 (pick-a-color pixel game on a code-generated colored grid, AI-image
 geoguessr parody), stock market, artifact adjacency bonuses, the war

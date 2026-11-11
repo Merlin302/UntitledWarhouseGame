@@ -63,17 +63,38 @@ EFFECT_DELIVERY = "delivery"
 EFFECT_LOYALTY = "loyalty"
 EFFECT_CAPACITY = "capacity"
 EFFECT_UNLOCK = "unlock"
+# Each owned unit adds effect_amount percent to delivery capacity.
+EFFECT_DELIVERY_BOOST = "delivery boost"
+
+# Research names, used by the rows that require them.
+LEAN_PROCUREMENT = "Lean Procurement"
+ROUTE_OPTIMIZATION = "Route Optimization Software"
+PICKUP_TRUCK_STUDY = "Pickup Truck Feasibility Study"
+CONVEYOR_RESEARCH = "Conveyor Belt R&D"
+IMPORT_LICENSES = "Import Licenses"
+LABOR_CONSULTANCY = "Labor Relations Consultancy"
+TUSHONKA_BUYOUT = "Buy Out Tushonka Canning Co."
+BOXLY_ACQUISITION = "Acquire Rival: Boxly Logistics"
+NO_REQUIREMENT = ""
 
 # Each row: name, emoji, base cost, effect kind, effect amount,
-# lifetime earnings needed to appear, and whether it is a one-time buy.
+# lifetime earnings needed to appear, whether it is a one-time buy, and
+# the research it requires (NO_REQUIREMENT if none).
 STARTING_ITEM_ROWS = [
-    ["Procurement Agent", "🧑‍💼", 100.0, EFFECT_STOCKING, 5, 0.0, False],
-    ["Fordov Delivery Van", "🚐", 50.0, EFFECT_DELIVERY, 1, 0.0, False],
+    ["Procurement Agent", "🧑‍💼", 100.0, EFFECT_STOCKING, 5, 0.0, False,
+     NO_REQUIREMENT],
+    ["Fordov Delivery Van", "🚐", 50.0, EFFECT_DELIVERY, 1, 0.0, False,
+     NO_REQUIREMENT],
     ["Short Form Marketing Campaign", "📱", 150.0, EFFECT_LOYALTY, 2, 200.0,
-     False],
-    ["Warehouse Expansion", "🏗️", 200.0, EFFECT_CAPACITY, 50, 500.0, False],
+     False, NO_REQUIREMENT],
+    ["Warehouse Expansion", "🏗️", 200.0, EFFECT_CAPACITY, 50, 500.0, False,
+     NO_REQUIREMENT],
     ["Next Generation Corporate Organization", "🏢", 2000.0, EFFECT_UNLOCK, 1,
-     1500.0, True],
+     1500.0, True, NO_REQUIREMENT],
+    ["Upgraded Pickup Truck", "🛻", 300.0, EFFECT_DELIVERY, 4, 0.0, False,
+     PICKUP_TRUCK_STUDY],
+    ["Better Conveyor Belt", "⚙️", 600.0, EFFECT_DELIVERY_BOOST, 5, 0.0,
+     False, CONVEYOR_RESEARCH],
 ]
 
 STARTING_NEWS = [
@@ -88,26 +109,80 @@ PAGE_COMPANY = "company"
 PAGE_BUSINESS = "business"
 PAGE_ARTIFACTS = "artifacts"
 PAGE_ORGANIZE = "organize"
+PAGE_RESEARCH = "research"
+
+CANNED_FOOD = "Canned Food"
 
 # Each row: name, emoji, CheckBox name (must match a save_goods parameter),
-# and income bonus as a fraction.
+# income bonus as a fraction, and the research it requires.
 STARTING_GOODS_ROWS = [
-    ["Household Goods", "🧺", "sell_household", 0.05],
-    ["Canned Food", "🥫", "sell_canned_food", 0.10],
-    ["Electronics", "📺", "sell_electronics", 0.15],
-    ["War Supplies", "💣", "sell_war_supplies", 1.00],
+    ["Household Goods", "🧺", "sell_household", 0.05, NO_REQUIREMENT],
+    [CANNED_FOOD, "🥫", "sell_canned_food", 0.10, NO_REQUIREMENT],
+    ["Electronics", "📺", "sell_electronics", 0.15, NO_REQUIREMENT],
+    ["War Supplies", "💣", "sell_war_supplies", 1.00, NO_REQUIREMENT],
+    ["Imported Luxuries", "💎", "sell_imported_luxuries", 0.25,
+     IMPORT_LICENSES],
 ]
 
 # Each row: name, emoji, CheckBox name (must match a save_policies parameter),
 # stocking bonus, delivery bonus, income bonus, loyalty target change,
-# strike risk per tick, and whether it needs an unlock purchase.
+# strike risk per tick, whether it needs an unlock purchase, and the
+# research it requires.
 STARTING_POLICY_ROWS = [
     ["Unpaid Overtime", "⏰", "unpaid_overtime",
-     0.5, 0.0, 0.0, -5.0, 0.03, False],
+     0.5, 0.0, 0.0, -5.0, 0.03, False, NO_REQUIREMENT],
     ["Aggressive Upselling", "💬", "aggressive_upselling",
-     0.0, 0.0, 0.15, -8.0, 0.0, False],
+     0.0, 0.0, 0.15, -8.0, 0.0, False, NO_REQUIREMENT],
     ["Algorithmic Route Quotas", "🗺️", "route_quotas",
-     0.0, 0.5, 0.0, -3.0, 0.05, True],
+     0.0, 0.5, 0.0, -3.0, 0.05, True, NO_REQUIREMENT],
+    ["Gig Worker Reclassification", "📋", "gig_reclassification",
+     0.0, 0.0, 0.20, -6.0, 0.02, False, LABOR_CONSULTANCY],
+]
+
+CATEGORY_STAT = "stat"
+CATEGORY_EQUIPMENT = "equipment"
+CATEGORY_UNLOCK = "unlock"
+CATEGORY_WORLD = "world"
+
+# Each row: name, emoji, description, category, cost, stocking bonus,
+# delivery bonus (both fractions), market size bonus, the goods type it
+# boosts ("" for none) and that goods bonus, the prerequisite research
+# (NO_REQUIREMENT if none), lifetime earnings needed to appear, and the
+# World News headline posted when it is completed.
+RESEARCH_ROWS = [
+    [LEAN_PROCUREMENT, "📉",
+     "Consultants remove three chairs and call it a methodology.",
+     CATEGORY_STAT, 800.0, 0.10, 0.0, 0, "", 0.0, NO_REQUIREMENT, 500.0,
+     "Procurement team goes lean; snacks reclassified as 'waste'."],
+    [ROUTE_OPTIMIZATION, "🧭",
+     "An app that tells drivers the road is shorter than they think.",
+     CATEGORY_STAT, 1000.0, 0.0, 0.10, 0, "", 0.0, NO_REQUIREMENT, 800.0,
+     "Drivers report the app keeps routing them through a lake."],
+    [PICKUP_TRUCK_STUDY, "🛻",
+     "A 40-page study concludes that bigger trucks hold more boxes.",
+     CATEGORY_EQUIPMENT, 1500.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT,
+     1500.0, "Study confirms trucks are 'like vans, but more so'."],
+    [CONVEYOR_RESEARCH, "⚙️",
+     "Engineers discover that belts can move boxes without lunch breaks.",
+     CATEGORY_EQUIPMENT, 2500.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT,
+     3000.0, "New conveyor belt prototype eats only one intern."],
+    [IMPORT_LICENSES, "📜",
+     "Paperwork so thick it is itself a taxable import.",
+     CATEGORY_UNLOCK, 3000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 3000.0,
+     "Customs office approves licenses after a 'gift basket'."],
+    [LABOR_CONSULTANCY, "🤝",
+     "Experts in making 'no' sound like 'great question'.",
+     CATEGORY_UNLOCK, 4000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 5000.0,
+     "Consultants rename workers 'independent box partners'."],
+    [TUSHONKA_BUYOUT, "🥫",
+     "Own the cans, own the soup, own the supply chain of soup.",
+     CATEGORY_WORLD, 8000.0, 0.0, 0.0, 0, CANNED_FOOD, 0.15,
+     IMPORT_LICENSES, 8000.0,
+     "Tushonka Canning Co. acquired; stew prices 'stable for now'."],
+    [BOXLY_ACQUISITION, "📦",
+     "Buy the competition, then politely forget it ever existed.",
+     CATEGORY_WORLD, 25000.0, 0.0, 0.0, 50, "", 0.0, NO_REQUIREMENT,
+     15000.0, "Boxly Logistics absorbed; its customers 'welcomed home'."],
 ]
 
 STRIKE_DURATION_TICKS = 5
@@ -596,6 +671,7 @@ class BuyItem:
         effect_amount: How much each owned unit improves that stat.
         unlock_at_earned: Lifetime earnings needed for it to appear.
         is_one_time: Whether it can only be bought once.
+        required_research: Research needed for it to appear ("" = none).
         owned: How many units the player has bought.
     """
     name: str
@@ -605,6 +681,7 @@ class BuyItem:
     effect_amount: int
     unlock_at_earned: float
     is_one_time: bool
+    required_research: str
     owned: int
 
 
@@ -617,12 +694,14 @@ class GoodsType:
         emoji: A placeholder picture for the goods type.
         input_name: The name of its CheckBox on the Business page.
         income_bonus: The income bonus as a fraction while selling it.
+        required_research: Research needed for it to appear ("" = none).
         is_selling: Whether the company currently sells it.
     """
     name: str
     emoji: str
     input_name: str
     income_bonus: float
+    required_research: str
     is_selling: bool
 
 
@@ -640,6 +719,8 @@ class Policy:
         loyalty_change: Amount added to the loyalty target.
         strike_risk: Added chance of a strike each tick, from 0 to 1.
         needs_unlock: Whether an unlock purchase is required first.
+        required_research: Research needed before it can be used ("" =
+            none).
         is_active: Whether the policy is currently in force.
     """
     name: str
@@ -651,7 +732,44 @@ class Policy:
     loyalty_change: float
     strike_risk: float
     needs_unlock: bool
+    required_research: str
     is_active: bool
+
+
+@dataclass
+class Research:
+    """One research project the player can pay for once.
+
+    Attributes:
+        name: The research's display name.
+        emoji: A placeholder picture for the research.
+        description: The funny corporate flavor text.
+        category: One of the CATEGORY_ constants.
+        cost: The money it costs to complete.
+        stocking_bonus: Extra stocking rate as a fraction once done.
+        delivery_bonus: Extra delivery capacity as a fraction once done.
+        market_bonus: Customers added to the market size once done.
+        goods_name: The goods type whose bonus it raises ("" for none).
+        goods_bonus: The income bonus it adds to that goods type.
+        prerequisite: Research that must be done first ("" for none).
+        unlock_at_earned: Lifetime earnings needed for it to appear.
+        headline: The World News headline posted when it is done.
+        is_done: Whether the player has completed it.
+    """
+    name: str
+    emoji: str
+    description: str
+    category: str
+    cost: float
+    stocking_bonus: float
+    delivery_bonus: float
+    market_bonus: int
+    goods_name: str
+    goods_bonus: float
+    prerequisite: str
+    unlock_at_earned: float
+    headline: str
+    is_done: bool
 
 
 @dataclass
@@ -721,6 +839,7 @@ class State:
         tick_count: Ticks since the game began; times the typing test.
         typing_round: The casino typing test in progress, if any.
         last_casino_result: The message from the latest casino action.
+        research: Every research project and whether it is done.
     """
     company_name: str
     money: float
@@ -746,6 +865,7 @@ class State:
     tick_count: int
     typing_round: TypingRound
     last_casino_result: str
+    research: list[Research]
 
 
 def make_no_typing_round() -> TypingRound:
@@ -766,7 +886,7 @@ def make_starting_items() -> list[BuyItem]:
     items = []
     for row in STARTING_ITEM_ROWS:
         items.append(BuyItem(row[0], row[1], row[2], row[3], row[4], row[5],
-                             row[6], 0))
+                             row[6], row[7], 0))
     return items
 
 
@@ -778,7 +898,8 @@ def make_starting_goods() -> list[GoodsType]:
     """
     goods_types = []
     for row in STARTING_GOODS_ROWS:
-        goods_types.append(GoodsType(row[0], row[1], row[2], row[3], False))
+        goods_types.append(GoodsType(row[0], row[1], row[2], row[3], row[4],
+                                     False))
     return goods_types
 
 
@@ -791,8 +912,22 @@ def make_starting_policies() -> list[Policy]:
     policies = []
     for row in STARTING_POLICY_ROWS:
         policies.append(Policy(row[0], row[1], row[2], row[3], row[4], row[5],
-                               row[6], row[7], row[8], False))
+                               row[6], row[7], row[8], row[9], False))
     return policies
+
+
+def make_starting_research() -> list[Research]:
+    """Build fresh Research so the global rows are never modified.
+
+    Returns:
+        A new list with one unfinished Research per row of RESEARCH_ROWS.
+    """
+    research = []
+    for row in RESEARCH_ROWS:
+        research.append(Research(row[0], row[1], row[2], row[3], row[4],
+                                 row[5], row[6], row[7], row[8], row[9],
+                                 row[10], row[11], row[12], False))
+    return research
 
 
 def make_new_state() -> State:
@@ -826,6 +961,7 @@ def make_new_state() -> State:
         tick_count=0,
         typing_round=make_no_typing_round(),
         last_casino_result="",
+        research=make_starting_research(),
     )
 
 
@@ -846,7 +982,7 @@ def make_test_item(effect_kind: str, effect_amount: int,
         A repeatable BuyItem that unlocks at 50 earned.
     """
     return BuyItem("Test", "T", 100.0, effect_kind, effect_amount, 50.0,
-                   False, owned)
+                   False, NO_REQUIREMENT, owned)
 
 
 def make_one_time_item(owned: int) -> BuyItem:
@@ -858,7 +994,8 @@ def make_one_time_item(owned: int) -> BuyItem:
     Returns:
         A one-time BuyItem that is always unlocked.
     """
-    return BuyItem("Once", "O", 100.0, EFFECT_UNLOCK, 1, 0.0, True, owned)
+    return BuyItem("Once", "O", 100.0, EFFECT_UNLOCK, 1, 0.0, True,
+                   NO_REQUIREMENT, owned)
 
 
 def make_test_goods(income_bonus: float, is_selling: bool) -> GoodsType:
@@ -871,7 +1008,8 @@ def make_test_goods(income_bonus: float, is_selling: bool) -> GoodsType:
     Returns:
         A GoodsType with those values.
     """
-    return GoodsType("Test", "T", "sell_test", income_bonus, is_selling)
+    return GoodsType("Test", "T", "sell_test", income_bonus, NO_REQUIREMENT,
+                     is_selling)
 
 
 def make_test_policy(is_active: bool) -> Policy:
@@ -884,7 +1022,7 @@ def make_test_policy(is_active: bool) -> Policy:
         A Policy that does not need an unlock.
     """
     return Policy("Test", "T", "test_policy", 0.5, 0.25, 0.1, -5.0, 0.03,
-                  False, is_active)
+                  False, NO_REQUIREMENT, is_active)
 
 
 def make_locked_policy() -> Policy:
@@ -894,7 +1032,7 @@ def make_locked_policy() -> Policy:
         A locked Policy with no effects.
     """
     return Policy("Locked", "L", "locked_policy", 0.0, 0.0, 0.0, 0.0, 0.0,
-                  True, False)
+                  True, NO_REQUIREMENT, False)
 
 
 def make_striking_state(ticks_left: int) -> State:
@@ -919,7 +1057,7 @@ def make_certain_strike_state() -> State:
     """
     state = make_new_state()
     state.policies = [Policy("Riot", "R", "riot", 0.0, 0.0, 0.0, 0.0, 1.0,
-                             False, True)]
+                             False, NO_REQUIREMENT, True)]
     return state
 
 
@@ -1297,6 +1435,111 @@ def make_veteran_state() -> State:
     return state
 
 
+def make_test_research(name: str, prerequisite: str,
+                       is_done: bool) -> Research:
+    """Build a research project with one known value for every effect.
+
+    Args:
+        name: The research's name.
+        prerequisite: The research needed first ("" for none).
+        is_done: Whether it is already completed.
+
+    Returns:
+        A 100-cost Research that appears at 100 earned and boosts "Test".
+    """
+    return Research(name, "R", "Testing.", CATEGORY_STAT, 100.0, 0.1, 0.2,
+                    10, "Test", 0.5, prerequisite, 100.0, "Test done.",
+                    is_done)
+
+
+def make_research_state() -> State:
+    """Build a State viewing the Research page with 2000 money, 1000 earned.
+
+    Returns:
+        A State that can afford the first research (Lean Procurement).
+    """
+    state = make_new_state()
+    state.money = 2000.0
+    state.total_earned = 1000.0
+    state.goods_in_stock = 10
+    state.current_page = PAGE_RESEARCH
+    return state
+
+
+def make_poor_research_state() -> State:
+    """Build the research State with too little money for any research.
+
+    Returns:
+        The research State holding only 100 money.
+    """
+    state = make_research_state()
+    state.money = 100.0
+    return state
+
+
+def make_expected_research_page(state: State) -> Page:
+    """Build the Research page expected for a given State.
+
+    Args:
+        state: The State the page should show.
+
+    Returns:
+        The expected Research page.
+    """
+    return Page(state, build_research_content(state))
+
+
+def expected_after_lean_procurement() -> State:
+    """Build the State expected after buying Lean Procurement.
+
+    Returns:
+        The research State with Lean Procurement done and paid for.
+    """
+    state = make_research_state()
+    state.money = 2000.0 - RESEARCH_ROWS[0][4]
+    state.research[0].is_done = True
+    state.news_feed = add_news(state.news_feed, RESEARCH_ROWS[0][12])
+    return state
+
+
+def make_finished_research_state(research_index: int) -> State:
+    """Build a new-game State with one research already completed.
+
+    Args:
+        research_index: The position of the research in state.research.
+
+    Returns:
+        A new-game State where that research is done.
+    """
+    state = make_new_state()
+    state.research[research_index].is_done = True
+    return state
+
+
+def expected_after_luxuries() -> State:
+    """Build the State expected after selling the unlocked luxuries.
+
+    Returns:
+        A Business page State with Import Licenses done, selling luxuries.
+    """
+    state = make_finished_research_state(4)
+    state.current_page = PAGE_BUSINESS
+    state.goods_types[4].is_selling = True
+    return state
+
+
+def expected_after_gig_policy() -> State:
+    """Build the State expected after enabling the researched policy.
+
+    Returns:
+        A Business page State with Gig Worker Reclassification active.
+    """
+    state = make_finished_research_state(5)
+    state.current_page = PAGE_BUSINESS
+    state.policies[3].is_active = True
+    return state
+
+
 # ---------------------------------------------------------------------------
 # Business: goods and policy helper functions
 # ---------------------------------------------------------------------------
@@ -1423,16 +1666,21 @@ assert_equal(total_strike_risk(
     [make_test_policy(True), make_test_policy(False)]), 0.03)
 
 
-def set_goods_choices(goods_types: list[GoodsType],
-                      choices: list[bool]) -> None:
+def set_goods_choices(goods_types: list[GoodsType], choices: list[bool],
+                      research: list[Research]) -> None:
     """Record which goods types the player chose to sell.
+
+    Goods whose required research isn't done stay unsold.
 
     Args:
         goods_types: The goods types to update.
         choices: One True or False per goods type, in the same order.
+        research: Every research project.
     """
     for index, goods in enumerate(goods_types):
-        goods.is_selling = choices[index]
+        goods.is_selling = (choices[index]
+                            and is_requirement_met(goods.required_research,
+                                                   research))
 
 
 def strike_multiplier(strike_ticks_left: int) -> float:
@@ -1487,6 +1735,281 @@ def add_news(news_feed: list[str], headline: str) -> list[str]:
 
 assert_equal(add_news(["old"], "new"), ["new", "old"])
 assert_equal(len(add_news(["x"] * MAX_NEWS_ITEMS, "new")), MAX_NEWS_ITEMS)
+
+
+# ---------------------------------------------------------------------------
+# Research: one-time projects that add bonuses and unlock new options
+# ---------------------------------------------------------------------------
+
+def is_research_done(research: list[Research], name: str) -> bool:
+    """Search the research list for a project and check if it is done.
+
+    Args:
+        research: Every research project.
+        name: The name of the project to look for.
+
+    Returns:
+        True if a project with that name exists and is completed.
+    """
+    for project in research:
+        if project.name == name:
+            return project.is_done
+    return False
+
+
+assert_equal(is_research_done([make_test_research("A", "", True)], "A"),
+             True)
+assert_equal(is_research_done([make_test_research("A", "", False)], "A"),
+             False)
+assert_equal(is_research_done([make_test_research("A", "", True)], "B"),
+             False)
+
+
+def is_requirement_met(required_research: str,
+                       research: list[Research]) -> bool:
+    """Check whether a required research (if any) has been completed.
+
+    Args:
+        required_research: The research needed, or NO_REQUIREMENT.
+        research: Every research project.
+
+    Returns:
+        True if nothing is required or the required research is done.
+    """
+    if required_research == NO_REQUIREMENT:
+        return True
+    return is_research_done(research, required_research)
+
+
+assert_equal(is_requirement_met(NO_REQUIREMENT, []), True)
+assert_equal(is_requirement_met("A", [make_test_research("A", "", True)]),
+             True)
+assert_equal(is_requirement_met("A", [make_test_research("A", "", False)]),
+             False)
+
+
+def is_research_available(project: Research, research: list[Research],
+                          total_earned: float) -> bool:
+    """Check whether a project can be researched now, ignoring money.
+
+    Args:
+        project: The project to check.
+        research: Every research project, to look up the prerequisite.
+        total_earned: The player's lifetime earnings.
+
+    Returns:
+        True if it is unfinished, its prerequisite is done, and the
+        player has earned enough for it to appear.
+    """
+    return (not project.is_done
+            and total_earned >= project.unlock_at_earned
+            and is_requirement_met(project.prerequisite, research))
+
+
+assert_equal(is_research_available(make_test_research("A", "", False), [],
+                                   99.0), False)
+assert_equal(is_research_available(make_test_research("A", "", False), [],
+                                   100.0), True)
+assert_equal(is_research_available(make_test_research("A", "", True), [],
+                                   100.0), False)
+assert_equal(is_research_available(
+    make_test_research("B", "A", False),
+    [make_test_research("A", "", False)], 100.0), False)
+
+
+def count_available_research(research: list[Research],
+                             total_earned: float) -> int:
+    """Count the projects that can be researched now, ignoring money.
+
+    The Business nav badge shows this number. It ignores money so the
+    badge (and the buttons around it) never redraw when money changes.
+
+    Args:
+        research: Every research project.
+        total_earned: The player's lifetime earnings.
+
+    Returns:
+        How many projects are available.
+    """
+    count = 0
+    for project in research:
+        if is_research_available(project, research, total_earned):
+            count = count + 1
+    return count
+
+
+assert_equal(count_available_research(make_new_state().research, 0.0), 0)
+assert_equal(count_available_research(make_new_state().research, 1000.0), 2)
+
+
+def research_money_required(cost: float, goods_in_stock: int) -> float:
+    """Calculate the money needed to safely pay for a research project.
+
+    Like money_required, it keeps enough money to restock an empty
+    warehouse, so research can never end the game.
+
+    Args:
+        cost: The research's price.
+        goods_in_stock: Units currently in the warehouse.
+
+    Returns:
+        The price, plus one unit's cost if the warehouse is empty.
+    """
+    if goods_in_stock == 0:
+        return cost + UNIT_COST
+    return cost
+
+
+assert_equal(research_money_required(800.0, 5), 800.0)
+assert_equal(research_money_required(800.0, 0), 800.0 + UNIT_COST)
+
+
+def can_buy_research(state: State, research_index: int) -> bool:
+    """Check whether a research project can be bought right now.
+
+    Args:
+        state: The current game state.
+        research_index: The project's position in state.research.
+
+    Returns:
+        True if it is available and the player can afford it.
+    """
+    project = state.research[research_index]
+    required = research_money_required(project.cost, state.goods_in_stock)
+    return (is_research_available(project, state.research, state.total_earned)
+            and required <= state.money)
+
+
+assert_equal(can_buy_research(make_research_state(), 0), True)
+assert_equal(can_buy_research(make_poor_research_state(), 0), False)
+assert_equal(can_buy_research(make_new_state(), 0), False)
+
+
+def complete_research(state: State, research_index: int) -> None:
+    """Pay for a research project, mark it done, and post its headline.
+
+    Args:
+        state: The game state to update.
+        research_index: The project's position in state.research.
+    """
+    project = state.research[research_index]
+    state.money = state.money - project.cost
+    project.is_done = True
+    state.news_feed = add_news(state.news_feed, project.headline)
+
+
+def total_research_stocking_bonus(research: list[Research]) -> float:
+    """Add up the stocking bonus of every completed research.
+
+    Args:
+        research: Every research project.
+
+    Returns:
+        The combined stocking bonus as a fraction.
+    """
+    total = 0.0
+    for project in research:
+        if project.is_done:
+            total = total + project.stocking_bonus
+    return total
+
+
+assert_equal(total_research_stocking_bonus(
+    [make_test_research("A", "", True), make_test_research("B", "", False)]),
+    0.1)
+
+
+def total_research_delivery_bonus(research: list[Research]) -> float:
+    """Add up the delivery bonus of every completed research.
+
+    Args:
+        research: Every research project.
+
+    Returns:
+        The combined delivery bonus as a fraction.
+    """
+    total = 0.0
+    for project in research:
+        if project.is_done:
+            total = total + project.delivery_bonus
+    return total
+
+
+assert_equal(total_research_delivery_bonus(
+    [make_test_research("A", "", True), make_test_research("B", "", False)]),
+    0.2)
+
+
+def total_research_market_bonus(research: list[Research]) -> int:
+    """Add up the customers every completed research adds to the market.
+
+    Args:
+        research: Every research project.
+
+    Returns:
+        The number of extra customers.
+    """
+    total = 0
+    for project in research:
+        if project.is_done:
+            total = total + project.market_bonus
+    return total
+
+
+assert_equal(total_research_market_bonus(
+    [make_test_research("A", "", True), make_test_research("B", "", True)]),
+    20)
+
+
+def goods_income_bonus(goods: GoodsType, research: list[Research]) -> float:
+    """Find a goods type's income bonus, including research boosts.
+
+    Args:
+        goods: The goods type.
+        research: Every research project.
+
+    Returns:
+        Its own bonus plus the bonus of each completed research for it.
+    """
+    total = goods.income_bonus
+    for project in research:
+        if project.is_done and project.goods_name == goods.name:
+            total = total + project.goods_bonus
+    return total
+
+
+assert_equal(goods_income_bonus(make_test_goods(0.25, True),
+                                [make_test_research("A", "", True)]), 0.75)
+assert_equal(goods_income_bonus(make_test_goods(0.25, True),
+                                [make_test_research("A", "", False)]), 0.25)
+
+
+def total_research_goods_bonus(research: list[Research],
+                               goods_types: list[GoodsType]) -> float:
+    """Add up the research boosts for every goods type being sold.
+
+    total_goods_bonus already counts each goods type's own bonus, so this
+    adds only the extra part that research gives.
+
+    Args:
+        research: Every research project.
+        goods_types: Every goods type.
+
+    Returns:
+        The extra income bonus from research, as a fraction.
+    """
+    total = 0.0
+    for goods in goods_types:
+        if goods.is_selling:
+            total = (total + goods_income_bonus(goods, research)
+                     - goods.income_bonus)
+    return total
+
+
+assert_equal(total_research_goods_bonus([make_test_research("A", "", True)],
+                                        [make_test_goods(0.25, True)]), 0.5)
+assert_equal(total_research_goods_bonus([make_test_research("A", "", True)],
+                                        [make_test_goods(0.25, False)]), 0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -2007,25 +2530,76 @@ assert_equal(calculate_warehouse_capacity(
     [make_test_item(EFFECT_CAPACITY, 50, 2)]), BASE_WAREHOUSE_CAPACITY + 100)
 
 
-def apply_rate_modifiers(base_rate: int, policy_bonus: float,
+def apply_rate_modifiers(base_rate: int, bonus_fraction: float,
                          strike_ticks_left: int) -> int:
-    """Apply policy bonuses and any strike penalty to a per-tick rate.
+    """Apply percentage bonuses and any strike penalty to a per-tick rate.
 
     Args:
         base_rate: The rate before modifiers.
-        policy_bonus: The policy bonus as a fraction.
+        bonus_fraction: The combined policy, research, and item bonus.
         strike_ticks_left: Ticks until the current strike ends.
 
     Returns:
         The final rate, rounded down to a whole number of units.
     """
-    multiplier = (1 + policy_bonus) * strike_multiplier(strike_ticks_left)
+    multiplier = (1 + bonus_fraction) * strike_multiplier(strike_ticks_left)
     return int(round(base_rate * multiplier, 2))
 
 
 assert_equal(apply_rate_modifiers(10, 0.0, 0), 10)
 assert_equal(apply_rate_modifiers(10, 0.5, 0), 15)
 assert_equal(apply_rate_modifiers(10, 0.5, 2), 7)
+
+
+def item_delivery_boost(items: list[BuyItem]) -> float:
+    """Add up the percentage delivery boost from owned items.
+
+    Args:
+        items: The player's buy items.
+
+    Returns:
+        The boost as a fraction (each effect_amount is a percent).
+    """
+    return total_item_effect(items, EFFECT_DELIVERY_BOOST) / 100
+
+
+assert_equal(item_delivery_boost(
+    [make_test_item(EFFECT_DELIVERY_BOOST, 5, 2)]), 0.1)
+
+
+def total_stocking_bonus(state: State) -> float:
+    """Add the percentage stocking bonuses from policies and research.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The combined stocking bonus as a fraction.
+    """
+    return (total_policy_stocking_bonus(state.policies)
+            + total_research_stocking_bonus(state.research))
+
+
+assert_equal(total_stocking_bonus(make_new_state()), 0.0)
+assert_equal(total_stocking_bonus(make_finished_research_state(0)), 0.1)
+
+
+def total_delivery_bonus(state: State) -> float:
+    """Add the percentage delivery bonuses from policies, research, items.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The combined delivery bonus as a fraction.
+    """
+    return (total_policy_delivery_bonus(state.policies)
+            + total_research_delivery_bonus(state.research)
+            + item_delivery_boost(state.buy_items))
+
+
+assert_equal(total_delivery_bonus(make_new_state()), 0.0)
+assert_equal(total_delivery_bonus(make_finished_research_state(1)), 0.1)
 
 
 def effective_stocking_rate(state: State) -> int:
@@ -2035,10 +2609,10 @@ def effective_stocking_rate(state: State) -> int:
         state: The current game state.
 
     Returns:
-        The stocking rate after policies and strikes.
+        The stocking rate after policies, research, and strikes.
     """
     return apply_rate_modifiers(calculate_stocking_rate(state.buy_items),
-                                total_policy_stocking_bonus(state.policies),
+                                total_stocking_bonus(state),
                                 state.strike_ticks_left)
 
 
@@ -2054,10 +2628,10 @@ def effective_delivery_capacity(state: State) -> int:
         state: The current game state.
 
     Returns:
-        The delivery capacity after policies and strikes.
+        The delivery capacity after policies, research, items, and strikes.
     """
     return apply_rate_modifiers(calculate_delivery_capacity(state.buy_items),
-                                total_policy_delivery_bonus(state.policies),
+                                total_delivery_bonus(state),
                                 state.strike_ticks_left)
 
 
@@ -2091,24 +2665,43 @@ assert_equal(calculate_units_stocked(5, 0, 100, 44.0), 2)
 assert_equal(calculate_units_stocked(5, 100, 100, 500.0), 0)
 
 
-def calculate_demand(loyalty: float) -> int:
+def current_market_size(state: State) -> int:
+    """Find how many customers the market holds, including research.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        MARKET_SIZE plus the customers added by completed research.
+    """
+    return MARKET_SIZE + total_research_market_bonus(state.research)
+
+
+assert_equal(current_market_size(make_new_state()), MARKET_SIZE)
+assert_equal(current_market_size(make_finished_research_state(7)),
+             MARKET_SIZE + RESEARCH_ROWS[7][7])
+
+
+def calculate_demand(loyalty: float, market_size: int) -> int:
     """Calculate how many units customers want to buy this tick.
 
     Args:
         loyalty: Customer loyalty from 0 to 100.
+        market_size: How many customers the market holds.
 
     Returns:
         The number of units customers want, rounded down.
     """
     # Drifting loyalty stops just short of its target (like 59.9999), so
     # round first or // would drop a whole unit of demand.
-    return int(MARKET_SIZE * round(loyalty, 2) // 100)
+    return int(market_size * round(loyalty, 2) // 100)
 
 
-assert_equal(calculate_demand(50.0), 50)
-assert_equal(calculate_demand(0.0), 0)
-assert_equal(calculate_demand(59.9999), 60)
-assert_equal(calculate_demand(59.5), 59)
+assert_equal(calculate_demand(50.0, 100), 50)
+assert_equal(calculate_demand(0.0, 100), 0)
+assert_equal(calculate_demand(59.9999, 100), 60)
+assert_equal(calculate_demand(59.5, 100), 59)
+assert_equal(calculate_demand(50.0, 150), 75)
 
 
 def calculate_units_sold(goods_in_stock: int, delivery_capacity: int,
@@ -2147,7 +2740,7 @@ assert_equal(calculate_sale_price(2.0), 30.0)
 
 
 def calculate_total_bonus(state: State) -> float:
-    """Add the income bonuses from goods, policies, and placed artifacts.
+    """Add the income bonuses from goods, policies, artifacts, and research.
 
     Args:
         state: The current game state.
@@ -2156,6 +2749,7 @@ def calculate_total_bonus(state: State) -> float:
         The bonus as a fraction, where 0.5 means +50%.
     """
     return (total_goods_bonus(state.goods_types)
+            + total_research_goods_bonus(state.research, state.goods_types)
             + total_policy_income_bonus(state.policies)
             + total_artifact_bonus(state.owned_artifacts))
 
@@ -2338,7 +2932,7 @@ def run_selling(state: State) -> None:
     units = calculate_units_sold(
         state.goods_in_stock,
         effective_delivery_capacity(state),
-        calculate_demand(state.loyalty),
+        calculate_demand(state.loyalty, current_market_size(state)),
     )
     income = calculate_income(units, calculate_sale_price(state.markup),
                               calculate_total_bonus(state))
@@ -2516,28 +3110,37 @@ assert_equal(can_afford(make_test_item(EFFECT_STOCKING, 1, 0), 1, 115.0, 0),
 assert_equal(can_afford(make_one_time_item(1), 1, 9999.0, 5), False)
 
 
-def is_item_visible(item: BuyItem, total_earned: float) -> bool:
+def is_item_visible(item: BuyItem, total_earned: float,
+                    research: list[Research]) -> bool:
     """Check whether the item has unlocked or was already purchased.
 
     Args:
         item: The item to check.
         total_earned: The player's lifetime earnings.
+        research: Every research project.
 
     Returns:
-        True if the item should appear in the buy list.
+        True if its research is done and it was bought or has unlocked.
     """
-    return item.owned > 0 or total_earned >= item.unlock_at_earned
+    return ((item.owned > 0 or total_earned >= item.unlock_at_earned)
+            and is_requirement_met(item.required_research, research))
 
 
-assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 0), 49.0),
+assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 0), 49.0, []),
              False)
-assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 0), 50.0),
+assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 0), 50.0, []),
              True)
-assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 1), 0.0), True)
+assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 1), 0.0, []),
+             True)
+# The pickup truck stays hidden until its research is done.
+assert_equal(is_item_visible(make_new_state().buy_items[5], 0.0,
+                             make_new_state().research), False)
+assert_equal(is_item_visible(make_new_state().buy_items[5], 0.0,
+                             make_finished_research_state(2).research), True)
 
 
-def is_policy_unlocked(policy: Policy, items: list[BuyItem]) -> bool:
-    """Check whether a policy can be used yet.
+def is_unlock_item_owned(policy: Policy, items: list[BuyItem]) -> bool:
+    """Check whether a policy's unlock purchase (if any) has been made.
 
     Args:
         policy: The policy to check.
@@ -2550,25 +3153,54 @@ def is_policy_unlocked(policy: Policy, items: list[BuyItem]) -> bool:
                                                         EFFECT_UNLOCK) > 0
 
 
-assert_equal(is_policy_unlocked(make_test_policy(False), []), True)
+assert_equal(is_unlock_item_owned(make_locked_policy(),
+                                  [make_one_time_item(0)]), False)
+assert_equal(is_unlock_item_owned(make_locked_policy(),
+                                  [make_one_time_item(1)]), True)
+
+
+def is_policy_unlocked(policy: Policy, items: list[BuyItem],
+                       research: list[Research]) -> bool:
+    """Check whether a policy can be used yet.
+
+    Args:
+        policy: The policy to check.
+        items: The player's buy items.
+        research: Every research project.
+
+    Returns:
+        True if its unlock item (if any) is owned and its research is done.
+    """
+    return (is_unlock_item_owned(policy, items)
+            and is_requirement_met(policy.required_research, research))
+
+
+assert_equal(is_policy_unlocked(make_test_policy(False), [], []), True)
 assert_equal(is_policy_unlocked(make_locked_policy(),
-                                [make_one_time_item(0)]), False)
+                                [make_one_time_item(0)], []), False)
 assert_equal(is_policy_unlocked(make_locked_policy(),
-                                [make_one_time_item(1)]), True)
+                                [make_one_time_item(1)], []), True)
+assert_equal(is_policy_unlocked(make_new_state().policies[3], [],
+                                make_new_state().research), False)
+assert_equal(is_policy_unlocked(make_new_state().policies[3], [],
+                                make_finished_research_state(5).research),
+             True)
 
 
 def set_policy_choices(policies: list[Policy], choices: list[bool],
-                       items: list[BuyItem]) -> None:
+                       items: list[BuyItem],
+                       research: list[Research]) -> None:
     """Record the player's policies, keeping locked ones switched off.
 
     Args:
         policies: The policies to update.
         choices: One True or False per policy, in the same order.
         items: The player's buy items.
+        research: Every research project.
     """
     for index, policy in enumerate(policies):
         policy.is_active = (choices[index]
-                            and is_policy_unlocked(policy, items))
+                            and is_policy_unlocked(policy, items, research))
 
 
 # ---------------------------------------------------------------------------
@@ -2926,6 +3558,8 @@ def describe_effect(item: BuyItem) -> str:
         return amount_text + " loyalty target"
     if item.effect_kind == EFFECT_CAPACITY:
         return amount_text + " warehouse capacity"
+    if item.effect_kind == EFFECT_DELIVERY_BOOST:
+        return amount_text + "% delivery capacity"
     return "Unlocks a new corporate policy"
 
 
@@ -2933,6 +3567,90 @@ assert_equal(describe_effect(make_test_item(EFFECT_DELIVERY, 1, 0)),
              "+1 delivery capacity")
 assert_equal(describe_effect(make_one_time_item(0)),
              "Unlocks a new corporate policy")
+assert_equal(describe_effect(make_test_item(EFFECT_DELIVERY_BOOST, 5, 0)),
+             "+5% delivery capacity")
+
+
+def describe_research_effect(project: Research) -> str:
+    """Describe the number bonuses a research project gives.
+
+    Args:
+        project: The research to describe.
+
+    Returns:
+        Its nonzero bonuses separated by commas ("" if it has none).
+    """
+    text = ""
+    if project.stocking_bonus != 0:
+        text = text + percent_text(project.stocking_bonus) + " stocking, "
+    if project.delivery_bonus != 0:
+        text = text + percent_text(project.delivery_bonus) + " delivery, "
+    if project.market_bonus != 0:
+        text = text + "+" + str(project.market_bonus) + " market size, "
+    if project.goods_name != "":
+        text = (text + percent_text(project.goods_bonus) + " "
+                + project.goods_name + " income, ")
+    return text[:-2]
+
+
+assert_equal(describe_research_effect(make_test_research("A", "", False)),
+             "+10% stocking, +20% delivery, +10 market size, "
+             + "+50% Test income")
+assert_equal(describe_research_effect(make_new_state().research[4]), "")
+
+
+def research_unlock_text(project: Research, state: State) -> str:
+    """List the buy items, goods, and policies a research unlocks.
+
+    Args:
+        project: The research to look up.
+        state: The current game state.
+
+    Returns:
+        "Unlocks: " and their names, or "" if it unlocks nothing.
+    """
+    names = ""
+    for item in state.buy_items:
+        if item.required_research == project.name:
+            names = names + item.name + ", "
+    for goods in state.goods_types:
+        if goods.required_research == project.name:
+            names = names + goods.name + " (goods), "
+    for policy in state.policies:
+        if policy.required_research == project.name:
+            names = names + policy.name + " (policy), "
+    if names == "":
+        return ""
+    return "Unlocks: " + names[:-2]
+
+
+assert_equal(research_unlock_text(make_new_state().research[2],
+                                  make_new_state()),
+             "Unlocks: Upgraded Pickup Truck")
+assert_equal(research_unlock_text(make_new_state().research[0],
+                                  make_new_state()), "")
+
+
+def research_summary(project: Research, state: State) -> str:
+    """Build the one-line effect summary shown under a research's name.
+
+    Args:
+        project: The research to summarize.
+        state: The current game state.
+
+    Returns:
+        Its category followed by its bonuses or what it unlocks.
+    """
+    effect = describe_research_effect(project)
+    if effect == "":
+        effect = research_unlock_text(project, state)
+    return project.category.capitalize() + " · " + effect
+
+
+assert_equal(research_summary(make_new_state().research[0], make_new_state()),
+             "Stat · +10% stocking")
+assert_equal(research_summary(make_new_state().research[4], make_new_state()),
+             "Unlock · Unlocks: Imported Luxuries (goods)")
 
 
 def controls_signature(state: State) -> str:
@@ -2949,11 +3667,14 @@ def controls_signature(state: State) -> str:
         state: The current game state.
 
     Returns:
-        Text recording the news and which items are visible.
+        Text recording the news, which items are visible, and how many
+        research projects are available (the Business badge).
     """
-    signature = str(state.news_feed)
+    signature = (str(state.news_feed) + str(count_available_research(
+        state.research, state.total_earned)))
     for item in state.buy_items:
-        signature = signature + str(is_item_visible(item, state.total_earned))
+        signature = signature + str(is_item_visible(item, state.total_earned,
+                                                    state.research))
     return signature
 
 
@@ -2962,6 +3683,9 @@ assert_equal(controls_signature(make_new_state()),
              controls_signature(make_rich_state()))
 assert_equal(controls_signature(make_new_state())
              == controls_signature(make_veteran_state()), False)
+# New research becoming available changes the badge, so it redraws.
+assert_equal(controls_signature(make_new_state())
+             == controls_signature(make_research_state()), False)
 
 
 def build_chip(label: str, value: str, chip_classes: str) -> Div:
@@ -3022,7 +3746,8 @@ def build_stat_chips(state: State) -> list[Div]:
         build_chip("Income / tick", income_text, "chip"),
         build_chip("Warehouse", warehouse_text, "chip"),
         build_chip("Loyalty", str(round(state.loyalty, 1)), "chip"),
-        build_chip("Demand", str(calculate_demand(state.loyalty)), "chip"),
+        build_chip("Demand", str(calculate_demand(
+            state.loyalty, current_market_size(state))), "chip"),
         build_chip("Income bonus",
                    percent_text(calculate_total_bonus(state)), "chip"),
     ]
@@ -3088,7 +3813,7 @@ assert_equal(len(build_policy_chips(make_striking_state(2))), 1)
 
 
 def active_effect_lines(state: State) -> list[str]:
-    """List each goods type being sold and each active policy.
+    """List each goods type sold, active policy, artifact, and research.
 
     Args:
         state: The current game state.
@@ -3100,7 +3825,9 @@ def active_effect_lines(state: State) -> list[str]:
     for goods in state.goods_types:
         if goods.is_selling:
             lines.append(goods.emoji + " " + goods.name + ": "
-                         + percent_text(goods.income_bonus) + " income")
+                         + percent_text(goods_income_bonus(goods,
+                                                           state.research))
+                         + " income")
     for policy in state.policies:
         if policy.is_active:
             lines.append(policy.emoji + " " + policy.name + ": "
@@ -3110,10 +3837,16 @@ def active_effect_lines(state: State) -> list[str]:
             lines.append(artifact_label(artifact) + ": "
                          + artifact_percent_text(artifact_bonus(artifact))
                          + " income")
+    for project in state.research:
+        effect = describe_research_effect(project)
+        if project.is_done and effect != "":
+            lines.append(project.emoji + " " + project.name + ": " + effect)
     return lines
 
 
 assert_equal(active_effect_lines(make_new_state()), [])
+assert_equal(active_effect_lines(make_finished_research_state(0)),
+             ["📉 Lean Procurement: +10% stocking"])
 assert_equal(active_effect_lines(make_artifact_state()),
              ["A Alpha: +10.0% income"])
 assert_equal(active_effect_lines(make_state_with_income_bonuses()),
@@ -3152,21 +3885,61 @@ def build_live_numbers(state: State) -> list:
     return [Div(chips, classes="chips"), build_effect_tags(state)]
 
 
-def build_nav(current_page: str) -> Div:
-    """Build the navigation buttons, marking the page being shown.
+def nav_section(current_page: str) -> str:
+    """Find which nav button a page belongs to.
 
     Args:
         current_page: One of the PAGE_ constants.
 
     Returns:
+        PAGE_BUSINESS for the Research sub-page, otherwise the page itself.
+    """
+    if current_page == PAGE_RESEARCH:
+        return PAGE_BUSINESS
+    return current_page
+
+
+assert_equal(nav_section(PAGE_RESEARCH), PAGE_BUSINESS)
+assert_equal(nav_section(PAGE_CASINO), PAGE_CASINO)
+
+
+def nav_label(row: list, available_research: int) -> str:
+    """Build a nav button's text, adding the research badge to Business.
+
+    Args:
+        row: One row of NAV_ROWS.
+        available_research: How many research projects are available.
+
+    Returns:
+        The button text, like "Business 🔬2".
+    """
+    if row[2] == PAGE_BUSINESS and available_research > 0:
+        return row[0] + " 🔬" + str(available_research)
+    return row[0]
+
+
+assert_equal(nav_label(NAV_ROWS[1], 2), "Business 🔬2")
+assert_equal(nav_label(NAV_ROWS[1], 0), "Business")
+assert_equal(nav_label(NAV_ROWS[0], 2), "Company")
+
+
+def build_nav(state: State) -> Div:
+    """Build the navigation buttons, marking the page being shown.
+
+    Args:
+        state: The current game state.
+
+    Returns:
         A Div holding one Button per main page.
     """
+    available = count_available_research(state.research, state.total_earned)
     buttons = []
     for row in NAV_ROWS:
-        if row[2] == current_page:
-            buttons.append(Button(row[0], row[1], classes="current"))
+        label = nav_label(row, available)
+        if row[2] == nav_section(state.current_page):
+            buttons.append(Button(label, row[1], classes="current"))
         else:
-            buttons.append(Button(row[0], row[1]))
+            buttons.append(Button(label, row[1]))
     return Div(buttons, classes="nav")
 
 
@@ -3180,7 +3953,7 @@ def build_top_bar(state: State) -> Div:
         A Div holding the company name, navigation, and live numbers.
     """
     return Div(
-        Div(Header(state.company_name, 1), build_nav(state.current_page),
+        Div(Header(state.company_name, 1), build_nav(state),
             classes="topbar-row"),
         # ADVANCED: A Div groups components. Its id is the name a Fragment
         # uses to find and replace just this part of the page.
@@ -3280,7 +4053,7 @@ def build_buy_list(state: State) -> Div:
     """
     rows = [build_card_head("Buy List", [build_buy_amount_controls(state)])]
     for item_index, item in enumerate(state.buy_items):
-        if is_item_visible(item, state.total_earned):
+        if is_item_visible(item, state.total_earned, state.research):
             rows.append(Div(
                 Span(item.emoji, classes="emoji"),
                 Div(Div(item.name, classes="item-name"),
@@ -3323,6 +4096,11 @@ def build_live_content(state: State) -> list:
     if state.current_page == PAGE_ARTIFACTS:
         return [build_top_bar(state),
                 Div(build_expedition_controls(state), classes="page")]
+    if state.current_page == PAGE_RESEARCH:
+        return [build_top_bar(state),
+                Div(build_research_list(state),
+                    build_completed_research(state),
+                    classes="page two-col")]
     return [
         build_top_bar(state),
         Div(Div(build_buy_list(state)),
@@ -3354,37 +4132,46 @@ def build_goods_form(state: State) -> Div:
     """
     rows = [build_card_head("Goods to Sell", [])]
     for goods in state.goods_types:
-        rows.append(Div(
-            CheckBox(goods.input_name, goods.is_selling),
-            Span(goods.emoji + " " + goods.name),
-            Span(percent_text(goods.income_bonus) + " income",
-                 classes="muted"),
-            classes="check-row",
-        ))
+        if is_requirement_met(goods.required_research, state.research):
+            rows.append(Div(
+                CheckBox(goods.input_name, goods.is_selling),
+                Span(goods.emoji + " " + goods.name),
+                Span(percent_text(goods_income_bonus(goods, state.research))
+                     + " income", classes="muted"),
+                classes="check-row",
+            ))
     rows.append(Button("Save Goods", "save_goods"))
     return Div(rows, classes="card")
 
 
-def policy_label(policy: Policy, items: list[BuyItem]) -> str:
+def policy_label(policy: Policy, items: list[BuyItem],
+                 research: list[Research]) -> str:
     """Build the text shown beside a policy's CheckBox.
 
     Args:
         policy: The policy to label.
         items: The player's buy items.
+        research: Every research project.
 
     Returns:
-        The policy's effects, or a note saying that it is locked.
+        The policy's effects, or a note saying what unlocks it.
     """
     text = policy.emoji + " " + policy.name + " - " + describe_policy(policy)
-    if is_policy_unlocked(policy, items):
+    if is_policy_unlocked(policy, items, research):
         return text
-    return ("🔒 " + text
-            + " (locked: buy Next Generation Corporate Organization)")
+    if not is_unlock_item_owned(policy, items):
+        return ("🔒 " + text
+                + " (locked: buy Next Generation Corporate Organization)")
+    return ("🔒 " + text + " (locked: research " + policy.required_research
+            + ")")
 
 
-assert_equal(policy_label(make_test_policy(False), [])[:6], "T Test")
-assert_equal(policy_label(make_locked_policy(), [make_one_time_item(0)])[:1],
-             "🔒")
+assert_equal(policy_label(make_test_policy(False), [], [])[:6], "T Test")
+assert_equal(policy_label(make_locked_policy(), [make_one_time_item(0)],
+                          [])[:1], "🔒")
+assert_equal("(locked: research Labor Relations Consultancy)"
+             in policy_label(make_new_state().policies[3], [],
+                             make_new_state().research), True)
 
 
 def build_policy_form(state: State) -> Div:
@@ -3400,7 +4187,7 @@ def build_policy_form(state: State) -> Div:
     for policy in state.policies:
         rows.append(Div(
             CheckBox(policy.input_name, policy.is_active),
-            Span(policy_label(policy, state.buy_items)),
+            Span(policy_label(policy, state.buy_items, state.research)),
             classes="check-row",
         ))
     rows.append(Button("Save Policies", "save_policies"))
@@ -3421,9 +4208,104 @@ def build_business_content(state: State) -> list:
     """
     return [
         Div(build_live_content(state), id="live_area"),
+        Div(build_research_link(), classes="page"),
         Div(build_goods_form(state), build_policy_form(state),
             classes="page two-col"),
     ]
+
+
+def build_research_link() -> Div:
+    """Build the Business page card that opens the Research page.
+
+    Returns:
+        A card holding a short note and the Research Lab button.
+    """
+    return Div(
+        build_card_head("Research", [Button("🔬 Open Research Lab",
+                                            "research_page")]),
+        Div("One-time projects that boost the company or unlock new "
+            + "goods, policies, and equipment.", classes="muted"),
+        classes="card",
+    )
+
+
+def build_research_row(project: Research, research_index: int,
+                       state: State) -> Div:
+    """Build one available research project and its Research button.
+
+    The button stays even when the player can't afford it; buy_research
+    refuses the purchase, so money changes never redraw the button.
+
+    Args:
+        project: The research to show.
+        research_index: Its position in state.research.
+        state: The current game state.
+
+    Returns:
+        A buy row for the project.
+    """
+    return Div(
+        Span(project.emoji, classes="emoji"),
+        Div(Div(project.name, classes="item-name"),
+            Div(project.description, classes="muted"),
+            Div(research_summary(project, state), classes="muted")),
+        Button("Research for " + format_money(project.cost), "buy_research",
+               [Argument("research_index", research_index)]),
+        classes="buy-row",
+    )
+
+
+def build_research_list(state: State) -> Div:
+    """Build the card listing every research project available now.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A card with one row per available project, or a short note.
+    """
+    rows = [build_card_head("Research Lab", [Button("← Business",
+                                                    "business_page")])]
+    for research_index, project in enumerate(state.research):
+        if is_research_available(project, state.research, state.total_earned):
+            rows.append(build_research_row(project, research_index, state))
+    if len(rows) == 1:
+        rows.append(Div("No research available. Earn more to attract "
+                        + "consultants.", classes="muted"))
+    return Div(rows, classes="card")
+
+
+def build_completed_research(state: State) -> Div:
+    """Build the card listing every completed research project.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A card with one line per completed project, or a short note.
+    """
+    lines = []
+    for project in state.research:
+        if project.is_done:
+            lines.append(project.emoji + " " + project.name)
+    if len(lines) == 0:
+        return Div(build_card_head("Completed", []),
+                   Div("Nothing researched yet.", classes="muted"),
+                   classes="card")
+    return Div(build_card_head("Completed", []), BulletedList(lines),
+               classes="card")
+
+
+def build_research_content(state: State) -> list:
+    """Build the Research page's content.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A list of the page's components.
+    """
+    return [Div(build_live_content(state), id="live_area")]
 
 
 def build_expedition_action(state: State, count: int) -> Button:
@@ -3806,9 +4688,13 @@ assert_equal(business_page(make_new_state()),
              make_expected_business_page(make_business_state()))
 
 
+# ADVANCED: "= False" gives a parameter a default value. A goods type that
+# is still locked has no CheckBox on the page, so the browser sends no value
+# for it, and Drafter uses the default instead.
 @route
 def save_goods(state: State, sell_household: bool, sell_canned_food: bool,
-               sell_electronics: bool, sell_war_supplies: bool) -> Page:
+               sell_electronics: bool, sell_war_supplies: bool,
+               sell_imported_luxuries: bool = False) -> Page:
     """Save which goods types the company sells.
 
     Args:
@@ -3817,12 +4703,15 @@ def save_goods(state: State, sell_household: bool, sell_canned_food: bool,
         sell_canned_food: Whether Canned Food is checked.
         sell_electronics: Whether Electronics is checked.
         sell_war_supplies: Whether War Supplies is checked.
+        sell_imported_luxuries: Whether Imported Luxuries is checked.
 
     Returns:
         The refreshed Business page.
     """
-    set_goods_choices(state.goods_types, [sell_household, sell_canned_food,
-                                          sell_electronics, sell_war_supplies])
+    set_goods_choices(state.goods_types,
+                      [sell_household, sell_canned_food, sell_electronics,
+                       sell_war_supplies, sell_imported_luxuries],
+                      state.research)
     state.sells_war_supplies = sell_war_supplies
     return business_page(state)
 
@@ -3830,11 +4719,20 @@ def save_goods(state: State, sell_household: bool, sell_canned_food: bool,
 assert_equal(save_goods(make_new_state(), False, False, False, True),
              make_expected_business_page(
                  expected_after_selling_war_supplies()))
+# Imported Luxuries stays unsold until Import Licenses is researched.
+assert_equal(save_goods(make_new_state(), False, False, False, False, True),
+             make_expected_business_page(make_business_state()))
+assert_equal(save_goods(make_finished_research_state(4), False, False, False,
+                        False, True),
+             make_expected_business_page(expected_after_luxuries()))
 
 
+# ADVANCED: "= False" is a default value, as in save_goods, in case the
+# page ever leaves this CheckBox out.
 @route
 def save_policies(state: State, unpaid_overtime: bool,
-                  aggressive_upselling: bool, route_quotas: bool) -> Page:
+                  aggressive_upselling: bool, route_quotas: bool,
+                  gig_reclassification: bool = False) -> Page:
     """Save which corporate policies are active.
 
     Args:
@@ -3842,13 +4740,16 @@ def save_policies(state: State, unpaid_overtime: bool,
         unpaid_overtime: Whether Unpaid Overtime is checked.
         aggressive_upselling: Whether Aggressive Upselling is checked.
         route_quotas: Whether Algorithmic Route Quotas is checked.
+        gig_reclassification: Whether Gig Worker Reclassification is
+            checked.
 
     Returns:
         The refreshed Business page.
     """
     set_policy_choices(state.policies,
-                       [unpaid_overtime, aggressive_upselling, route_quotas],
-                       state.buy_items)
+                       [unpaid_overtime, aggressive_upselling, route_quotas,
+                        gig_reclassification],
+                       state.buy_items, state.research)
     return business_page(state)
 
 
@@ -3859,6 +4760,56 @@ assert_equal(save_policies(make_new_state(), False, False, True),
              make_expected_business_page(make_business_state()))
 assert_equal(save_policies(make_unlocked_state(), False, False, True),
              make_expected_business_page(expected_after_quotas()))
+# Gig Worker Reclassification needs Labor Relations Consultancy first.
+assert_equal(save_policies(make_new_state(), False, False, False, True),
+             make_expected_business_page(make_business_state()))
+assert_equal(save_policies(make_finished_research_state(5), False, False,
+                           False, True),
+             make_expected_business_page(expected_after_gig_policy()))
+
+
+@route
+def research_page(state: State) -> Page:
+    """Show the Research page, a sub-page of Business.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The Research page.
+    """
+    state.current_page = PAGE_RESEARCH
+    return Page(state, build_research_content(state))
+
+
+assert_equal(research_page(make_research_state()),
+             make_expected_research_page(make_research_state()))
+
+
+@route
+def buy_research(state: State, research_index: int) -> Page:
+    """Complete a research project if it is available and affordable.
+
+    Args:
+        state: The current game state.
+        research_index: The project's position in state.research.
+
+    Returns:
+        The refreshed Research page.
+    """
+    if can_buy_research(state, research_index):
+        complete_research(state, research_index)
+    return research_page(state)
+
+
+assert_equal(buy_research(make_research_state(), 0),
+             make_expected_research_page(expected_after_lean_procurement()))
+# Too poor: nothing changes.
+assert_equal(buy_research(make_poor_research_state(), 0),
+             make_expected_research_page(make_poor_research_state()))
+# Not unlocked yet (Boxly needs 15000 earned): nothing changes.
+assert_equal(buy_research(make_research_state(), 7),
+             make_expected_research_page(make_research_state()))
 
 
 @route
