@@ -53,7 +53,8 @@ off what is done and name the exact function or field that satisfies it.
       `build_casino_setup_form`, `TextArea("typed_text")` in
       `build_typing_form`
 - [x] At least 3 meaningful if statements — _where:_ `buy_item` (can afford),
-      `build_buy_list` (`is_item_visible` unlock check), `build_buy_action`
+      `build_buy_list` (`is_item_visible` research check),
+      `build_buy_action`
       (sold out), `build_nav` (which tab is current), `build_policy_chips`
       (only nonzero effects, strike warning), `clean_company_name` (blank
       name),
@@ -63,7 +64,9 @@ off what is done and name the exact function or field that satisfies it.
       or new), `run_expedition` (can afford), `can_place_bet` (bet limits),
       `roll_prompt` (difficulty), `start_typing_round` (bet accepted),
       `buy_research` (can buy), `is_requirement_met` (research needed),
-      `nav_label` (research badge), `build_research_list` (available or
+      `nav_label` (War badge), `build_research_chips` (research
+      available), `controls_signature` (Research page open),
+      `build_research_list` (available or
       none), `policy_label` (which lock applies), `run_war_economy` (war
       starts / threat full), `build_goods_row` (sanctioned goods),
       `apply_debug_jump` (which shortcut), `run_intermission` (meter full,

@@ -78,26 +78,30 @@ BOXLY_ACQUISITION = "Acquire Rival: Boxly Logistics"
 DEFENSE_LICENSE = "Defense Procurement License"
 PARCELPRO_ABSORPTION = "Absorb Fleeing Rival: ParcelPro"
 OZONIX_NATIONALIZATION = "Nationalize Ozonix Marketplace"
+MARKETING_PLAYBOOK = "Social Media Playbook"
+ZONING_PERMIT = "Warehouse Zoning Permit"
+RESTRUCTURING_STUDY = "Corporate Restructuring Study"
 NO_REQUIREMENT = ""
 
-# Each row: name, emoji, base cost, effect kind, effect amount,
-# lifetime earnings needed to appear, whether it is a one-time buy, and
-# the research it requires (NO_REQUIREMENT if none).
+# Each row: name, emoji, base cost, effect kind, effect amount, whether
+# it is a one-time buy, and the research it requires (NO_REQUIREMENT if
+# none). New items only ever appear through research, which the player
+# buys with a click, so a tick never has to redraw the Buy list.
 STARTING_ITEM_ROWS = [
-    ["Procurement Agent", "🧑‍💼", 100.0, EFFECT_STOCKING, 5, 0.0, False,
+    ["Procurement Agent", "🧑‍💼", 100.0, EFFECT_STOCKING, 5, False,
      NO_REQUIREMENT],
-    ["Fordov Delivery Van", "🚐", 50.0, EFFECT_DELIVERY, 1, 0.0, False,
+    ["Fordov Delivery Van", "🚐", 50.0, EFFECT_DELIVERY, 1, False,
      NO_REQUIREMENT],
-    ["Short Form Marketing Campaign", "📱", 150.0, EFFECT_LOYALTY, 2, 200.0,
-     False, NO_REQUIREMENT],
-    ["Warehouse Expansion", "🏗️", 200.0, EFFECT_CAPACITY, 50, 500.0, False,
-     NO_REQUIREMENT],
+    ["Short Form Marketing Campaign", "📱", 150.0, EFFECT_LOYALTY, 2, False,
+     MARKETING_PLAYBOOK],
+    ["Warehouse Expansion", "🏗️", 200.0, EFFECT_CAPACITY, 50, False,
+     ZONING_PERMIT],
     ["Next Generation Corporate Organization", "🏢", 2000.0, EFFECT_UNLOCK, 1,
-     1500.0, True, NO_REQUIREMENT],
-    ["Upgraded Pickup Truck", "🛻", 300.0, EFFECT_DELIVERY, 4, 0.0, False,
+     True, RESTRUCTURING_STUDY],
+    ["Upgraded Pickup Truck", "🛻", 300.0, EFFECT_DELIVERY, 4, False,
      PICKUP_TRUCK_STUDY],
-    ["Better Conveyor Belt", "⚙️", 600.0, EFFECT_DELIVERY_BOOST, 5, 0.0,
-     False, CONVEYOR_RESEARCH],
+    ["Better Conveyor Belt", "⚙️", 600.0, EFFECT_DELIVERY_BOOST, 5, False,
+     CONVEYOR_RESEARCH],
 ]
 
 STARTING_NEWS = [
@@ -211,6 +215,19 @@ RESEARCH_ROWS = [
      CATEGORY_WORLD, 60000.0, 0.0, 0.0, 60, "", 0.0, PARCELPRO_ABSORPTION,
      0.0, "Ozonix nationalized; shareholders thanked for their service.",
      True],
+    [MARKETING_PLAYBOOK, "📱",
+     "A guide to dancing in front of boxes until people buy them.",
+     CATEGORY_EQUIPMENT, 100.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 200.0,
+     "Warehouse staff now legally required to 'go viral' weekly.", False],
+    [ZONING_PERMIT, "🏗️",
+     "Permission to build more warehouse, signed in triplicate.",
+     CATEGORY_EQUIPMENT, 250.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 500.0,
+     "City approves expansion after warehouse promises 'fewer forklifts'.",
+     False],
+    [RESTRUCTURING_STUDY, "🏢",
+     "Consultants draw boxes around boxes and call it an org chart.",
+     CATEGORY_EQUIPMENT, 750.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 1500.0,
+     "Management restructured; everyone now reports to everyone.", False],
 ]
 
 # ---------------------------------------------------------------------------
@@ -639,6 +656,16 @@ body .drafter-body-- .nav button.current {
   margin: 0 auto;
   padding: 16px 16px 0 16px;
 }
+/* #live_area is only a container for tick Fragments. display: contents
+   removes its box from the layout, so the sticky top bar sticks to the
+   whole page instead of only to #live_area. */
+#live_area {
+  display: contents;
+}
+.news-scroll {
+  max-height: 7.5em;
+  overflow-y: auto;
+}
 .dashboard,
 .two-col {
   display: grid;
@@ -835,7 +862,6 @@ class BuyItem:
         base_cost: The price of the first unit.
         effect_kind: Which stat it improves (an EFFECT_ constant).
         effect_amount: How much each owned unit improves that stat.
-        unlock_at_earned: Lifetime earnings needed for it to appear.
         is_one_time: Whether it can only be bought once.
         required_research: Research needed for it to appear ("" = none).
         owned: How many units the player has bought.
@@ -845,7 +871,6 @@ class BuyItem:
     base_cost: float
     effect_kind: str
     effect_amount: int
-    unlock_at_earned: float
     is_one_time: bool
     required_research: str
     owned: int
@@ -1122,7 +1147,7 @@ def make_starting_items() -> list[BuyItem]:
     items = []
     for row in STARTING_ITEM_ROWS:
         items.append(BuyItem(row[0], row[1], row[2], row[3], row[4], row[5],
-                             row[6], row[7], 0))
+                             row[6], 0))
     return items
 
 
@@ -1240,10 +1265,10 @@ def make_test_item(effect_kind: str, effect_amount: int,
         owned: How many units are already owned.
 
     Returns:
-        A repeatable BuyItem that unlocks at 50 earned.
+        A repeatable BuyItem that needs no research.
     """
-    return BuyItem("Test", "T", 100.0, effect_kind, effect_amount, 50.0,
-                   False, NO_REQUIREMENT, owned)
+    return BuyItem("Test", "T", 100.0, effect_kind, effect_amount, False,
+                   NO_REQUIREMENT, owned)
 
 
 def make_one_time_item(owned: int) -> BuyItem:
@@ -1255,7 +1280,7 @@ def make_one_time_item(owned: int) -> BuyItem:
     Returns:
         A one-time BuyItem that is always unlocked.
     """
-    return BuyItem("Once", "O", 100.0, EFFECT_UNLOCK, 1, 0.0, True,
+    return BuyItem("Once", "O", 100.0, EFFECT_UNLOCK, 1, True,
                    NO_REQUIREMENT, owned)
 
 
@@ -3090,7 +3115,7 @@ def count_available_research(research: list[Research], total_earned: float,
 assert_equal(count_available_research(make_new_state().research, 0.0,
                                       PHASE_PEACE), 0)
 assert_equal(count_available_research(make_new_state().research, 1000.0,
-                                      PHASE_PEACE), 2)
+                                      PHASE_PEACE), 4)
 
 
 def safe_money_required(cost: float, goods_in_stock: int) -> float:
@@ -4416,33 +4441,34 @@ assert_equal(can_afford(make_test_item(EFFECT_STOCKING, 1, 0), 1, 115.0, 0),
 assert_equal(can_afford(make_one_time_item(1), 1, 9999.0, 5), False)
 
 
-def is_item_visible(item: BuyItem, total_earned: float,
-                    research: list[Research]) -> bool:
-    """Check whether the item has unlocked or was already purchased.
+def is_item_visible(item: BuyItem, research: list[Research]) -> bool:
+    """Check whether the item's research is done or it was already bought.
+
+    Items never unlock from earnings alone, only through research, which
+    the player buys with a click. So a tick can never make one appear.
 
     Args:
         item: The item to check.
-        total_earned: The player's lifetime earnings.
         research: Every research project.
 
     Returns:
-        True if its research is done and it was bought or has unlocked.
+        True if the item needs no research, its research is done, or it
+        is already owned.
     """
-    return ((item.owned > 0 or total_earned >= item.unlock_at_earned)
-            and is_requirement_met(item.required_research, research))
+    return (item.owned > 0
+            or is_requirement_met(item.required_research, research))
 
 
-assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 0), 49.0, []),
-             False)
-assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 0), 50.0, []),
-             True)
-assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 1), 0.0, []),
-             True)
-# The pickup truck stays hidden until its research is done.
-assert_equal(is_item_visible(make_new_state().buy_items[5], 0.0,
+assert_equal(is_item_visible(make_test_item(EFFECT_STOCKING, 1, 0), []), True)
+# The marketing campaign and pickup truck stay hidden until researched.
+assert_equal(is_item_visible(make_new_state().buy_items[2],
                              make_new_state().research), False)
-assert_equal(is_item_visible(make_new_state().buy_items[5], 0.0,
+assert_equal(is_item_visible(make_new_state().buy_items[5],
+                             make_new_state().research), False)
+assert_equal(is_item_visible(make_new_state().buy_items[5],
                              make_finished_research_state(2).research), True)
+assert_equal(is_item_visible(make_new_state().buy_items[0],
+                             make_new_state().research), True)
 
 
 def is_unlock_item_owned(policy: Policy, items: list[BuyItem]) -> bool:
@@ -4960,37 +4986,39 @@ assert_equal(research_summary(make_new_state().research[4], make_new_state()),
 
 
 def controls_signature(state: State) -> str:
-    """Summarize what decides whether a tick must redraw the buttons.
+    """Summarize what decides whether a tick must redraw #live_area.
 
-    Buy and expedition buttons stay on screen whether or not the player
-    can afford them (buy_item and run_expedition refuse what can't be
-    afforded), so money changes never redraw them. Only a newly visible
-    item or a new headline does. The tick compares this text with the
-    previous tick's and leaves the buttons alone if they match, so a
-    tick can't interrupt a click.
+    The tick compares this text with the previous tick's. If they match,
+    it replaces only #live_numbers, which holds no buttons, so it can't
+    interrupt a click. Money never counts: buttons stay on screen whether
+    or not the player can afford them. Neither do new buy items, which
+    only appear through research (a click). The Company page's buttons
+    sit outside #live_area, so even a redraw leaves them alone.
 
     Args:
         state: The current game state.
 
     Returns:
-        Text recording the news, which items are visible, and how many
-        research projects are available (the Business badge).
+        Text recording the news, the game phase, and the War badge, plus
+        the available research count when the Research page is open.
     """
-    signature = (str(state.news_feed) + str(count_available_research(
-        state.research, state.total_earned, state.game_phase))
-        + state.game_phase + war_badge(state))
-    for item in state.buy_items:
-        signature = signature + str(is_item_visible(item, state.total_earned,
-                                                    state.research))
+    signature = str(state.news_feed) + state.game_phase + war_badge(state)
+    # The Research page lists available projects inside #live_area.
+    if state.current_page == PAGE_RESEARCH:
+        signature = signature + str(count_available_research(
+            state.research, state.total_earned, state.game_phase))
     return signature
 
 
-# Money alone never changes the signature; unlocking an item does.
+# Money and lifetime earnings never change the signature.
 assert_equal(controls_signature(make_new_state()),
              controls_signature(make_rich_state()))
+assert_equal(controls_signature(make_new_state()),
+             controls_signature(make_veteran_state()))
+# The war's headlines and new phase do.
 assert_equal(controls_signature(make_new_state())
-             == controls_signature(make_veteran_state()), False)
-# New research becoming available changes the badge, so it redraws.
+             == controls_signature(make_war_state()), False)
+# On the Research page, newly available research does too.
 assert_equal(controls_signature(make_new_state())
              == controls_signature(make_research_state()), False)
 
@@ -5193,6 +5221,28 @@ def threat_text(state: State) -> str:
 
 assert_equal(threat_text(make_nearly_threatened_state()),
              "99% (+" + str(round(threat_per_second(5), 1)) + "/s)")
+
+
+def build_research_chips(state: State) -> list[Div]:
+    """Build the chip counting research the player can start now.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        One "🔬 Research" chip, or none when nothing is available.
+    """
+    available = count_available_research(state.research, state.total_earned,
+                                         state.game_phase)
+    if available == 0:
+        return []
+    return [build_chip("🔬 Research", str(available) + " available",
+                       "chip")]
+
+
+assert_equal(build_research_chips(make_new_state()), [])
+assert_equal(build_research_chips(make_research_state()),
+             [build_chip("🔬 Research", "4 available", "chip")])
 
 
 def build_war_chips(state: State) -> list[Div]:
@@ -5589,7 +5639,7 @@ def build_live_numbers(state: State) -> list:
         A list of the components inside the #live_numbers element.
     """
     chips = ([build_chip("Money", format_money(state.money), "chip money")]
-             + build_war_chips(state))
+             + build_research_chips(state) + build_war_chips(state))
     if state.current_page == PAGE_WAR:
         return [Div(chips + build_wave_chips(state), classes="chips"),
                 build_war_board(state)]
@@ -5620,28 +5670,27 @@ assert_equal(nav_section(PAGE_RESEARCH), PAGE_BUSINESS)
 assert_equal(nav_section(PAGE_CASINO), PAGE_CASINO)
 
 
-def nav_label(row: list, available_research: int, war_alert: str) -> str:
-    """Build a nav button's text, adding the Business and War badges.
+def nav_label(row: list, war_alert: str) -> str:
+    """Build a nav button's text, adding the War badge.
+
+    The research count is a chip in #live_numbers instead of a badge
+    here, so it can change without redrawing the nav buttons.
 
     Args:
         row: One row of NAV_ROWS.
-        available_research: How many research projects are available.
         war_alert: The War badge text from war_badge.
 
     Returns:
-        The button text, like "Business 🔬2".
+        The button text, like "War ⚠️".
     """
-    if row[2] == PAGE_BUSINESS and available_research > 0:
-        return row[0] + " 🔬" + str(available_research)
     if row[2] == PAGE_WAR:
         return row[0] + war_alert
     return row[0]
 
 
-assert_equal(nav_label(NAV_ROWS[1], 2, ""), "Business 🔬2")
-assert_equal(nav_label(NAV_ROWS[1], 0, ""), "Business")
-assert_equal(nav_label(NAV_ROWS[0], 2, " ⚠️"), "Company")
-assert_equal(nav_label(NAV_ROWS[4], 0, " ⚠️"), "War ⚠️")
+assert_equal(nav_label(NAV_ROWS[1], ""), "Business")
+assert_equal(nav_label(NAV_ROWS[0], " ⚠️"), "Company")
+assert_equal(nav_label(NAV_ROWS[4], " ⚠️"), "War ⚠️")
 
 
 def build_nav(state: State) -> Div:
@@ -5653,11 +5702,9 @@ def build_nav(state: State) -> Div:
     Returns:
         A Div holding one Button per main page.
     """
-    available = count_available_research(state.research, state.total_earned,
-                                         state.game_phase)
     buttons = []
     for row in NAV_ROWS:
-        label = nav_label(row, available, war_badge(state))
+        label = nav_label(row, war_badge(state))
         # The War button only appears once the war has started.
         if row[2] != PAGE_WAR or is_wartime(state.game_phase):
             if row[2] == nav_section(state.current_page):
@@ -5803,7 +5850,7 @@ def build_buy_list(state: State) -> Div:
     """
     rows = [build_card_head("Buy List", [build_buy_amount_controls(state)])]
     for item_index, item in enumerate(state.buy_items):
-        if is_item_visible(item, state.total_earned, state.research):
+        if is_item_visible(item, state.research):
             rows.append(Div(
                 Span(item.emoji, classes="emoji"),
                 Div(Div(item.name, classes="item-name"),
@@ -5825,7 +5872,8 @@ def build_news_feed(state: State) -> Div:
         A card holding the list of headlines.
     """
     return Div(build_card_head("World News", []),
-               BulletedList(state.news_feed), classes="card")
+               Div(BulletedList(state.news_feed), classes="news-scroll"),
+               classes="card")
 
 
 def build_live_content(state: State) -> list:
@@ -5857,12 +5905,30 @@ def build_live_content(state: State) -> list:
                 Div(build_research_list(state),
                     build_completed_research(state),
                     classes="page two-col")]
-    return [
-        build_top_bar(state),
-        Div(Div(build_buy_list(state)),
-            Div(build_markup_controls(state), build_news_feed(state)),
-            classes="page dashboard"),
-    ]
+    return [build_top_bar(state),
+            Div(build_news_feed(state), classes="page")]
+
+
+def build_company_controls(state: State) -> Div:
+    """Build the Company page's Buy list and Pricing cards.
+
+    They sit outside #live_area, so no tick ever redraws these buttons.
+    They change only when a click route draws the whole page.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The two-column grid holding the Buy list and markup controls.
+    """
+    return Div(Div(build_buy_list(state)), Div(build_markup_controls(state)),
+               classes="page dashboard")
+
+
+assert_equal(build_company_controls(make_new_state()),
+             Div(Div(build_buy_list(make_new_state())),
+                 Div(build_markup_controls(make_new_state())),
+                 classes="page dashboard"))
 
 
 def build_company_content(state: State) -> list:
@@ -5874,7 +5940,8 @@ def build_company_content(state: State) -> list:
     Returns:
         A list of the page's components.
     """
-    return [Div(build_live_content(state), id="live_area")]
+    return [Div(build_live_content(state), id="live_area"),
+            build_company_controls(state)]
 
 
 def build_goods_form(state: State) -> Div:

@@ -150,6 +150,12 @@ other than `@dataclass` and `@route`, try/except, generators, JavaScript.
      chips; never put buttons there.
    - Action buttons stay on screen even when unaffordable; the route
      refuses the action. `controls_signature` must not depend on money.
+   - Keep frequently clicked buttons outside `#live_area` when a page has
+     per-tick content besides the top bar (the Company page puts the Buy
+     list and Pricing cards in `build_company_controls`, after
+     `#live_area`). A tick that redraws `#live_area` replaces every button
+     inside it, which can swallow a click in progress. `#live_area` uses
+     `display: contents` so the sticky top bar still sticks.
    - Check new pages at phone width (375 px): no sideways scrolling.
 
 ## Game design (current understanding — numbers are placeholders)
@@ -181,7 +187,8 @@ flavor-text strings).
   "Next Generation Corporate Organization" (unlocks a policy).
 - Each repeat purchase costs more (cost * COST_GROWTH ** owned).
 - X1 / X5 / X10 buttons set how many units one Buy click purchases.
-- Items unlock/appear as the player progresses (if statements).
+- New items appear only through research (`required_research`), never
+  from earnings alone, so a tick never has to redraw the Buy list.
 - Increase/lower markup buttons.
 
 **Business page:** checkboxes for which goods types to sell (each adds an
@@ -191,9 +198,11 @@ unpaid overtime: +stocking, -loyalty, raises strike risk). Strikes (labor
 unrest from policies) cause temporary penalties.
 
 **Research page (sub-page of Business):** reached from the "Open
-Research Lab" button on the Business page. The Business nav button shows a
-badge ("Business 🔬2") counting research that is available (prerequisite
-done and unlocked by total_earned; money is ignored, per rule 8). Each
+Research Lab" button on the Business page. A "🔬 Research" chip in
+`#live_numbers` (`build_research_chips`) counts research that is available
+(prerequisite done and unlocked by total_earned; money is ignored, per
+rule 8). It is a chip rather than a nav badge so it can update without
+redrawing the nav buttons. Each
 `Research` (catalog: `RESEARCH_ROWS`) is bought once with money and takes
 effect instantly, posting a World News headline. Categories: stat (%
 stocking/delivery), equipment (unlocks a buy item), unlock (unlocks a goods

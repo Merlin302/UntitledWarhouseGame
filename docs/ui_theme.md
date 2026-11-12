@@ -58,7 +58,10 @@ Screenshots: `docs/screenshots/theme_company_desktop.jpg` and
    "chip")`. Never put buttons there; a tick replaces it every time.
 3. Keep buttons stable: show them even when the player can't afford the
    action, and have the route refuse it. `controls_signature` only tracks
-   news and which items are visible, never money.
+   news, the game phase, and the War badge (plus available research on
+   the Research page), never money.
+   Keep often-clicked buttons outside `#live_area` where possible (see
+   `build_company_controls`).
 4. Forms (checkboxes, select boxes, text boxes) go outside `#live_area`,
    so ticks can't reset them.
 5. Test every new page at phone width (375 px) and check there is no
