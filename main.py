@@ -178,25 +178,28 @@ CATEGORY_WORLD = "world"
 # Workarounds win back income lost to wartime sanctions.
 CATEGORY_WORKAROUND = "workaround"
 
-# Sanctions: from the moment the war starts until it ends, all income is
-# multiplied by SANCTIONS_INCOME_MULTIPLIER. Each workaround research adds
+# Sanctions: from the moment the war starts until it ends, the profit on
+# each sale (what it earns above UNIT_COST) is multiplied by
+# SANCTIONS_INCOME_MULTIPLIER. Every sale still earns back its UNIT_COST,
+# so selling never loses money. Each workaround research adds
 # WORKAROUND_RECOVERY back, and the Parallel Imports Scheme also lets
 # sanctioned goods be sold again.
 #
 # Target: a player who finds every workaround and sells the war goods
 # should end the war at about 1.5x their pre-war income. The workarounds
-# and war goods suppliers alone get back to about pre-war income; the rest
-# comes from artifacts, food acquisitions, and policies. Worked example
-# (tested below calculate_income):
+# and war goods suppliers alone get to about 1.15x; the rest comes from
+# artifacts, food acquisitions, and policies. Worked example at markup 1.5
+# (a sale price of 22.50; tested below calculate_income):
 #   Pre-war: sells Household, Canned, Electronics, and War Supplies with
 #     all four suppliers: bonus 0.05 + 0.10 + 0.15 + 1.00 = 1.30, so each
-#     sale earns 2.30x the base price.
-#   War starts: Electronics is banned (bonus 1.15) and income is cut by
-#     80%: 2.15 x 0.2 = 0.43, about 19% of pre-war. This is the crash.
+#     sale earns 22.50 x 2.30 = 51.75 (a profit of 36.75).
+#   War starts: Electronics is banned (bonus 1.15) and 80% of the profit
+#     is lost: 15 + (22.50 x 2.15 - 15) x 0.2 = 21.68, about 42% of
+#     pre-war. This is the crash.
 #   All three workarounds: Electronics is back and the multiplier is
-#     0.2 + 3 x 0.15 = 0.65: 2.30 x 0.65 = 1.495, about 65% of pre-war.
+#     0.2 + 3 x 0.15 = 0.65: 15 + 36.75 x 0.65 = 38.89, about 75%.
 #   Plus the Body Armor and Drone Components suppliers (+0.60, +0.80):
-#     3.70 x 0.65 = 2.405, about 1.05x pre-war.
+#     15 + (22.50 x 3.70 - 15) x 0.65 = 59.36, about 1.15x pre-war.
 SANCTIONS_INCOME_MULTIPLIER = 0.2
 WORKAROUND_RECOVERY = 0.15
 
@@ -412,7 +415,7 @@ WAR_START_EARNED = 40000.0
 WAR_START_NEWS = ("BREAKING: The " + ENEMY_COUNTRY + " invades the "
                   + HOME_COUNTRY + "! Markets 'mildly concerned'.")
 SANCTIONS_NEWS = ("Sanctions ban electronics and luxury imports; "
-                  + "analysts expect revenue to 'drop 80%, at minimum'.")
+                  + "analysts expect profits to 'drop 80%, at minimum'.")
 SIRENS_NEWS = ("Air raid sirens sound citywide. Read the briefing in your "
                + "Inbox before the first attack.")
 
@@ -646,11 +649,11 @@ EMAIL_ROWS = [
      + "which is the first thing that changed.\n\nCorporate HQ",
      False],
     [EMAIL_CRASH, SENDER_ADVISOR,
-     "Our income has been cut by 80% (by our own Government)",
-     "Sanctions took effect this morning. Every sale now earns a fifth of "
-     + "what it did yesterday, and electronics and luxury imports may no "
-     + "longer be sold. The Government calls this 'shared sacrifice'. I "
-     + "checked, and we are the ones doing the sharing.\n\n"
+     "Our profits have been cut by 80% (by our own Government)",
+     "Sanctions took effect this morning. Every sale now keeps a fifth of "
+     + "the profit it made yesterday, and electronics and luxury imports "
+     + "may no longer be sold. The Government calls this 'shared "
+     + "sacrifice'. I checked, and we are the ones doing the sharing.\n\n"
      + "Here is my advice, which you are free to ignore and be wrong:\n"
      + "1. Food. People still eat during a war, and our foreign rivals "
      + "are fleeing. Acquisitions now lists their food companies "
@@ -4680,7 +4683,7 @@ assert_equal(is_sanctioned_now(make_new_state().goods_types[0],
 
 
 def sanctions_multiplier(research: list[Research], game_phase: str) -> float:
-    """Find what sanctions multiply all income by.
+    """Find what sanctions multiply the profit on each sale by.
 
     Args:
         research: Every research project.
@@ -5816,25 +5819,39 @@ def calculate_income(units_sold: int, sale_price: float,
                      total_bonus: float, multiplier: float) -> float:
     """Calculate the money earned from a tick's sales.
 
+    Sanctions only cut the profit: each sale always earns back UNIT_COST,
+    so stocking and selling can never lose money.
+
     Args:
         units_sold: The number of units sold.
         sale_price: The price of one unit.
         total_bonus: The income bonus as a fraction.
-        multiplier: What sanctions multiply income by (1.0 in peace).
+        multiplier: What sanctions multiply the profit by (1.0 in peace).
 
     Returns:
         The income from these sales.
     """
-    return units_sold * sale_price * (1 + total_bonus) * multiplier
+    earned_per_unit = sale_price * (1 + total_bonus)
+    profit_per_unit = earned_per_unit - UNIT_COST
+    return units_sold * (UNIT_COST + profit_per_unit * multiplier)
 
 
-assert_equal(calculate_income(4, 10.0, 0.0, 1.0), 40.0)
-assert_equal(calculate_income(4, 10.0, 0.5, 1.0), 60.0)
-assert_equal(calculate_income(4, 10.0, 0.5, 0.5), 30.0)
+# In peace (multiplier 1.0), income is the full sale price plus bonus.
+assert_equal(calculate_income(4, 30.0, 0.0, 1.0), 120.0)
+assert_equal(calculate_income(4, 30.0, 0.5, 1.0), 180.0)
+# Sanctions cut only the profit: 4 x (15 + 15 x 0.2).
+assert_equal(calculate_income(4, 30.0, 0.0, 0.2), 72.0)
+# Even at the lowest markup and no bonus, a sanctioned sale earns back
+# at least what the unit cost.
+assert_equal(calculate_income(1, calculate_sale_price(MIN_MARKUP), 0.0,
+                              SANCTIONS_INCOME_MULTIPLIER) >= UNIT_COST,
+             True)
 
 
 def example_income_ratio(state: State) -> float:
     """Compare one sale's income with the pre-war example's (for tests).
+
+    Both are measured at STARTING_MARKUP, like the worked example.
 
     Args:
         state: The State to compare.
@@ -5842,19 +5859,20 @@ def example_income_ratio(state: State) -> float:
     Returns:
         Its income per sale divided by make_prewar_tycoon_state's.
     """
-    prewar = calculate_income(1, 1.0, calculate_total_bonus(
+    price = calculate_sale_price(STARTING_MARKUP)
+    prewar = calculate_income(1, price, calculate_total_bonus(
         make_prewar_tycoon_state()), 1.0)
-    return calculate_income(1, 1.0, calculate_total_bonus(state),
+    return calculate_income(1, price, calculate_total_bonus(state),
                             sanctions_multiplier(state.research,
                                                  state.game_phase)) / prewar
 
 
 # The worked example in the constants block: the war crashes income to
-# about 19% of pre-war, and the workarounds plus the war goods suppliers
-# lift it back to about pre-war income.
+# about 42% of pre-war, and the workarounds plus the war goods suppliers
+# lift it to about 1.15x.
 assert_equal(round(example_income_ratio(make_crashed_tycoon_state()), 2),
-             0.19)
-assert_equal(round(example_income_ratio(make_war_tycoon_state()), 2), 1.05)
+             0.42)
+assert_equal(round(example_income_ratio(make_war_tycoon_state()), 2), 1.15)
 
 
 def max_income_per_tick(state: State) -> float:
@@ -6688,7 +6706,7 @@ def describe_research_effect(project: Research) -> str:
                 + project.goods_name + " income, ")
     if project.sanction_recovery != 0:
         text = (text + percent_text(project.sanction_recovery)
-                + " income under sanctions, ")
+                + " profit under sanctions, ")
     if project.name == PARALLEL_IMPORTS:
         text = text + "sanctioned goods can be sold, "
     return text[:-2]
@@ -6699,7 +6717,7 @@ assert_equal(describe_research_effect(make_test_research("A", "", False)),
              + "+50% Test income")
 assert_equal(describe_research_effect(make_new_state().research[4]), "")
 assert_equal(describe_research_effect(make_new_state().research[14]),
-             "+15% income under sanctions, sanctioned goods can be sold")
+             "+15% profit under sanctions, sanctioned goods can be sold")
 
 
 def research_unlock_text(project: Research, state: State) -> str:
@@ -6756,7 +6774,7 @@ assert_equal(research_summary(make_new_state().research[4], make_new_state()),
              "Unlock · Unlocks: Imported Luxuries (goods)")
 assert_equal(research_summary(make_new_state().research[15],
                               make_new_state()),
-             "Workaround · +15% income under sanctions")
+             "Workaround · +15% profit under sanctions")
 
 
 def controls_signature(state: State) -> str:
@@ -6963,7 +6981,7 @@ def active_effect_lines(state: State) -> list[str]:
     if state.game_phase == PHASE_WAR:
         multiplier = sanctions_multiplier(state.research, state.game_phase)
         lines.append("🚫 Sanctions: " + percent_text(multiplier - 1)
-                     + " income")
+                     + " profit")
         if state.supplies_government:
             lines.append("🏛️ Supplying the Government: "
                          + str(GOVERNMENT_SUPPLY_UNITS_PER_TICK)
@@ -6985,9 +7003,9 @@ assert_equal(active_effect_lines(make_state_with_income_bonuses()),
 assert_equal(active_effect_lines(make_owner_state(7)),
              ["📦 Boxly Logistics: +50 market size"])
 assert_equal(active_effect_lines(make_war_state())[-1],
-             "🚫 Sanctions: -80% income")
+             "🚫 Sanctions: -80% profit")
 assert_equal(active_effect_lines(make_workaround_state())[-1],
-             "🚫 Sanctions: -35% income")
+             "🚫 Sanctions: -35% profit")
 assert_equal(active_effect_lines(expected_after_buying_bronik())[-1],
              "💸 Bailout upkeep: -Ŧ8.00/s")
 assert_equal(active_effect_lines(make_supplier_state(10))[-1],

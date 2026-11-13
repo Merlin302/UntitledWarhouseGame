@@ -278,16 +278,20 @@ the Government sends `EMAIL_LOW_OPINION` once. Every
 banks), posts a headline, and sends `EMAIL_CONFISCATION` (repeatable).
 
 **Sanctions crash (economy rework E2 built):** from the war's start until
-it ends (`finish_war` posts a "sanctions lifted" headline), all
-income is multiplied by `sanctions_multiplier` (`calculate_income`'s
-`multiplier`): `SANCTIONS_INCOME_MULTIPLIER` (0.2, an 80% cut) plus
+it ends (`finish_war` posts a "sanctions lifted" headline), the profit
+on each sale (what it earns above `UNIT_COST`) is multiplied by
+`sanctions_multiplier` (`calculate_income`'s `multiplier`); every sale
+still earns back `UNIT_COST`, so selling never loses money (an earlier
+version cut all revenue, which made each sale lose money and softlocked
+the game). The multiplier is `SANCTIONS_INCOME_MULTIPLIER` (0.2, an 80%
+cut) plus
 `Research.sanction_recovery` of each completed workaround research
 (`CATEGORY_WORKAROUND`, war-only: Parallel Imports Scheme, Offshore Shell
 Company, Patriotic Rebranding; each `WORKAROUND_RECOVERY`). The Parallel
 Imports Scheme also makes sanctioned goods sellable again
 (`is_sanctioned_now`). There is no free wartime goods bonus. Target: about
 1.5x pre-war income by the end of the war; every workaround plus the war
-goods suppliers gives about 1.05x, and artifacts, food acquisitions, and
+goods suppliers gives about 1.15x (at markup 1.5), and artifacts, food acquisitions, and
 policies are meant to make up the rest. The worked example is in a comment
 by the constants and is tested below `calculate_income`
 (`example_income_ratio`). The Company page shows a
