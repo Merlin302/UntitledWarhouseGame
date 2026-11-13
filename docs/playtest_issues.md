@@ -22,6 +22,8 @@ pass.
 | 9 | 2026-11-11, W3 | Balance | `WAR_VICTORY_GOODS = 30000` is a guess. It needs real numbers for how many war goods a typical player sells over 35 waves. | deferred |
 | 10 | 2026-11-11, W3 | Debug | "End the war (lose)" sets war goods sold to 0 and counts all 35 waves as broken through, so a defeat demo shows extreme numbers. | open |
 | 11 | 2026-11-12, lost-click fix | Pacing | The marketing campaign, warehouse expansion, and corporate organization items now need research (Social Media Playbook, Warehouse Zoning Permit, Corporate Restructuring Study), so the research chip shows 3 available within seconds of a new game (see #1). Their costs (100 / 250 / 750) are guesses. | deferred |
+| 12 | 2026-11-13, Emails | Pacing | The research email arrives on tick 1, right after the welcome email, because some research is available almost at once (see #1 and #11). Raising the early `unlock_at_earned` values would space them out. | deferred |
+| 13 | 2026-11-13, Emails | Emails | The confiscation notice has no real trigger yet: there is no confiscation mechanic, so only the Debug button sends it. | open |
 
 ## Resolved
 

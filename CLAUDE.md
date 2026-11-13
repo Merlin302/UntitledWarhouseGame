@@ -231,8 +231,8 @@ length, x `DEBUG_WAR_SPEED`), faster with more war goods sold, capped at
 `MAX_THREAT_PER_SECOND`.
 
 **War page (phase W2 built: air defense):** the War nav button appears once
-the war starts (badge ❗ until the briefing is read, ⚠️ during a wave). A
-one-time briefing (`seen_war_tutorial`) must be dismissed before wave 1.
+the war starts (badge ⚠️ during a wave). The air defense briefing is an
+email (`EMAIL_FIRST_WAVE`, see Emails); wave 1 waits until it is opened.
 Between waves the threat meter fills; when full, `start_wave` generates the
 next wave with `make_wave(wave_number)` (count, HP, and attacker mix grow;
 dire waves every `DIRE_WAVE_EVERY` and the last; capped at `MAX_ATTACKERS`)
@@ -248,7 +248,7 @@ living attacker there, leftovers carry over. Failing a wave (`end_wave` /
 `rate_penalty` -> `apply_rate_modifiers`; failing a dire wave also destroys
 `DIRE_EQUIPMENT_LOSS_FRACTION` of each defense. On the War page the top bar
 is not sticky and `#live_numbers` holds the whole battle board (Drafter
-2.1.4 Fragments update one element); the briefing and shop sit outside it.
+2.1.4 Fragments update one element); the shop sits outside it.
 **End of the war (phase W3 built):** when wave `WAVE_COUNT` ends,
 `end_wave` calls `finish_war`: `game_phase` becomes war_over and a ceasefire
 headline is posted. The war is won if `war_goods_sold >= WAR_VICTORY_GOODS`
@@ -258,10 +258,28 @@ shows `war_victory_page` or `war_defeat_page` (waves defended, waves that
 broke through, war goods sold, and an Epilogue placeholder for the ending
 that comes later). The economy keeps running after the war.
 
+**Emails (Inbox page):** `EMAIL_ROWS` is the catalog of templates (trigger
+key, sender, subject, body, repeatable). `send_email(state, key)` copies one
+into `State.inbox` (newest first, trimmed to `MAX_INBOX_EMAILS`) as an
+`Email` (key, sender, subject, body, tick_received, is_read). A template is
+sent once unless repeatable; `State.sent_email_keys` remembers what was
+sent, even after trimming. Senders: John Johnson (the advisor), Corporate
+HQ, the Government. Tone: dry corporate satire. Triggers: welcome
+(`start_game`), research (`run_email_triggers` in the tick, when research
+is first available), war (`start_war`), first wave (`run_intermission`,
+when threat reaches `BRIEFING_THREAT`; no wave starts while it is unread:
+`is_email_unread`), confiscation (repeatable; Debug button only until a
+confiscation mechanic exists). The nav shows "Inbox (N)" (`inbox_badge`,
+part of `controls_signature`; it never depends on money). `inbox_page`
+lists emails inside `#live_area`, so new mail appears at once;
+`open_email` marks one read and shows it (`PAGE_EMAIL`). New emails: add a
+row to `EMAIL_ROWS` and one `send_email` call at the trigger.
+
 **Debug page (🐞 in the nav, hidden when `DEBUG_TOOLS = False`):** buttons
 that add money and jump ahead (restart in peace, unlock peacetime research,
 start the war, fill the threat meter, start the next wave now, skip to
-dire wave 10, skip to the last wave, end the war with a win or a loss), for
+dire wave 10, skip to the last wave, end the war with a win or a loss,
+send the confiscation email), for
 demos and play-testing.
 
 **Artifacts page (gacha):** pay for expeditions (buttons for X1, X5, X10,

@@ -247,8 +247,8 @@ WAR_START_NEWS = ("BREAKING: The " + ENEMY_COUNTRY + " invades the "
                   + HOME_COUNTRY + "! Markets 'mildly concerned'.")
 SANCTIONS_NEWS = ("Sanctions ban electronics and luxury imports; the "
                   + "company is now the only supplier of soup.")
-SIRENS_NEWS = ("Air raid sirens sound citywide. Read the War page briefing "
-               + "before the first attack.")
+SIRENS_NEWS = ("Air raid sirens sound citywide. Read the briefing in your "
+               + "Inbox before the first attack.")
 
 WAVE_COUNT = 35
 # Every 10th wave, and the last wave, is a dire wave.
@@ -320,6 +320,110 @@ WAR_LOST_NEWS = ("CEASEFIRE: The " + HOME_COUNTRY + " signs a humiliating "
                  + "treaty. The warehouse is blamed 'for vibes'.")
 
 # ---------------------------------------------------------------------------
+# Emails: the inbox and its catalog of templates
+# ---------------------------------------------------------------------------
+
+PAGE_INBOX = "inbox"
+# The page that shows one opened email.
+PAGE_EMAIL = "email"
+# The inbox drops its oldest emails beyond this many.
+MAX_INBOX_EMAILS = 20
+# The air defense briefing is sent when the threat meter first gets here.
+BRIEFING_THREAT = 50.0
+
+SENDER_ADVISOR = "John Johnson, Senior Advisor"
+SENDER_HQ = "Corporate HQ"
+SENDER_GOVERNMENT = "Government of the " + HOME_COUNTRY
+
+# Trigger keys: send_email(state, key) sends the template with that key.
+EMAIL_WELCOME = "welcome"
+EMAIL_RESEARCH = "research"
+EMAIL_WAR = "war"
+EMAIL_FIRST_WAVE = "first wave"
+EMAIL_CONFISCATION = "confiscation"
+
+# Each row: trigger key, sender, subject, body, and whether it can be sent
+# more than once. "\n" in a body starts a new line on the page.
+EMAIL_ROWS = [
+    [EMAIL_WELCOME, SENDER_ADVISOR,
+     "Welcome aboard (there is no orientation)",
+     "Congratulations on your new warehouse. I am John Johnson, your "
+     + "Senior Advisor. I advise; you are liable.\n\n"
+     + "How the business works, every tick:\n"
+     + "1. Procurement Agents buy goods into the warehouse at "
+     + CURRENCY_SYMBOL + str(UNIT_COST) + " each, until it is full or you "
+     + "are broke.\n"
+     + "2. Delivery Vans carry goods to customers. You sell the smallest "
+     + "of three numbers: goods in stock, delivery capacity, and customer "
+     + "demand.\n"
+     + "3. Demand comes from customer loyalty. A higher markup earns more "
+     + "per sale and makes customers like you less. They get over it, "
+     + "slowly.\n\n"
+     + "Start on the Company page: buy an agent and a few vans. Then watch "
+     + "which number is holding you back, and buy more of that.\n\n"
+     + "Regards,\nJohn Johnson\n"
+     + "Sent from my desk, which I am told is temporary",
+     False],
+    [EMAIL_RESEARCH, SENDER_HQ,
+     "Memo: innovation is now permitted",
+     "Following a successful quarter, the Board has approved the concept "
+     + "of 'ideas'.\n\n"
+     + "A Research Lab is open on the Business page. Each project is paid "
+     + "for once and works immediately. Some raise stocking or delivery, "
+     + "some unlock new equipment, goods, or policies, and some rearrange "
+     + "the market in our favor.\n\n"
+     + "The 🔬 Research chip at the top of every page counts the projects "
+     + "you can start. More appear as lifetime earnings grow.\n\n"
+     + "Innovation outside approved projects remains a disciplinary "
+     + "matter.\n\nCorporate HQ",
+     False],
+    [EMAIL_WAR, SENDER_GOVERNMENT,
+     "NOTICE: a state of war now exists",
+     "Citizen-Enterprise,\n\n"
+     + "The " + ENEMY_COUNTRY + " has invaded the " + HOME_COUNTRY
+     + ". You are instructed to remain calm and operational.\n\n"
+     + "Effective immediately:\n"
+     + "- Goods marked 🚫 Sanctioned on the Business page may not be "
+     + "sold.\n"
+     + "- Essential goods now earn more, as your competitors have "
+     + "relocated abroad. The Government has no comment on this.\n"
+     + "- A Defense Procurement License is available in your Research "
+     + "Lab. War goods sold decide who wins the war. They also make your "
+     + "warehouse more interesting to the enemy.\n\n"
+     + "A War page has been issued to you. Thank you for your continued "
+     + "existence.",
+     False],
+    [EMAIL_FIRST_WAVE, SENDER_ADVISOR,
+     "URGENT: things in the sky (read before wave 1)",
+     "The threat meter is half full, so here is everything I know about "
+     + "air defense. The enemy will not attack until you have opened this "
+     + "email. I asked; they were surprisingly reasonable about it.\n\n"
+     + "- The " + ENEMY_COUNTRY + " attacks in " + str(WAVE_COUNT)
+     + " waves. A wave starts when the threat meter is full.\n"
+     + "- Selling war goods fills the meter faster, but war goods sold "
+     + "decide who wins the war.\n"
+     + "- Attackers fly high, medium, or low. Each defense is good at "
+     + "some altitudes and useless at others.\n"
+     + "- Shoot down every attacker before the wave's timer runs out, or "
+     + "the survivors destroy stock and cut production for a while.\n"
+     + "- Every " + str(DIRE_WAVE_EVERY) + "th wave (and the last) is "
+     + "dire: tougher, and losing it damages your defenses.\n"
+     + "- Air defense is sold on the War page at any time, even "
+     + "mid-wave.\n\n"
+     + "I will be advising from the basement.\n\nJohn Johnson",
+     False],
+    [EMAIL_CONFISCATION, SENDER_GOVERNMENT,
+     "Notice of Patriotic Contribution",
+     "Citizen-Enterprise,\n\n"
+     + "Under the Wartime Logistics Act, a portion of your property has "
+     + "been reclassified as 'the State's'.\n\n"
+     + "No action is required on your part. No action is possible on your "
+     + "part. A receipt will be issued after the war, subject to the "
+     + "outcome of the war.",
+     True],
+]
+
+# ---------------------------------------------------------------------------
 # Debug: shortcuts for demos and play-testing
 # ---------------------------------------------------------------------------
 
@@ -336,6 +440,7 @@ DEBUG_JUMP_DIRE = "dire"
 DEBUG_JUMP_LAST = "last"
 DEBUG_JUMP_WIN = "win"
 DEBUG_JUMP_LOSE = "lose"
+DEBUG_JUMP_CONFISCATION = "confiscation"
 # Lifetime earnings that make every peacetime research appear.
 DEBUG_RESEARCH_EARNED = 25000.0
 
@@ -445,6 +550,7 @@ NAV_ROWS = [
     ["Artifacts", "artifacts_page", PAGE_ARTIFACTS],
     ["Casino", "casino_page", PAGE_CASINO],
     ["War", "war_page", PAGE_WAR],
+    ["Inbox", "inbox_page", PAGE_INBOX],
 ]
 
 # ADVANCED: This is CSS, the language browsers use to style a page. Each
@@ -661,6 +767,10 @@ body .drafter-body-- .nav button.current {
    whole page instead of only to #live_area. */
 #live_area {
   display: contents;
+}
+.email-body {
+  white-space: pre-line;
+  margin: 10px 0;
 }
 .news-scroll {
   max-height: 7.5em;
@@ -1050,6 +1160,26 @@ class TypingRound:
 
 
 @dataclass
+class Email:
+    """One email in the player's inbox, copied from a row of EMAIL_ROWS.
+
+    Attributes:
+        key: The EMAIL_ trigger key of the template it was built from.
+        sender: Who the email is from.
+        subject: The subject line.
+        body: The full text; "\\n" starts a new line.
+        tick_received: The value of State.tick_count when it arrived.
+        is_read: Whether the player has opened it.
+    """
+    key: str
+    sender: str
+    subject: str
+    body: str
+    tick_received: int
+    is_read: bool
+
+
+@dataclass
 class State:
     """Holds everything the website remembers between pages.
 
@@ -1087,9 +1217,11 @@ class State:
         wave_number: The number of waves started so far.
         wave_ms_left: Milliseconds left in the current wave (0 = no wave).
         waves_defended: How many waves were destroyed in time.
-        seen_war_tutorial: Whether the player dismissed the War briefing.
         raid_ms_left: Milliseconds left of the air raid production penalty.
         last_wave_report: A summary of how the latest wave ended.
+        inbox: The newest MAX_INBOX_EMAILS emails, newest first.
+        sent_email_keys: The key of every template sent so far, so a
+            once-only email is never sent twice (one entry per template).
     """
     company_name: str
     money: float
@@ -1124,9 +1256,10 @@ class State:
     wave_number: int
     wave_ms_left: int
     waves_defended: int
-    seen_war_tutorial: bool
     raid_ms_left: int
     last_wave_report: str
+    inbox: list[Email]
+    sent_email_keys: list[str]
 
 
 def make_no_typing_round() -> TypingRound:
@@ -1245,9 +1378,10 @@ def make_new_state() -> State:
         wave_number=0,
         wave_ms_left=0,
         waves_defended=0,
-        seen_war_tutorial=False,
         raid_ms_left=0,
         last_wave_report="",
+        inbox=[],
+        sent_email_keys=[],
     )
 
 
@@ -1431,10 +1565,11 @@ def expected_after_named_start() -> State:
     """Build the State expected after starting a company named Boxes.
 
     Returns:
-        A new-game State with the company name set.
+        A new-game State with the company name set and the welcome email.
     """
     state = make_new_state()
     state.company_name = "Boxes"
+    send_email(state, EMAIL_WELCOME)
     return state
 
 
@@ -1872,7 +2007,43 @@ def make_briefed_threat_state() -> State:
         A war State whose next tick fills the meter and starts wave 1.
     """
     state = make_nearly_threatened_state()
-    state.seen_war_tutorial = True
+    skip_briefing(state)
+    return state
+
+
+def make_unbriefed_war_state() -> State:
+    """Build the war State with the air defense briefing still unread.
+
+    Returns:
+        A war State whose first wave is waiting for the player.
+    """
+    state = make_war_state()
+    send_email(state, EMAIL_FIRST_WAVE)
+    return state
+
+
+def make_inbox_state() -> State:
+    """Build a new-game State with two unread emails, viewing the Inbox.
+
+    Returns:
+        A State on the Inbox page: research email first, then welcome.
+    """
+    state = make_new_state()
+    state.current_page = PAGE_INBOX
+    send_email(state, EMAIL_WELCOME)
+    send_email(state, EMAIL_RESEARCH)
+    return state
+
+
+def expected_after_opening_welcome() -> State:
+    """Build the State expected after opening the older of two emails.
+
+    Returns:
+        The inbox State showing the welcome email, which is now read.
+    """
+    state = make_inbox_state()
+    state.current_page = PAGE_EMAIL
+    state.inbox[1].is_read = True
     return state
 
 
@@ -1885,7 +2056,7 @@ def make_wave_state() -> State:
         A war State whose next 1000 ms tick wins the wave.
     """
     state = make_war_state()
-    state.seen_war_tutorial = True
+    skip_briefing(state)
     state.wave_number = 1
     state.wave_ms_left = 1000
     state.attackers = [make_test_attacker(ALTITUDE_LOW, 5.0)]
@@ -1957,7 +2128,7 @@ def make_finished_war_state(war_goods_sold: int) -> State:
     """
     state = make_war_state()
     state.game_phase = PHASE_WAR_OVER
-    state.seen_war_tutorial = True
+    skip_briefing(state)
     state.wave_number = WAVE_COUNT
     state.waves_defended = 30
     state.war_goods_sold = war_goods_sold
@@ -2234,6 +2405,204 @@ def add_news(news_feed: list[str], headline: str) -> list[str]:
 
 assert_equal(add_news(["old"], "new"), ["new", "old"])
 assert_equal(len(add_news(["x"] * MAX_NEWS_ITEMS, "new")), MAX_NEWS_ITEMS)
+
+
+# ---------------------------------------------------------------------------
+# Emails: sending, counting, and reading the inbox
+# ---------------------------------------------------------------------------
+
+def find_email_row(key: str) -> list:
+    """Find the email template with a trigger key (a linear search).
+
+    Args:
+        key: One of the EMAIL_ trigger keys.
+
+    Returns:
+        The matching row of EMAIL_ROWS, or an empty list if none matches.
+    """
+    for row in EMAIL_ROWS:
+        if row[0] == key:
+            return row
+    return []
+
+
+assert_equal(find_email_row(EMAIL_WELCOME)[1], SENDER_ADVISOR)
+assert_equal(find_email_row("no such key"), [])
+
+
+def add_email(inbox: list[Email], email: Email) -> list[Email]:
+    """Put an email first, dropping the oldest if the inbox is full.
+
+    Args:
+        inbox: The current emails, newest first.
+        email: The new email.
+
+    Returns:
+        A new list of at most MAX_INBOX_EMAILS emails.
+    """
+    return [email] + inbox[:MAX_INBOX_EMAILS - 1]
+
+
+assert_equal(add_email([], Email("k", "a", "b", "c", 0, False)),
+             [Email("k", "a", "b", "c", 0, False)])
+assert_equal(len(add_email([Email("k", "a", "b", "c", 0, False)]
+                           * MAX_INBOX_EMAILS,
+                           Email("new", "a", "b", "c", 1, False))),
+             MAX_INBOX_EMAILS)
+
+
+def send_email(state: State, key: str) -> None:
+    """Add the email with a trigger key to the inbox, unread.
+
+    A template is sent only once, unless its row marks it repeatable.
+
+    Args:
+        state: The game state to update.
+        key: One of the EMAIL_ trigger keys.
+    """
+    row = find_email_row(key)
+    was_sent = key in state.sent_email_keys
+    if row and (row[4] or not was_sent):
+        if not was_sent:
+            state.sent_email_keys.append(key)
+        state.inbox = add_email(state.inbox, Email(
+            row[0], row[1], row[2], row[3], state.tick_count, False))
+
+
+def state_after_emails(keys: list[str]) -> State:
+    """Send several emails to a new-game State and return it.
+
+    Args:
+        keys: The EMAIL_ trigger keys to send, in order.
+
+    Returns:
+        A new-game State after send_email for each key.
+    """
+    state = make_new_state()
+    for key in keys:
+        send_email(state, key)
+    return state
+
+
+assert_equal(state_after_emails([EMAIL_WELCOME]).inbox[0].sender,
+             SENDER_ADVISOR)
+assert_equal(state_after_emails([EMAIL_WELCOME]).inbox[0].is_read, False)
+# The newest email comes first.
+assert_equal(state_after_emails(
+    [EMAIL_WELCOME, EMAIL_RESEARCH]).inbox[0].key, EMAIL_RESEARCH)
+# A once-only email is not sent twice; a repeatable one is.
+assert_equal(len(state_after_emails([EMAIL_WELCOME, EMAIL_WELCOME]).inbox),
+             1)
+assert_equal(len(state_after_emails(
+    [EMAIL_CONFISCATION, EMAIL_CONFISCATION]).inbox), 2)
+assert_equal(state_after_emails(
+    [EMAIL_CONFISCATION, EMAIL_CONFISCATION]).sent_email_keys,
+    [EMAIL_CONFISCATION])
+# The inbox never grows past its maximum size.
+assert_equal(len(state_after_emails(
+    [EMAIL_CONFISCATION] * (MAX_INBOX_EMAILS + 5)).inbox), MAX_INBOX_EMAILS)
+
+
+def count_unread(inbox: list[Email]) -> int:
+    """Count the emails the player hasn't opened.
+
+    Args:
+        inbox: The emails to count.
+
+    Returns:
+        How many are unread.
+    """
+    count = 0
+    for email in inbox:
+        if not email.is_read:
+            count = count + 1
+    return count
+
+
+assert_equal(count_unread([]), 0)
+assert_equal(count_unread(make_inbox_state().inbox), 2)
+assert_equal(count_unread(expected_after_opening_welcome().inbox), 1)
+
+
+def is_email_unread(inbox: list[Email], key: str) -> bool:
+    """Check whether an email with a trigger key is waiting to be read.
+
+    Args:
+        inbox: The emails to search.
+        key: One of the EMAIL_ trigger keys.
+
+    Returns:
+        True if the inbox holds an unread email with that key.
+    """
+    for email in inbox:
+        if email.key == key and not email.is_read:
+            return True
+    return False
+
+
+assert_equal(is_email_unread([], EMAIL_FIRST_WAVE), False)
+assert_equal(is_email_unread(make_unbriefed_war_state().inbox,
+                             EMAIL_FIRST_WAVE), True)
+
+
+def skip_briefing(state: State) -> None:
+    """Deliver the air defense briefing (if needed) and mark it read.
+
+    Used by the debug jumps and by tests, so waves can start right away.
+
+    Args:
+        state: The game state to update.
+    """
+    send_email(state, EMAIL_FIRST_WAVE)
+    for email in state.inbox:
+        if email.key == EMAIL_FIRST_WAVE:
+            email.is_read = True
+
+
+# make_wave_state uses skip_briefing: its briefing is delivered and read.
+assert_equal(len(make_wave_state().inbox), 1)
+assert_equal(is_email_unread(make_wave_state().inbox, EMAIL_FIRST_WAVE),
+             False)
+
+
+def inbox_badge(inbox: list[Email]) -> str:
+    """Build the unread count shown on the Inbox nav button.
+
+    It depends only on the inbox (never on money), so the nav buttons are
+    redrawn only when an email arrives or is opened.
+
+    Args:
+        inbox: The player's emails.
+
+    Returns:
+        Text like " (2)", or "" when everything is read.
+    """
+    unread = count_unread(inbox)
+    if unread == 0:
+        return ""
+    return " (" + str(unread) + ")"
+
+
+assert_equal(inbox_badge([]), "")
+assert_equal(inbox_badge(make_inbox_state().inbox), " (2)")
+
+
+def can_open_email(inbox: list[Email], email_index: int) -> bool:
+    """Check that a position in the inbox holds an email.
+
+    Args:
+        inbox: The player's emails.
+        email_index: The position to check.
+
+    Returns:
+        True if the index is inside the inbox.
+    """
+    return 0 <= email_index and email_index < len(inbox)
+
+
+assert_equal(can_open_email(make_inbox_state().inbox, 1), True)
+assert_equal(can_open_email(make_inbox_state().inbox, 2), False)
+assert_equal(can_open_email([], 0), False)
 
 
 # ---------------------------------------------------------------------------
@@ -2663,20 +3032,17 @@ def war_badge(state: State) -> str:
         state: The current game state.
 
     Returns:
-        " ⚠️" during a wave, " ❗" while the briefing is unread, " 📜"
-        after the war, else "".
+        " ⚠️" during a wave, " 📜" after the war, else "".
     """
     if state.game_phase == PHASE_WAR_OVER:
         return " 📜"
     if is_wave_active(state):
         return " ⚠️"
-    if state.game_phase == PHASE_WAR and not state.seen_war_tutorial:
-        return " ❗"
     return ""
 
 
 assert_equal(war_badge(make_new_state()), "")
-assert_equal(war_badge(make_war_state()), " ❗")
+assert_equal(war_badge(make_war_state()), "")
 assert_equal(war_badge(make_wave_state()), " ⚠️")
 assert_equal(war_badge(make_finished_war_state(0)), " 📜")
 
@@ -2900,8 +3266,9 @@ assert_equal(state_after_wave_tick(make_last_wave_state(0)).news_feed[0],
 def run_intermission(state: State, war_units: int, interval_ms: int) -> None:
     """Fill the threat meter between waves; start a wave when it is full.
 
-    The first wave waits until the player has read the War briefing, and
-    no wave starts after the last one.
+    The air defense briefing email is sent once the meter reaches
+    BRIEFING_THREAT. No wave starts while that email is unread, and no
+    wave starts after the last one.
 
     Args:
         state: The game state to update.
@@ -2911,8 +3278,11 @@ def run_intermission(state: State, war_units: int, interval_ms: int) -> None:
     old_threat = state.threat
     state.threat = add_threat(old_threat, threat_per_second(war_units),
                               interval_ms)
+    if state.threat >= BRIEFING_THREAT:
+        send_email(state, EMAIL_FIRST_WAVE)
     if state.threat == MAX_THREAT:
-        if state.seen_war_tutorial and state.wave_number < WAVE_COUNT:
+        is_briefed = not is_email_unread(state.inbox, EMAIL_FIRST_WAVE)
+        if is_briefed and state.wave_number < WAVE_COUNT:
             start_wave(state)
         elif old_threat < MAX_THREAT:
             state.news_feed = add_news(state.news_feed, SIRENS_NEWS)
@@ -2930,6 +3300,7 @@ def start_war(state: State) -> None:
             goods.is_selling = False
     state.news_feed = add_news(state.news_feed, SANCTIONS_NEWS)
     state.news_feed = add_news(state.news_feed, WAR_START_NEWS)
+    send_email(state, EMAIL_WAR)
 
 
 def run_war_economy(state: State, interval_ms: int) -> None:
@@ -2990,6 +3361,14 @@ assert_equal(state_after_war_economy(make_nearly_threatened_state()).threat,
              MAX_THREAT)
 assert_equal(state_after_war_economy(
     make_nearly_threatened_state()).news_feed[0], SIRENS_NEWS)
+# The war email arrives when the war starts.
+assert_equal(state_after_war_economy(make_veteran_state()).inbox[0].key,
+             EMAIL_WAR)
+# The briefing email arrives unread, and wave 1 waits for it to be read.
+assert_equal(is_email_unread(state_after_war_economy(
+    make_nearly_threatened_state()).inbox, EMAIL_FIRST_WAVE), True)
+assert_equal(state_after_war_economy(
+    make_nearly_threatened_state()).wave_number, 0)
 # After the briefing, a full meter starts wave 1 and empties.
 assert_equal(state_after_war_economy(make_briefed_threat_state()).wave_number,
              1)
@@ -3116,6 +3495,43 @@ assert_equal(count_available_research(make_new_state().research, 0.0,
                                       PHASE_PEACE), 0)
 assert_equal(count_available_research(make_new_state().research, 1000.0,
                                       PHASE_PEACE), 4)
+
+
+def run_email_triggers(state: State) -> None:
+    """Send the emails that depend on game progress; called every tick.
+
+    Only the research email is checked here. The war emails are sent by
+    start_war and run_intermission, and the welcome email by start_game.
+
+    Args:
+        state: The game state to update.
+    """
+    if EMAIL_RESEARCH not in state.sent_email_keys:
+        if count_available_research(state.research, state.total_earned,
+                                    state.game_phase) > 0:
+            send_email(state, EMAIL_RESEARCH)
+
+
+def state_after_email_triggers(state: State) -> State:
+    """Run the email triggers once and return the State.
+
+    Args:
+        state: The State to update.
+
+    Returns:
+        The same State, after run_email_triggers.
+    """
+    run_email_triggers(state)
+    return state
+
+
+# No research is available in a new game, so no email is sent.
+assert_equal(state_after_email_triggers(make_new_state()).inbox, [])
+# Once research is available, the research email arrives (only once).
+assert_equal(state_after_email_triggers(
+    make_research_state()).inbox[0].key, EMAIL_RESEARCH)
+assert_equal(len(state_after_email_triggers(state_after_email_triggers(
+    make_research_state())).inbox), 1)
 
 
 def safe_money_required(cost: float, goods_in_stock: int) -> float:
@@ -4999,10 +5415,12 @@ def controls_signature(state: State) -> str:
         state: The current game state.
 
     Returns:
-        Text recording the news, the game phase, and the War badge, plus
-        the available research count when the Research page is open.
+        Text recording the news, the game phase, the War badge, and the
+        Inbox badge, plus the available research count when the Research
+        page is open.
     """
-    signature = str(state.news_feed) + state.game_phase + war_badge(state)
+    signature = (str(state.news_feed) + state.game_phase + war_badge(state)
+                 + inbox_badge(state.inbox))
     # The Research page lists available projects inside #live_area.
     if state.current_page == PAGE_RESEARCH:
         signature = signature + str(count_available_research(
@@ -5303,13 +5721,13 @@ def wave_status_text(state: State) -> str:
                 + " · " + str((state.wave_ms_left + 999) // 1000) + "s left")
     if state.wave_number >= WAVE_COUNT:
         return "Last wave fought"
-    if not state.seen_war_tutorial:
-        return "Read the briefing"
+    if is_email_unread(state.inbox, EMAIL_FIRST_WAVE):
+        return "Read your Inbox"
     return ("Wave " + str(state.wave_number + 1) + " in ~"
             + str(seconds_until_wave(state)) + "s")
 
 
-assert_equal(wave_status_text(make_war_state()), "Read the briefing")
+assert_equal(wave_status_text(make_unbriefed_war_state()), "Read your Inbox")
 assert_equal(wave_status_text(make_wave_state()),
              "Wave 1/" + str(WAVE_COUNT) + " · 1s left")
 
@@ -5486,33 +5904,6 @@ def build_war_board(state: State) -> Div:
                build_altitude_summary(state), classes="war-board")
 
 
-def build_war_tutorial() -> Div:
-    """Build the one-time War briefing shown before the first wave.
-
-    Returns:
-        A card explaining the air defense rules, with a button to start.
-    """
-    return Div(
-        build_card_head("📋 Briefing: Air Defense", []),
-        BulletedList([
-            "The " + ENEMY_COUNTRY + " attacks in " + str(WAVE_COUNT)
-            + " waves. A wave starts when the threat meter is full.",
-            "Selling war goods fills the meter faster, but war goods "
-            + "sold decide who wins the war.",
-            "Attackers fly high, medium, or low. Each defense is good "
-            + "at some altitudes and useless at others.",
-            "Shoot down every attacker within "
-            + str(wave_duration_ms() // 1000) + "s, or the survivors "
-            + "destroy stock and cut production for a while.",
-            "Every " + str(DIRE_WAVE_EVERY) + "th wave (and the last) is "
-            + "dire: tougher, and losing it damages your defenses.",
-            "You can buy air defense at any time, even mid-wave.",
-        ]),
-        Button("Understood. Defend the warehouse!", "dismiss_war_tutorial"),
-        classes="card",
-    )
-
-
 def build_defense_row(defense: DefenseEquipment, defense_index: int) -> Div:
     """Build one row of the air defense shop.
 
@@ -5607,8 +5998,8 @@ def build_war_report_content(state: State, is_victory: bool) -> list:
 def build_war_content(state: State) -> list:
     """Build the War page's content.
 
-    The briefing and shop sit outside the live area, so ticks never
-    redraw their buttons.
+    The shop sits outside the live area, so ticks never redraw its
+    buttons. (The briefing is an email in the Inbox.)
 
     Args:
         state: The current game state.
@@ -5622,11 +6013,7 @@ def build_war_content(state: State) -> list:
                                    Div("All quiet... for now.",
                                        classes="muted"), classes="card"),
                                classes="page")]
-    cards = []
-    if not state.seen_war_tutorial:
-        cards.append(build_war_tutorial())
-    cards.append(build_defense_shop(state))
-    return [live_area, Div(cards, classes="page")]
+    return [live_area, Div(build_defense_shop(state), classes="page")]
 
 
 def build_live_numbers(state: State) -> list:
@@ -5663,34 +6050,42 @@ def nav_section(current_page: str) -> str:
         return PAGE_BUSINESS
     if current_page == PAGE_WAR_REPORT:
         return PAGE_WAR
+    if current_page == PAGE_EMAIL:
+        return PAGE_INBOX
     return current_page
 
 
 assert_equal(nav_section(PAGE_RESEARCH), PAGE_BUSINESS)
 assert_equal(nav_section(PAGE_CASINO), PAGE_CASINO)
+assert_equal(nav_section(PAGE_EMAIL), PAGE_INBOX)
 
 
-def nav_label(row: list, war_alert: str) -> str:
-    """Build a nav button's text, adding the War badge.
+def nav_label(row: list, war_alert: str, inbox_alert: str) -> str:
+    """Build a nav button's text, adding the War or Inbox badge.
 
     The research count is a chip in #live_numbers instead of a badge
-    here, so it can change without redrawing the nav buttons.
+    here, so it can change without redrawing the nav buttons. The unread
+    email count is a badge because it rarely changes.
 
     Args:
         row: One row of NAV_ROWS.
         war_alert: The War badge text from war_badge.
+        inbox_alert: The Inbox badge text from inbox_badge.
 
     Returns:
-        The button text, like "War ⚠️".
+        The button text, like "War ⚠️" or "Inbox (2)".
     """
     if row[2] == PAGE_WAR:
         return row[0] + war_alert
+    if row[2] == PAGE_INBOX:
+        return row[0] + inbox_alert
     return row[0]
 
 
-assert_equal(nav_label(NAV_ROWS[1], ""), "Business")
-assert_equal(nav_label(NAV_ROWS[0], " ⚠️"), "Company")
-assert_equal(nav_label(NAV_ROWS[4], " ⚠️"), "War ⚠️")
+assert_equal(nav_label(NAV_ROWS[1], "", ""), "Business")
+assert_equal(nav_label(NAV_ROWS[0], " ⚠️", " (2)"), "Company")
+assert_equal(nav_label(NAV_ROWS[4], " ⚠️", " (2)"), "War ⚠️")
+assert_equal(nav_label(NAV_ROWS[5], " ⚠️", " (2)"), "Inbox (2)")
 
 
 def build_nav(state: State) -> Div:
@@ -5704,7 +6099,7 @@ def build_nav(state: State) -> Div:
     """
     buttons = []
     for row in NAV_ROWS:
-        label = nav_label(row, war_badge(state))
+        label = nav_label(row, war_badge(state), inbox_badge(state.inbox))
         # The War button only appears once the war has started.
         if row[2] != PAGE_WAR or is_wartime(state.game_phase):
             if row[2] == nav_section(state.current_page):
@@ -5876,6 +6271,86 @@ def build_news_feed(state: State) -> Div:
                classes="card")
 
 
+def build_email_row(email: Email, email_index: int) -> Div:
+    """Build one row of the Inbox list.
+
+    Args:
+        email: The email to show.
+        email_index: Its position in state.inbox.
+
+    Returns:
+        A row with a read/unread icon, the subject, the sender, and an
+        Open button.
+    """
+    icon = "📩"
+    if email.is_read:
+        icon = "✉️"
+    return Div(
+        Span(icon, classes="emoji"),
+        Div(Div(email.subject, classes="item-name"),
+            Div(email.sender + " · tick " + str(email.tick_received),
+                classes="muted")),
+        Button("Open", "open_email", [Argument("email_index", email_index)]),
+        classes="buy-row",
+    )
+
+
+def build_inbox_list(state: State) -> Div:
+    """Build the Inbox card: one row per email, newest first.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A card listing every email in the inbox.
+    """
+    rows = [build_card_head("Inbox", []),
+            Div(str(count_unread(state.inbox)) + " unread of "
+                + str(len(state.inbox)) + " · 📩 means unread",
+                classes="muted")]
+    for email_index, email in enumerate(state.inbox):
+        rows.append(build_email_row(email, email_index))
+    return Div(rows, classes="card narrow")
+
+
+def build_inbox_content(state: State) -> list:
+    """Build the Inbox page's content.
+
+    The list sits inside the live area, so an email that arrives while
+    the page is open shows up at once (and every Open button keeps
+    pointing at the right email).
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A list of the page's components.
+    """
+    return [Div(build_live_content(state), id="live_area")]
+
+
+def build_email_content(state: State, email: Email) -> list:
+    """Build the page that shows one opened email.
+
+    Args:
+        state: The current game state.
+        email: The email to show.
+
+    Returns:
+        A list of the page's components.
+    """
+    return [
+        Div(build_live_content(state), id="live_area"),
+        Div(Div(build_card_head(email.subject, []),
+                Div("From: " + email.sender + " · received on tick "
+                    + str(email.tick_received), classes="muted"),
+                Div(email.body, classes="email-body"),
+                Button("Back to Inbox", "inbox_page"),
+                classes="card narrow"),
+            classes="page"),
+    ]
+
+
 def build_live_content(state: State) -> list:
     """Build everything a full tick refresh replaces on the current page.
 
@@ -5897,6 +6372,11 @@ def build_live_content(state: State) -> list:
         return [build_top_bar(state)]
     if state.current_page == PAGE_WAR_REPORT:
         return [build_top_bar(state)]
+    if state.current_page == PAGE_EMAIL:
+        return [build_top_bar(state)]
+    if state.current_page == PAGE_INBOX:
+        return [build_top_bar(state),
+                Div(build_inbox_list(state), classes="page")]
     if state.current_page == PAGE_ARTIFACTS:
         return [build_top_bar(state),
                 Div(build_expedition_controls(state), classes="page")]
@@ -6504,6 +6984,7 @@ def start_game(state: State, company_name: str) -> Page:
         The company page, including the game's Clock.
     """
     state.company_name = clean_company_name(company_name)
+    send_email(state, EMAIL_WELCOME)
     return Page(state, [build_game_clock(state)]
                 + build_company_content(state))
 
@@ -6710,21 +7191,57 @@ assert_equal(war_page(make_finished_war_state(0)),
 
 
 @route
-def dismiss_war_tutorial(state: State) -> Page:
-    """Mark the War briefing as read, so waves can begin.
+def inbox_page(state: State) -> Page:
+    """Show the Inbox: the list of emails the company has received.
 
     Args:
         state: The current game state.
 
     Returns:
-        The refreshed War page.
+        The Inbox page.
     """
-    state.seen_war_tutorial = True
-    return war_page(state)
+    state.current_page = PAGE_INBOX
+    return Page(state, build_inbox_content(state))
 
 
-assert_equal(dismiss_war_tutorial(make_war_state()).state.seen_war_tutorial,
-             True)
+assert_equal(inbox_page(state_after_emails([EMAIL_WELCOME, EMAIL_RESEARCH])),
+             Page(make_inbox_state(),
+                  build_inbox_content(make_inbox_state())))
+
+
+@route
+def open_email(state: State, email_index: int) -> Page:
+    """Open one email and mark it as read.
+
+    Args:
+        state: The current game state.
+        email_index: The email's position in state.inbox.
+
+    Returns:
+        The page showing that email, or the Inbox if there is no such
+        email.
+    """
+    if not can_open_email(state.inbox, email_index):
+        return inbox_page(state)
+    email = state.inbox[email_index]
+    email.is_read = True
+    state.current_page = PAGE_EMAIL
+    return Page(state, build_email_content(state, email))
+
+
+assert_equal(open_email(make_inbox_state(), 1),
+             Page(expected_after_opening_welcome(),
+                  build_email_content(
+                      expected_after_opening_welcome(),
+                      expected_after_opening_welcome().inbox[1])))
+# No email at that position: the Inbox is shown and nothing is marked read.
+assert_equal(open_email(make_inbox_state(), 5),
+             Page(make_inbox_state(),
+                  build_inbox_content(make_inbox_state())))
+# Opening the briefing lets the first wave start.
+assert_equal(is_email_unread(open_email(make_unbriefed_war_state(),
+                                        0).state.inbox, EMAIL_FIRST_WAVE),
+             False)
 
 
 @route
@@ -7082,7 +7599,7 @@ def debug_ensure_war(state: State) -> None:
     state.total_earned = max(state.total_earned, WAR_START_EARNED)
     if state.game_phase == PHASE_PEACE:
         start_war(state)
-    state.seen_war_tutorial = True
+    skip_briefing(state)
 
 
 def debug_start_wave(state: State, waves_before: int) -> None:
@@ -7149,6 +7666,8 @@ def apply_debug_jump(state: State, target: str) -> State:
         debug_start_wave(state, WAVE_COUNT - 1)
     elif target == DEBUG_JUMP_WIN or target == DEBUG_JUMP_LOSE:
         debug_end_war(state, target == DEBUG_JUMP_WIN)
+    elif target == DEBUG_JUMP_CONFISCATION:
+        send_email(state, EMAIL_CONFISCATION)
     return state
 
 
@@ -7171,6 +7690,9 @@ assert_equal(apply_debug_jump(make_new_state(), DEBUG_JUMP_WIN).news_feed[0],
              WAR_WON_NEWS)
 assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_LOSE).game_phase,
              PHASE_WAR_OVER)
+assert_equal(apply_debug_jump(make_new_state(),
+                              DEBUG_JUMP_CONFISCATION).inbox[0].key,
+             EMAIL_CONFISCATION)
 
 
 def build_debug_card() -> Div:
@@ -7209,6 +7731,8 @@ def build_debug_card() -> Div:
                    [Argument("target", DEBUG_JUMP_WIN)]),
             Button("End the war (lose)", "debug_jump",
                    [Argument("target", DEBUG_JUMP_LOSE)]),
+            Button("Send confiscation email", "debug_jump",
+                   [Argument("target", DEBUG_JUMP_CONFISCATION)]),
             classes="button-row"),
         classes="card narrow",
     )
@@ -7305,6 +7829,7 @@ def tick(state: State) -> Fragment:
     run_selling(state)
     run_war_economy(state, tick_interval(state))
     run_loyalty_drift(state)
+    run_email_triggers(state)
     state.tick_count = state.tick_count + 1
     new_signature = controls_signature(state)
     # ADVANCED: A Fragment replaces one element instead of rebuilding the
