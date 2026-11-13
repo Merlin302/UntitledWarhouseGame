@@ -5,7 +5,7 @@ off what is done and name the exact function or field that satisfies it.
 
 ## Site
 
-- [x] At least 7 routes — _where:_ 29 routes: `index`, `start_game`,
+- [x] At least 7 routes — _where:_ 31 routes: `index`, `start_game`,
       `company_page`, `business_page`, `research_page`, `buy_research`,
       `artifacts_page`, `organize_page`,
       `casino_page`, `start_typing_round`, `submit_typing_round`,
@@ -13,23 +13,24 @@ off what is done and name the exact function or field that satisfies it.
       `set_buy_amount`, `buy_item`, `raise_markup`, `lower_markup`, `tick`,
       `debug_page`, `debug_add_money`, `debug_jump`, `war_page`,
       `buy_defense`, `war_victory_page`, `war_defeat_page`,
-      `inbox_page`, `open_email`
+      `inbox_page`, `open_email`, `acquisitions_page`, `buy_company`
 - [x] At least 5 pages — _where:_ start page (`index`), company page
       (`company_page`), Business page (`business_page`), Research page
       (`research_page`), Artifacts page
       (`artifacts_page`), Organize page (`organize_page`), Casino page
       (`casino_page`), War page (`war_page`), victory page
       (`war_victory_page`), defeat page (`war_defeat_page`), Inbox page
-      (`inbox_page`), opened email page (`open_email`), Debug page
+      (`inbox_page`), opened email page (`open_email`), Acquisitions
+      page (`acquisitions_page`), Debug page
       (`debug_page`, demo tool)
-- [x] `State` dataclass with at least 4 fields — _where:_ `State` (37 fields)
+- [x] `State` dataclass with at least 4 fields — _where:_ `State` (38 fields)
 - [x] At least one State field is a list/dict of a second dataclass —
       _where:_ `State.owned_artifacts: list[Artifact]`,
       `State.buy_items: list[BuyItem]`,
       `State.goods_types: list[GoodsType]`, `State.policies: list[Policy]`,
       `State.research: list[Research]`, `State.attackers: list[Attacker]`,
       `State.defenses: list[DefenseEquipment]`,
-      `State.inbox: list[Email]`
+      `State.inbox: list[Email]`, `State.companies: list[Company]`
 - [x] At least 4 State fields, including that list/dict, are meaningfully
       modified in at least one route — _where:_ `buy_items` (`.owned`, in
       `buy_item`), `money` (`buy_item`, `tick`), `markup` (`raise_markup`,
@@ -47,7 +48,8 @@ off what is done and name the exact function or field that satisfies it.
       `buy_defense`), `wave_number`, `wave_ms_left`, `waves_defended`,
       `raid_ms_left`, `last_wave_report` (`tick`), `inbox` and
       `sent_email_keys` (`start_game` and `tick`, through `send_email`;
-      `.is_read` in `open_email`)
+      `.is_read` in `open_email`), `companies` (`.is_owned`, in
+      `buy_company` through `acquire_company`)
 - [x] At least 3 input fields (TextBox, CheckBox, SelectBox, TextArea)
       — _where:_ `TextBox("company_name")` in `build_start_content`, one
       `CheckBox` per goods type in `build_goods_form`, one `CheckBox` per
@@ -80,7 +82,10 @@ off what is done and name the exact function or field that satisfies it.
       `defense_dps` (which altitude), `buy_defense` (can afford),
       `send_email` (once only unless repeatable), `run_email_triggers`
       (research first available), `open_email` (email exists),
-      `build_email_row` (read or unread icon)
+      `build_email_row` (read or unread icon), `buy_company` (can
+      buy), `is_company_for_sale` (owned or research missing),
+      `describe_company_effect` (which sector), `goods_detail_text`
+      (no supplier owned)
 - [x] At least 1 loop over the list/dict of dataclass instances, used in a
       meaningful way — _where (main answer):_ `total_artifact_bonus` loops
       over `state.owned_artifacts`, skips unplaced artifacts, and totals the
@@ -95,11 +100,14 @@ off what is done and name the exact function or field that satisfies it.
       `damage_attackers` loops over `state.attackers` and carries leftover
       damage to the next attacker (`enemy_hp`, `count_survivors` too);
       `total_dps` loops over `state.defenses`; `count_unread`,
-      `is_email_unread`, and `build_inbox_list` loop over `state.inbox`
+      `is_email_unread`, and `build_inbox_list` loop over `state.inbox`;
+      `supplier_bonus` and `total_company_effect` loop over
+      `state.companies` to total the bonuses of owned companies
 - [x] Legitimate purpose (entertainment: it's a game) — _where:_ the whole site
 - [x] No global variables; only ALL_CAPS constants, never mutated — _where:_
       constants block; `make_starting_items`, `make_starting_goods`,
       `make_starting_policies`, `make_starting_research`,
+      `make_starting_companies`,
       `artifact_from_row`, and `make_new_state` copy them
 - [x] Uses Drafter — _where:_ `main.py`, `start_server(make_new_state())`
 - [x] Any technique not covered in the course is explained in a comment or

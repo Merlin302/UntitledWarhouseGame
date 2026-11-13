@@ -192,8 +192,8 @@ flavor-text strings).
 - Increase/lower markup buttons.
 
 **Business page:** checkboxes for which goods types to sell (each adds an
-income bonus; "War supplies" gives a huge bonus and will later attract the
-war), and checkboxes for policies (each has an upside and a downside, e.g.
+income bonus once its supplier is owned, see Acquisitions; "War supplies"
+gives a huge bonus and will later attract the war), and checkboxes for policies (each has an upside and a downside, e.g.
 unpaid overtime: +stocking, -loyalty, raises strike risk). Strikes (labor
 unrest from policies) cause temporary penalties.
 
@@ -211,8 +211,25 @@ goods types, and policies have a `required_research` field ("" = none):
 locked buy items and goods are hidden, locked policies are shown locked.
 Research bonuses feed `total_stocking_bonus` / `total_delivery_bonus` (into
 `apply_rate_modifiers`), `current_market_size` (into `calculate_demand`), and
-`total_research_goods_bonus` (into `calculate_total_bonus`). The Better
+`goods_income_bonus` (into `calculate_total_bonus`). The Better
 Conveyor Belt uses `EFFECT_DELIVERY_BOOST` (a % per unit).
+
+**Acquisitions (economy rework E1 built; sub-page of Business):** the
+government is the antagonist, so success should come from exploiting the
+situation, not from free bonuses. A goods type has no income bonus of its
+own. `Company` (catalog: `COMPANY_ROWS`, copied into `State.companies`) is
+bought once on the Acquisitions page (`acquisitions_page`, `buy_company`,
+reached from the "Open Acquisitions" button). Sectors (`SECTOR_`):
+supplier (gives its `goods_name` an income bonus: `supplier_bonus` ->
+`goods_income_bonus`), logistics (market size: `current_market_size`),
+media (loyalty target: `calculate_loyalty_target`), bank (none yet; it
+will shrink confiscations in E3). Advertising research (Canned Food Jingle
+Campaign, Influencer Unboxing Program) adds to a goods type's bonus.
+Companies with a `required_research` are hidden until it is done. The
+Acquire buttons sit outside `#live_area`. Still to build: E2 (war-start
+income crash from sanctions, recovered by workaround research; a player who
+finds them should end the war at about 1.5x pre-war income) and E3
+(government opinion 0-100, patriotic contributions, confiscations).
 
 **The War (phase W1 built: war economy):** `State.game_phase` goes
 peace -> war -> war_over (`PHASE_` constants). The war starts when

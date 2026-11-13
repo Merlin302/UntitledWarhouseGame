@@ -73,8 +73,8 @@ PICKUP_TRUCK_STUDY = "Pickup Truck Feasibility Study"
 CONVEYOR_RESEARCH = "Conveyor Belt R&D"
 IMPORT_LICENSES = "Import Licenses"
 LABOR_CONSULTANCY = "Labor Relations Consultancy"
-TUSHONKA_BUYOUT = "Buy Out Tushonka Canning Co."
-BOXLY_ACQUISITION = "Acquire Rival: Boxly Logistics"
+SOUP_JINGLE = "Canned Food Jingle Campaign"
+UNBOXING_PROGRAM = "Influencer Unboxing Program"
 DEFENSE_LICENSE = "Defense Procurement License"
 PARCELPRO_ABSORPTION = "Absorb Fleeing Rival: ParcelPro"
 OZONIX_NATIONALIZATION = "Nationalize Ozonix Marketplace"
@@ -118,26 +118,34 @@ PAGE_ARTIFACTS = "artifacts"
 PAGE_ORGANIZE = "organize"
 PAGE_RESEARCH = "research"
 
+HOUSEHOLD_GOODS = "Household Goods"
 CANNED_FOOD = "Canned Food"
+ELECTRONICS = "Electronics"
+WAR_SUPPLIES = "War Supplies"
+IMPORTED_LUXURIES = "Imported Luxuries"
+BODY_ARMOR = "Body Armor"
+DRONE_COMPONENTS = "Drone Components"
 
 # Each row: name, emoji, CheckBox name (must match a save_goods parameter),
-# income bonus as a fraction, the research it requires, whether it is a
-# war good, whether wartime sanctions ban it, and the extra income bonus it
-# gets during the war (when the company is the only supplier left).
+# the research it requires, whether it is a war good, whether wartime
+# sanctions ban it, and the extra income bonus it gets during the war (when
+# the company is the only supplier left). A goods type has no income bonus
+# of its own: that comes from owning its supplier (COMPANY_ROWS) and from
+# advertising research.
 STARTING_GOODS_ROWS = [
-    ["Household Goods", "🧺", "sell_household", 0.05, NO_REQUIREMENT,
+    [HOUSEHOLD_GOODS, "🧺", "sell_household", NO_REQUIREMENT,
      False, False, 0.10],
-    [CANNED_FOOD, "🥫", "sell_canned_food", 0.10, NO_REQUIREMENT,
+    [CANNED_FOOD, "🥫", "sell_canned_food", NO_REQUIREMENT,
      False, False, 0.25],
-    ["Electronics", "📺", "sell_electronics", 0.15, NO_REQUIREMENT,
+    [ELECTRONICS, "📺", "sell_electronics", NO_REQUIREMENT,
      False, True, 0.0],
-    ["War Supplies", "💣", "sell_war_supplies", 1.00, NO_REQUIREMENT,
+    [WAR_SUPPLIES, "💣", "sell_war_supplies", NO_REQUIREMENT,
      True, False, 0.0],
-    ["Imported Luxuries", "💎", "sell_imported_luxuries", 0.25,
+    [IMPORTED_LUXURIES, "💎", "sell_imported_luxuries",
      IMPORT_LICENSES, False, True, 0.0],
-    ["Body Armor", "🦺", "sell_body_armor", 0.60, DEFENSE_LICENSE,
+    [BODY_ARMOR, "🦺", "sell_body_armor", DEFENSE_LICENSE,
      True, False, 0.0],
-    ["Drone Components", "🔧", "sell_drone_parts", 0.80, DEFENSE_LICENSE,
+    [DRONE_COMPONENTS, "🔧", "sell_drone_parts", DEFENSE_LICENSE,
      True, False, 0.0],
 ]
 
@@ -192,15 +200,17 @@ RESEARCH_ROWS = [
      "Experts in making 'no' sound like 'great question'.",
      CATEGORY_UNLOCK, 4000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 5000.0,
      "Consultants rename workers 'independent box partners'.", False],
-    [TUSHONKA_BUYOUT, "🥫",
-     "Own the cans, own the soup, own the supply chain of soup.",
-     CATEGORY_WORLD, 8000.0, 0.0, 0.0, 0, CANNED_FOOD, 0.15,
-     IMPORT_LICENSES, 8000.0,
-     "Tushonka Canning Co. acquired; stew prices 'stable for now'.", False],
-    [BOXLY_ACQUISITION, "📦",
-     "Buy the competition, then politely forget it ever existed.",
-     CATEGORY_WORLD, 25000.0, 0.0, 0.0, 50, "", 0.0, NO_REQUIREMENT,
-     15000.0, "Boxly Logistics absorbed; its customers 'welcomed home'.",
+    [SOUP_JINGLE, "🎵",
+     "Eleven notes, legally distinct from every other jingle.",
+     CATEGORY_WORLD, 6000.0, 0.0, 0.0, 0, CANNED_FOOD, 0.10,
+     MARKETING_PLAYBOOK, 8000.0,
+     "Canned food jingle stuck in the nation's head; doctors baffled.",
+     False],
+    [UNBOXING_PROGRAM, "🤳",
+     "Pay strangers to open boxes slowly while gasping.",
+     CATEGORY_WORLD, 12000.0, 0.0, 0.0, 0, ELECTRONICS, 0.10,
+     MARKETING_PLAYBOOK, 15000.0,
+     "Influencer unboxes a television for 40 minutes; views soar.",
      False],
     [DEFENSE_LICENSE, "🎖️",
      "A stamp that turns a warehouse into a 'strategic asset'.",
@@ -228,6 +238,54 @@ RESEARCH_ROWS = [
      "Consultants draw boxes around boxes and call it an org chart.",
      CATEGORY_EQUIPMENT, 750.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 1500.0,
      "Management restructured; everyone now reports to everyone.", False],
+]
+
+# ---------------------------------------------------------------------------
+# Acquisitions: companies the player can buy
+# ---------------------------------------------------------------------------
+
+PAGE_ACQUISITIONS = "acquisitions"
+
+# A supplier gives one goods type its income bonus. A logistics company
+# adds customers to the market. A media company raises the loyalty target.
+# (Banks arrive with confiscations, which they protect against.)
+SECTOR_SUPPLIER = "supplier"
+SECTOR_LOGISTICS = "logistics"
+SECTOR_BANK = "bank"
+SECTOR_MEDIA = "media"
+
+# Each row: name, emoji, description, sector, cost, effect amount (an
+# income bonus fraction for suppliers, customers for logistics, loyalty
+# target points for media), the goods type a supplier supplies ("" for
+# other sectors), and the research it requires (NO_REQUIREMENT if none).
+COMPANY_ROWS = [
+    ["Cleanex Home Products", "🧴",
+     "Makes one soap and forty labels for it.",
+     SECTOR_SUPPLIER, 1500.0, 0.05, HOUSEHOLD_GOODS, NO_REQUIREMENT],
+    ["Tushonka Canning Co.", "🥫",
+     "Own the cans, own the soup, own the supply chain of soup.",
+     SECTOR_SUPPLIER, 4000.0, 0.10, CANNED_FOOD, NO_REQUIREMENT],
+    ["Voltik Electronics Plant", "🔌",
+     "Every television is tested by being switched on once.",
+     SECTOR_SUPPLIER, 8000.0, 0.15, ELECTRONICS, NO_REQUIREMENT],
+    ["Granit Arms Works", "🏭",
+     "Its brochure says 'agricultural machinery'. Its machinery does not.",
+     SECTOR_SUPPLIER, 15000.0, 1.00, WAR_SUPPLIES, NO_REQUIREMENT],
+    ["Maison Lux Importers", "👜",
+     "Handbags with a waiting list and a customs problem.",
+     SECTOR_SUPPLIER, 12000.0, 0.25, IMPORTED_LUXURIES, IMPORT_LICENSES],
+    ["Bronik Armor Factory", "🦺",
+     "Formerly made raincoats. The pattern barely changed.",
+     SECTOR_SUPPLIER, 25000.0, 0.60, BODY_ARMOR, DEFENSE_LICENSE],
+    ["Zhuzh Drone Works", "🛸",
+     "A toy company that read the news and pivoted.",
+     SECTOR_SUPPLIER, 35000.0, 0.80, DRONE_COMPONENTS, DEFENSE_LICENSE],
+    ["Boxly Logistics", "📦",
+     "Buy the competition, then politely forget it ever existed.",
+     SECTOR_LOGISTICS, 25000.0, 50, "", NO_REQUIREMENT],
+    ["Varnia Today", "📰",
+     "A newspaper with strong opinions, soon to be yours.",
+     SECTOR_MEDIA, 10000.0, 5, "", NO_REQUIREMENT],
 ]
 
 # ---------------------------------------------------------------------------
@@ -341,6 +399,7 @@ EMAIL_RESEARCH = "research"
 EMAIL_WAR = "war"
 EMAIL_FIRST_WAVE = "first wave"
 EMAIL_CONFISCATION = "confiscation"
+EMAIL_ACQUISITION = "acquisition"
 
 # Each row: trigger key, sender, subject, body, and whether it can be sent
 # more than once. "\n" in a body starts a new line on the page.
@@ -421,6 +480,19 @@ EMAIL_ROWS = [
      + "part. A receipt will be issued after the war, subject to the "
      + "outcome of the war.",
      True],
+    [EMAIL_ACQUISITION, SENDER_HQ,
+     "Fwd: Re: Re: we appear to own a company",
+     "Congratulations on your first acquisition. Legal confirms that we "
+     + "bought it on purpose.\n\n"
+     + "For the avoidance of doubt:\n"
+     + "- Suppliers give the goods they make an income bonus. Goods "
+     + "without a supplier earn only the basic price.\n"
+     + "- Logistics companies bring their customers with them.\n"
+     + "- Media companies make people like us, at scale.\n\n"
+     + "More companies come up for sale as research is completed. Staff "
+     + "of acquired companies have been told that nothing will change, "
+     + "which is the first thing that changed.\n\nCorporate HQ",
+     False],
 ]
 
 # ---------------------------------------------------------------------------
@@ -994,7 +1066,6 @@ class GoodsType:
         name: The goods type's display name.
         emoji: A placeholder picture for the goods type.
         input_name: The name of its CheckBox on the Business page.
-        income_bonus: The income bonus as a fraction while selling it.
         required_research: Research needed for it to appear ("" = none).
         is_war_good: Whether its sales count as war goods sold.
         is_sanctioned: Whether wartime sanctions stop it being sold.
@@ -1004,7 +1075,6 @@ class GoodsType:
     name: str
     emoji: str
     input_name: str
-    income_bonus: float
     required_research: str
     is_war_good: bool
     is_sanctioned: bool
@@ -1079,6 +1149,33 @@ class Research:
     headline: str
     requires_war: bool
     is_done: bool
+
+
+@dataclass
+class Company:
+    """One company the player can acquire (buy once).
+
+    Attributes:
+        name: The company's display name.
+        emoji: A placeholder picture for the company.
+        description: The funny corporate flavor text.
+        sector: One of the SECTOR_ constants; decides what it does.
+        cost: The money it costs to acquire.
+        effect_amount: How big its effect is: an income bonus fraction
+            (supplier), customers (logistics), or loyalty points (media).
+        goods_name: The goods type a supplier supplies ("" for others).
+        required_research: Research needed for it to appear ("" = none).
+        is_owned: Whether the player has acquired it.
+    """
+    name: str
+    emoji: str
+    description: str
+    sector: str
+    cost: float
+    effect_amount: float
+    goods_name: str
+    required_research: str
+    is_owned: bool
 
 
 @dataclass
@@ -1222,6 +1319,7 @@ class State:
         inbox: The newest MAX_INBOX_EMAILS emails, newest first.
         sent_email_keys: The key of every template sent so far, so a
             once-only email is never sent twice (one entry per template).
+        companies: Every company that can be acquired, and whether it is.
     """
     company_name: str
     money: float
@@ -1260,6 +1358,7 @@ class State:
     last_wave_report: str
     inbox: list[Email]
     sent_email_keys: list[str]
+    companies: list[Company]
 
 
 def make_no_typing_round() -> TypingRound:
@@ -1293,7 +1392,7 @@ def make_starting_goods() -> list[GoodsType]:
     goods_types = []
     for row in STARTING_GOODS_ROWS:
         goods_types.append(GoodsType(row[0], row[1], row[2], row[3], row[4],
-                                     row[5], row[6], row[7], False))
+                                     row[5], row[6], False))
     return goods_types
 
 
@@ -1323,6 +1422,19 @@ def make_starting_research() -> list[Research]:
                                  row[10], row[11], row[12], row[13],
                                  False))
     return research
+
+
+def make_starting_companies() -> list[Company]:
+    """Build fresh Companies so the global rows are never modified.
+
+    Returns:
+        A new list with one unowned Company per row of COMPANY_ROWS.
+    """
+    companies = []
+    for row in COMPANY_ROWS:
+        companies.append(Company(row[0], row[1], row[2], row[3], row[4],
+                                 row[5], row[6], row[7], False))
+    return companies
 
 
 def make_starting_defenses() -> list[DefenseEquipment]:
@@ -1382,6 +1494,7 @@ def make_new_state() -> State:
         last_wave_report="",
         inbox=[],
         sent_email_keys=[],
+        companies=make_starting_companies(),
     )
 
 
@@ -1418,18 +1531,91 @@ def make_one_time_item(owned: int) -> BuyItem:
                    NO_REQUIREMENT, owned)
 
 
-def make_test_goods(income_bonus: float, is_selling: bool) -> GoodsType:
-    """Build a simple goods type for the helper tests.
+def make_test_goods(is_selling: bool) -> GoodsType:
+    """Build a simple goods type named "Test" for the helper tests.
 
     Args:
-        income_bonus: The income bonus as a fraction.
         is_selling: Whether it is being sold.
 
     Returns:
-        A GoodsType with those values.
+        A GoodsType with that value.
     """
-    return GoodsType("Test", "T", "sell_test", income_bonus, NO_REQUIREMENT,
-                     False, False, 0.0, is_selling)
+    return GoodsType("Test", "T", "sell_test", NO_REQUIREMENT, False, False,
+                     0.0, is_selling)
+
+
+def make_test_company(sector: str, effect_amount: float,
+                      is_owned: bool) -> Company:
+    """Build a simple company for the helper tests.
+
+    Args:
+        sector: One of the SECTOR_ constants.
+        effect_amount: How big its effect is.
+        is_owned: Whether the player owns it.
+
+    Returns:
+        A 100-cost Company; a supplier supplies the "Test" goods type.
+    """
+    goods_name = ""
+    if sector == SECTOR_SUPPLIER:
+        goods_name = "Test"
+    return Company("Test Co.", "C", "Testing.", sector, 100.0,
+                   effect_amount, goods_name, NO_REQUIREMENT, is_owned)
+
+
+def make_owner_state(company_index: int) -> State:
+    """Build a new-game State that already owns one company.
+
+    Args:
+        company_index: The company's position in state.companies.
+
+    Returns:
+        A new-game State where that company is owned.
+    """
+    state = make_new_state()
+    state.companies[company_index].is_owned = True
+    return state
+
+
+def make_acquisitions_state() -> State:
+    """Build a State viewing the Acquisitions page with 5000 money.
+
+    Returns:
+        A State that can afford the first two companies.
+    """
+    state = make_new_state()
+    state.money = 5000.0
+    state.goods_in_stock = 10
+    state.current_page = PAGE_ACQUISITIONS
+    return state
+
+
+def expected_after_buying_cleanex() -> State:
+    """Build the State expected after acquiring the first company.
+
+    Returns:
+        The acquisitions State owning Cleanex, with the money paid, the
+        headline posted, and the first-acquisition email sent.
+    """
+    state = make_acquisitions_state()
+    state.money = 5000.0 - COMPANY_ROWS[0][4]
+    state.companies[0].is_owned = True
+    state.news_feed = add_news(state.news_feed,
+                               acquisition_headline(state.companies[0]))
+    send_email(state, EMAIL_ACQUISITION)
+    return state
+
+
+def make_expected_acquisitions_page(state: State) -> Page:
+    """Build the Acquisitions page expected for a given State.
+
+    Args:
+        state: The State the page should show.
+
+    Returns:
+        The expected Acquisitions page.
+    """
+    return Page(state, build_acquisitions_content(state))
 
 
 def make_test_policy(is_active: bool) -> Policy:
@@ -1539,10 +1725,12 @@ def make_artifact_state() -> State:
 def make_state_with_income_bonuses() -> State:
     """Build a State selling Electronics with Aggressive Upselling active.
 
+    It owns the Electronics supplier, which gives the goods their bonus.
+
     Returns:
         A new-game State with +15% from goods and +15% from policy.
     """
-    state = make_new_state()
+    state = make_owner_state(2)
     state.goods_types[2].is_selling = True
     state.policies[1].is_active = True
     return state
@@ -2210,28 +2398,6 @@ def expected_after_gig_policy() -> State:
 # ---------------------------------------------------------------------------
 # Business: goods and policy helper functions
 # ---------------------------------------------------------------------------
-
-def total_goods_bonus(goods_types: list[GoodsType]) -> float:
-    """Add up the income bonus of every goods type being sold.
-
-    Args:
-        goods_types: The goods types to add up.
-
-    Returns:
-        The combined income bonus as a fraction.
-    """
-    total = 0.0
-    for goods in goods_types:
-        if goods.is_selling:
-            total = total + goods.income_bonus
-    return total
-
-
-assert_equal(total_goods_bonus([]), 0.0)
-assert_equal(total_goods_bonus([make_test_goods(0.25, True),
-                                make_test_goods(0.5, False),
-                                make_test_goods(1.0, True)]), 1.25)
-
 
 def total_policy_stocking_bonus(policies: list[Policy]) -> float:
     """Add up the stocking bonus of every active policy.
@@ -3676,69 +3842,233 @@ assert_equal(total_research_market_bonus(
     20)
 
 
+# ---------------------------------------------------------------------------
+# Acquisitions: companies that give goods bonuses, customers, and loyalty
+# ---------------------------------------------------------------------------
+
+def total_company_effect(companies: list[Company], sector: str) -> float:
+    """Add up the effect of every owned company in one sector.
+
+    Args:
+        companies: Every company.
+        sector: One of the SECTOR_ constants.
+
+    Returns:
+        The combined effect amount of the owned companies in that sector.
+    """
+    total = 0.0
+    for company in companies:
+        if company.is_owned and company.sector == sector:
+            total = total + company.effect_amount
+    return total
+
+
+assert_equal(total_company_effect([], SECTOR_MEDIA), 0.0)
+assert_equal(total_company_effect(
+    [make_test_company(SECTOR_MEDIA, 5.0, True),
+     make_test_company(SECTOR_MEDIA, 3.0, False),
+     make_test_company(SECTOR_LOGISTICS, 50.0, True)], SECTOR_MEDIA), 5.0)
+
+
+def supplier_bonus(companies: list[Company], goods_name: str) -> float:
+    """Add up the income bonus owned suppliers give one goods type.
+
+    Args:
+        companies: Every company.
+        goods_name: The name of the goods type.
+
+    Returns:
+        The income bonus as a fraction (0 with no owned supplier).
+    """
+    total = 0.0
+    for company in companies:
+        if (company.is_owned and company.sector == SECTOR_SUPPLIER
+                and company.goods_name == goods_name):
+            total = total + company.effect_amount
+    return total
+
+
+assert_equal(supplier_bonus(
+    [make_test_company(SECTOR_SUPPLIER, 0.25, True)], "Test"), 0.25)
+assert_equal(supplier_bonus(
+    [make_test_company(SECTOR_SUPPLIER, 0.25, False)], "Test"), 0.0)
+assert_equal(supplier_bonus(
+    [make_test_company(SECTOR_SUPPLIER, 0.25, True)], "Other"), 0.0)
+# Every goods type in a new game has exactly one supplier for sale.
+assert_equal(len(make_new_state().goods_types), 7)
+assert_equal(supplier_bonus(make_owner_state(1).companies, CANNED_FOOD),
+             0.10)
+
+
+def is_company_for_sale(company: Company, research: list[Research]) -> bool:
+    """Check whether a company is shown on the Acquisitions list.
+
+    Args:
+        company: The company to check.
+        research: Every research project.
+
+    Returns:
+        True if it isn't owned yet and its required research is done.
+    """
+    return (not company.is_owned
+            and is_requirement_met(company.required_research, research))
+
+
+assert_equal(is_company_for_sale(make_new_state().companies[0], []), True)
+assert_equal(is_company_for_sale(make_owner_state(0).companies[0], []),
+             False)
+# Maison Lux Importers needs the Import Licenses research (index 4).
+assert_equal(is_company_for_sale(make_new_state().companies[4],
+                                 make_new_state().research), False)
+assert_equal(is_company_for_sale(
+    make_new_state().companies[4],
+    make_finished_research_state(4).research), True)
+
+
+def can_buy_company(state: State, company_index: int) -> bool:
+    """Check whether a company can be acquired right now.
+
+    Args:
+        state: The current game state.
+        company_index: The company's position in state.companies.
+
+    Returns:
+        True if it exists, is for sale, and the player can afford it
+        (keeping enough money to restock an empty warehouse).
+    """
+    if company_index < 0 or company_index >= len(state.companies):
+        return False
+    company = state.companies[company_index]
+    required = safe_money_required(company.cost, state.goods_in_stock)
+    return (is_company_for_sale(company, state.research)
+            and required <= state.money)
+
+
+assert_equal(can_buy_company(make_acquisitions_state(), 0), True)
+# Too expensive, research missing, or no such company.
+assert_equal(can_buy_company(make_acquisitions_state(), 3), False)
+assert_equal(can_buy_company(make_acquisitions_state(), 4), False)
+assert_equal(can_buy_company(make_acquisitions_state(), 99), False)
+
+
+def acquisition_headline(company: Company) -> str:
+    """Build the World News headline for an acquisition.
+
+    Args:
+        company: The company that was acquired.
+
+    Returns:
+        The headline text.
+    """
+    return ("ACQUIRED: " + company.name + " joins the family. Its staff "
+            + "were informed by memo.")
+
+
+assert_equal(acquisition_headline(make_test_company(SECTOR_MEDIA, 5.0, True)),
+             "ACQUIRED: Test Co. joins the family. Its staff were informed "
+             + "by memo.")
+# A company that is already owned can't be bought again.
+assert_equal(can_buy_company(expected_after_buying_cleanex(), 0), False)
+
+
+def acquire_company(state: State, company_index: int) -> None:
+    """Pay for a company, mark it owned, and announce it.
+
+    The first acquisition also sends an email explaining the sectors.
+
+    Args:
+        state: The game state to update.
+        company_index: The company's position in state.companies.
+    """
+    company = state.companies[company_index]
+    state.money = state.money - company.cost
+    company.is_owned = True
+    state.news_feed = add_news(state.news_feed, acquisition_headline(company))
+    send_email(state, EMAIL_ACQUISITION)
+
+
+def describe_company_effect(company: Company) -> str:
+    """Describe what owning a company does, for the Acquisitions page.
+
+    Args:
+        company: The company to describe.
+
+    Returns:
+        Text like "+15% income from Electronics".
+    """
+    if company.sector == SECTOR_SUPPLIER:
+        return (percent_text(company.effect_amount) + " income from "
+                + company.goods_name)
+    if company.sector == SECTOR_LOGISTICS:
+        return "+" + str(int(company.effect_amount)) + " market size"
+    if company.sector == SECTOR_MEDIA:
+        return "+" + str(int(company.effect_amount)) + " loyalty target"
+    return ""
+
+
 def goods_income_bonus(goods: GoodsType, research: list[Research],
-                       game_phase: str) -> float:
-    """Find a goods type's income bonus, including research and the war.
+                       companies: list[Company], game_phase: str) -> float:
+    """Find a goods type's income bonus from every source.
+
+    A goods type has no bonus of its own: the player earns it by owning
+    the supplier and by completing advertising research.
 
     Args:
         goods: The goods type.
         research: Every research project.
+        companies: Every company.
         game_phase: One of the PHASE_ constants.
 
     Returns:
-        Its own bonus, plus each completed research for it, plus its
-        wartime bonus.
+        Its owned suppliers' bonus, plus each completed research for it,
+        plus its wartime bonus.
     """
-    total = goods.income_bonus + goods_war_bonus(goods, game_phase)
+    total = (supplier_bonus(companies, goods.name)
+             + goods_war_bonus(goods, game_phase))
     for project in research:
         if project.is_done and project.goods_name == goods.name:
             total = total + project.goods_bonus
     return total
 
 
-assert_equal(goods_income_bonus(make_test_goods(0.25, True),
-                                [make_test_research("A", "", True)],
-                                PHASE_PEACE), 0.75)
-assert_equal(goods_income_bonus(make_test_goods(0.25, True),
-                                [make_test_research("A", "", False)],
-                                PHASE_PEACE), 0.25)
-assert_equal(goods_income_bonus(make_new_state().goods_types[1], [],
-                                PHASE_WAR), 0.35)
+# No supplier and no research: no bonus.
+assert_equal(goods_income_bonus(make_test_goods(True), [], [], PHASE_PEACE),
+             0.0)
+assert_equal(goods_income_bonus(
+    make_test_goods(True), [make_test_research("A", "", True)],
+    [make_test_company(SECTOR_SUPPLIER, 0.25, True)], PHASE_PEACE), 0.75)
+assert_equal(goods_income_bonus(
+    make_test_goods(True), [make_test_research("A", "", False)],
+    [make_test_company(SECTOR_SUPPLIER, 0.25, True)], PHASE_PEACE), 0.25)
+# Canned Food gets +25% in wartime even without its supplier.
+assert_equal(goods_income_bonus(make_new_state().goods_types[1], [], [],
+                                PHASE_WAR), 0.25)
 
 
-def total_extra_goods_bonus(research: list[Research],
-                            goods_types: list[GoodsType],
-                            game_phase: str) -> float:
-    """Add up the research and wartime boosts for goods being sold.
-
-    total_goods_bonus already counts each goods type's own bonus, so this
-    adds only the extra part that research and the war give.
+def total_goods_income_bonus(state: State) -> float:
+    """Add up the income bonus of every goods type being sold.
 
     Args:
-        research: Every research project.
-        goods_types: Every goods type.
-        game_phase: One of the PHASE_ constants.
+        state: The current game state.
 
     Returns:
-        The extra income bonus, as a fraction.
+        The combined income bonus, as a fraction.
     """
     total = 0.0
-    for goods in goods_types:
+    for goods in state.goods_types:
         if goods.is_selling:
-            total = (total + goods_income_bonus(goods, research, game_phase)
-                     - goods.income_bonus)
+            total = total + goods_income_bonus(
+                goods, state.research, state.companies, state.game_phase)
     return total
 
 
-assert_equal(total_extra_goods_bonus([make_test_research("A", "", True)],
-                                     [make_test_goods(0.25, True)],
-                                     PHASE_PEACE), 0.5)
-assert_equal(total_extra_goods_bonus([make_test_research("A", "", True)],
-                                     [make_test_goods(0.25, False)],
-                                     PHASE_PEACE), 0.0)
-# War Supplies gets no war bonus; Household Goods gets +10%.
-assert_equal(round(total_extra_goods_bonus([], make_war_state().goods_types,
-                                           PHASE_WAR), 2), 0.1)
+assert_equal(total_goods_income_bonus(make_new_state()), 0.0)
+# Owning a supplier does nothing until its goods are being sold.
+assert_equal(total_goods_income_bonus(make_owner_state(2)), 0.0)
+assert_equal(total_goods_income_bonus(make_state_with_income_bonuses()),
+             0.15)
+# In wartime, Household Goods gets +10% and War Supplies gets nothing.
+assert_equal(round(total_goods_income_bonus(make_war_state()), 2), 0.1)
 
 
 # ---------------------------------------------------------------------------
@@ -4412,20 +4742,25 @@ assert_equal(calculate_units_stocked(5, 100, 100, 500.0), 0)
 
 
 def current_market_size(state: State) -> int:
-    """Find how many customers the market holds, including research.
+    """Find how many customers the market holds.
 
     Args:
         state: The current game state.
 
     Returns:
-        MARKET_SIZE plus the customers added by completed research.
+        MARKET_SIZE plus the customers added by completed research and by
+        owned logistics companies.
     """
-    return MARKET_SIZE + total_research_market_bonus(state.research)
+    return (MARKET_SIZE + total_research_market_bonus(state.research)
+            + int(total_company_effect(state.companies, SECTOR_LOGISTICS)))
 
 
 assert_equal(current_market_size(make_new_state()), MARKET_SIZE)
-assert_equal(current_market_size(make_finished_research_state(7)),
-             MARKET_SIZE + RESEARCH_ROWS[7][7])
+# Boxly Logistics (company 7) brings 50 customers.
+assert_equal(current_market_size(make_owner_state(7)), MARKET_SIZE + 50)
+# ParcelPro (research 9) adds 40 more.
+assert_equal(current_market_size(make_finished_research_state(9)),
+             MARKET_SIZE + RESEARCH_ROWS[9][7])
 
 
 def calculate_demand(loyalty: float, market_size: int) -> int:
@@ -4486,7 +4821,7 @@ assert_equal(calculate_sale_price(2.0), 30.0)
 
 
 def calculate_total_bonus(state: State) -> float:
-    """Add the income bonuses from goods, policies, artifacts, and research.
+    """Add the income bonuses from goods, policies, and artifacts.
 
     Args:
         state: The current game state.
@@ -4494,9 +4829,7 @@ def calculate_total_bonus(state: State) -> float:
     Returns:
         The bonus as a fraction, where 0.5 means +50%.
     """
-    return (total_goods_bonus(state.goods_types)
-            + total_extra_goods_bonus(state.research, state.goods_types,
-                                      state.game_phase)
+    return (total_goods_income_bonus(state)
             + total_policy_income_bonus(state.policies)
             + total_artifact_bonus(state.owned_artifacts))
 
@@ -4566,13 +4899,15 @@ assert_equal(clamp_loyalty(42.0), 42.0)
 
 
 def calculate_loyalty_target(markup: float, items: list[BuyItem],
-                             policies: list[Policy]) -> float:
+                             policies: list[Policy],
+                             companies: list[Company]) -> float:
     """Calculate the loyalty that markup, marketing, and policies lead to.
 
     Args:
         markup: The current markup.
         items: The player's buy items.
         policies: The player's corporate policies.
+        companies: Every company; owned media companies raise the target.
 
     Returns:
         The loyalty value that customers drift toward.
@@ -4580,17 +4915,21 @@ def calculate_loyalty_target(markup: float, items: list[BuyItem],
     marketing = total_item_effect(items, EFFECT_LOYALTY)
     penalty = (markup - MIN_MARKUP) * MARKUP_LOYALTY_PENALTY
     policy_change = total_policy_loyalty_change(policies)
+    media = total_company_effect(companies, SECTOR_MEDIA)
     return clamp_loyalty(BASE_LOYALTY_TARGET + marketing - penalty
-                         + policy_change)
+                         + policy_change + media)
 
 
-assert_equal(calculate_loyalty_target(1.0, [], []), BASE_LOYALTY_TARGET)
-assert_equal(calculate_loyalty_target(1.5, [], []), 50.0)
-assert_equal(calculate_loyalty_target(5.0, [], []), 0.0)
+assert_equal(calculate_loyalty_target(1.0, [], [], []), BASE_LOYALTY_TARGET)
+assert_equal(calculate_loyalty_target(1.5, [], [], []), 50.0)
+assert_equal(calculate_loyalty_target(5.0, [], [], []), 0.0)
 assert_equal(calculate_loyalty_target(
-    1.0, [make_test_item(EFFECT_LOYALTY, 2, 3)], []), 66.0)
-assert_equal(calculate_loyalty_target(1.0, [], [make_test_policy(True)]),
+    1.0, [make_test_item(EFFECT_LOYALTY, 2, 3)], [], []), 66.0)
+assert_equal(calculate_loyalty_target(1.0, [], [make_test_policy(True)], []),
              BASE_LOYALTY_TARGET - 5.0)
+assert_equal(calculate_loyalty_target(
+    1.0, [], [], [make_test_company(SECTOR_MEDIA, 5.0, True)]),
+    BASE_LOYALTY_TARGET + 5.0)
 
 
 def drift_loyalty(loyalty: float, target: float) -> float:
@@ -4697,7 +5036,7 @@ def run_loyalty_drift(state: State) -> None:
         state: The game state to update.
     """
     target = calculate_loyalty_target(state.markup, state.buy_items,
-                                      state.policies)
+                                      state.policies, state.companies)
     state.loyalty = drift_loyalty(state.loyalty, target)
 
 
@@ -5566,7 +5905,10 @@ assert_equal(len(build_policy_chips(make_striking_state(2))), 1)
 
 
 def active_effect_lines(state: State) -> list[str]:
-    """List each goods type sold, active policy, artifact, and research.
+    """List each goods type sold, policy, artifact, research, and company.
+
+    Suppliers are counted in their goods type's line, so only logistics
+    and media companies get a line of their own.
 
     Args:
         state: The current game state.
@@ -5579,7 +5921,8 @@ def active_effect_lines(state: State) -> list[str]:
         if goods.is_selling:
             lines.append(goods.emoji + " " + goods.name + ": "
                          + percent_text(goods_income_bonus(
-                             goods, state.research, state.game_phase))
+                             goods, state.research, state.companies,
+                             state.game_phase))
                          + " income")
     for policy in state.policies:
         if policy.is_active:
@@ -5594,6 +5937,10 @@ def active_effect_lines(state: State) -> list[str]:
         effect = describe_research_effect(project)
         if project.is_done and effect != "":
             lines.append(project.emoji + " " + project.name + ": " + effect)
+    for company in state.companies:
+        if company.is_owned and company.sector != SECTOR_SUPPLIER:
+            lines.append(company.emoji + " " + company.name + ": "
+                         + describe_company_effect(company))
     return lines
 
 
@@ -5605,6 +5952,8 @@ assert_equal(active_effect_lines(make_artifact_state()),
 assert_equal(active_effect_lines(make_state_with_income_bonuses()),
              ["📺 Electronics: +15% income",
               "💬 Aggressive Upselling: +15% income, -8 loyalty target"])
+assert_equal(active_effect_lines(make_owner_state(7)),
+             ["📦 Boxly Logistics: +50 market size"])
 
 
 def build_effect_tags(state: State) -> Div:
@@ -6043,10 +6392,10 @@ def nav_section(current_page: str) -> str:
         current_page: One of the PAGE_ constants.
 
     Returns:
-        PAGE_BUSINESS for Research, PAGE_WAR for the war report, otherwise
-        the page itself.
+        PAGE_BUSINESS for Research and Acquisitions, PAGE_WAR for the war
+        report, PAGE_INBOX for an opened email, otherwise the page itself.
     """
-    if current_page == PAGE_RESEARCH:
+    if current_page == PAGE_RESEARCH or current_page == PAGE_ACQUISITIONS:
         return PAGE_BUSINESS
     if current_page == PAGE_WAR_REPORT:
         return PAGE_WAR
@@ -6056,6 +6405,7 @@ def nav_section(current_page: str) -> str:
 
 
 assert_equal(nav_section(PAGE_RESEARCH), PAGE_BUSINESS)
+assert_equal(nav_section(PAGE_ACQUISITIONS), PAGE_BUSINESS)
 assert_equal(nav_section(PAGE_CASINO), PAGE_CASINO)
 assert_equal(nav_section(PAGE_EMAIL), PAGE_INBOX)
 
@@ -6374,6 +6724,8 @@ def build_live_content(state: State) -> list:
         return [build_top_bar(state)]
     if state.current_page == PAGE_EMAIL:
         return [build_top_bar(state)]
+    if state.current_page == PAGE_ACQUISITIONS:
+        return [build_top_bar(state)]
     if state.current_page == PAGE_INBOX:
         return [build_top_bar(state),
                 Div(build_inbox_list(state), classes="page")]
@@ -6449,19 +6801,26 @@ def goods_detail_text(goods: GoodsType, state: State) -> str:
         state: The current game state.
 
     Returns:
-        Its income bonus, and a note if it is a war good.
+        Its income bonus (or a note that it has no supplier yet), and a
+        note if it is a war good.
     """
-    text = (percent_text(goods_income_bonus(goods, state.research,
-                                            state.game_phase)) + " income")
+    bonus = goods_income_bonus(goods, state.research, state.companies,
+                               state.game_phase)
+    text = percent_text(bonus) + " income"
+    if supplier_bonus(state.companies, goods.name) == 0:
+        text = text + " · no supplier owned"
     if goods.is_war_good:
         return text + " · ⚔️ war good"
     return text
 
 
 assert_equal(goods_detail_text(make_new_state().goods_types[0],
-                               make_new_state()), "+5% income")
-assert_equal(goods_detail_text(make_new_state().goods_types[3],
                                make_new_state()),
+             "+0% income · no supplier owned")
+assert_equal(goods_detail_text(make_owner_state(0).goods_types[0],
+                               make_owner_state(0)), "+5% income")
+assert_equal(goods_detail_text(make_owner_state(3).goods_types[3],
+                               make_owner_state(3)),
              "+100% income · ⚔️ war good")
 
 
@@ -6549,7 +6908,8 @@ def build_business_content(state: State) -> list:
     """
     return [
         Div(build_live_content(state), id="live_area"),
-        Div(build_research_link(), classes="page"),
+        Div(build_research_link(), build_acquisitions_link(),
+            classes="page two-col"),
         Div(build_goods_form(state), build_policy_form(state),
             classes="page two-col"),
     ]
@@ -6568,6 +6928,106 @@ def build_research_link() -> Div:
             + "goods, policies, and equipment.", classes="muted"),
         classes="card",
     )
+
+
+def build_acquisitions_link() -> Div:
+    """Build the Business page card that opens the Acquisitions page.
+
+    Returns:
+        A card holding a short note and the Acquisitions button.
+    """
+    return Div(
+        build_card_head("Acquisitions", [Button("🏢 Open Acquisitions",
+                                                "acquisitions_page")]),
+        Div("Buy suppliers to earn an income bonus on their goods, plus "
+            + "logistics and media companies.", classes="muted"),
+        classes="card",
+    )
+
+
+def build_company_row(company: Company, company_index: int) -> Div:
+    """Build one company that is for sale and its Acquire button.
+
+    The button stays even when the player can't afford it; buy_company
+    refuses the purchase, so money changes never redraw the button.
+
+    Args:
+        company: The company to show.
+        company_index: Its position in state.companies.
+
+    Returns:
+        A buy row for the company.
+    """
+    return Div(
+        Span(company.emoji, classes="emoji"),
+        Div(Div(company.name, classes="item-name"),
+            Div(company.description, classes="muted"),
+            Div(company.sector.capitalize() + " · "
+                + describe_company_effect(company), classes="muted")),
+        Button("Acquire for " + format_money(company.cost), "buy_company",
+               [Argument("company_index", company_index)]),
+        classes="buy-row",
+    )
+
+
+def build_company_list(state: State) -> Div:
+    """Build the card listing every company that is for sale.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A card with one row per company for sale, or a short note.
+    """
+    rows = [build_card_head("For Sale", [Button("← Business",
+                                                "business_page")])]
+    for company_index, company in enumerate(state.companies):
+        if is_company_for_sale(company, state.research):
+            rows.append(build_company_row(company, company_index))
+    if len(rows) == 1:
+        rows.append(Div("Nothing for sale. Research may shake a few "
+                        + "owners loose.", classes="muted"))
+    return Div(rows, classes="card")
+
+
+def build_owned_companies(state: State) -> Div:
+    """Build the card listing every company the player owns.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A card with one line per owned company, or a short note.
+    """
+    lines = []
+    for company in state.companies:
+        if company.is_owned:
+            lines.append(company.emoji + " " + company.name + ": "
+                         + describe_company_effect(company))
+    if len(lines) == 0:
+        return Div(build_card_head("Owned", []),
+                   Div("No companies yet. Suppliers are a good start.",
+                       classes="muted"),
+                   classes="card")
+    return Div(build_card_head("Owned", []), BulletedList(lines),
+               classes="card")
+
+
+def build_acquisitions_content(state: State) -> list:
+    """Build the Acquisitions page's content.
+
+    The lists sit outside the live area, so ticks never redraw the
+    Acquire buttons. They change only when a click draws the whole page.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A list of the page's components.
+    """
+    return [Div(build_live_content(state), id="live_area"),
+            Div(build_company_list(state), build_owned_companies(state),
+                classes="page two-col")]
 
 
 def build_research_row(project: Research, research_index: int,
@@ -7308,9 +7768,53 @@ assert_equal(buy_research(make_research_state(), 0),
 # Too poor: nothing changes.
 assert_equal(buy_research(make_poor_research_state(), 0),
              make_expected_research_page(make_poor_research_state()))
-# Not unlocked yet (Boxly needs 15000 earned): nothing changes.
+# Not unlocked yet (the Unboxing Program needs 15000 earned): no change.
 assert_equal(buy_research(make_research_state(), 7),
              make_expected_research_page(make_research_state()))
+
+
+@route
+def acquisitions_page(state: State) -> Page:
+    """Show the Acquisitions page, a sub-page of Business.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The Acquisitions page.
+    """
+    state.current_page = PAGE_ACQUISITIONS
+    return Page(state, build_acquisitions_content(state))
+
+
+assert_equal(acquisitions_page(make_acquisitions_state()),
+             make_expected_acquisitions_page(make_acquisitions_state()))
+
+
+@route
+def buy_company(state: State, company_index: int) -> Page:
+    """Acquire a company if it is for sale and affordable.
+
+    Args:
+        state: The current game state.
+        company_index: The company's position in state.companies.
+
+    Returns:
+        The refreshed Acquisitions page.
+    """
+    if can_buy_company(state, company_index):
+        acquire_company(state, company_index)
+    return acquisitions_page(state)
+
+
+assert_equal(buy_company(make_acquisitions_state(), 0),
+             make_expected_acquisitions_page(expected_after_buying_cleanex()))
+# Too expensive (Granit Arms Works costs 15000): nothing changes.
+assert_equal(buy_company(make_acquisitions_state(), 3),
+             make_expected_acquisitions_page(make_acquisitions_state()))
+# Already owned: it can't be bought (or paid for) twice.
+assert_equal(buy_company(expected_after_buying_cleanex(), 0),
+             make_expected_acquisitions_page(expected_after_buying_cleanex()))
 
 
 @route

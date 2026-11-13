@@ -24,6 +24,8 @@ pass.
 | 11 | 2026-11-12, lost-click fix | Pacing | The marketing campaign, warehouse expansion, and corporate organization items now need research (Social Media Playbook, Warehouse Zoning Permit, Corporate Restructuring Study), so the research chip shows 3 available within seconds of a new game (see #1). Their costs (100 / 250 / 750) are guesses. | deferred |
 | 12 | 2026-11-13, Emails | Pacing | The research email arrives on tick 1, right after the welcome email, because some research is available almost at once (see #1 and #11). Raising the early `unlock_at_earned` values would space them out. | deferred |
 | 13 | 2026-11-13, Emails | Emails | The confiscation notice has no real trigger yet: there is no confiscation mechanic, so only the Debug button sends it. | open |
+| 14 | 2026-11-13, E1 | Balance | Company costs and bonuses in `COMPANY_ROWS` are guesses. Supplier bonuses match the old free goods bonuses, so early income is lower than before until suppliers are bought. | deferred |
+| 15 | 2026-11-13, E1 | Balance | Household Goods and Canned Food still get a free wartime bonus (`war_bonus`) without a supplier. Planned to be removed in E2. | open |
 
 ## Resolved
 
