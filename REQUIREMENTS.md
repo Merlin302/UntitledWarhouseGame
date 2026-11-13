@@ -5,14 +5,15 @@ off what is done and name the exact function or field that satisfies it.
 
 ## Site
 
-- [x] At least 7 routes — _where:_ 33 routes: `index`, `start_game`,
+- [x] At least 7 routes — _where:_ 34 routes: `index`, `start_game`,
       `company_page`, `business_page`, `research_page`, `buy_research`,
       `artifacts_page`, `organize_page`,
       `casino_page`, `start_typing_round`, `submit_typing_round`,
       `save_goods`, `save_policies`, `run_expedition`, `save_artifact_grid`,
       `set_buy_amount`, `buy_item`, `raise_markup`, `lower_markup`, `tick`,
       `debug_page`, `debug_add_money`, `debug_jump`, `war_page`,
-      `buy_defense`, `war_victory_page`, `war_defeat_page`,
+      `buy_defense`, `start_next_wave`, `war_victory_page`,
+      `war_defeat_page`,
       `inbox_page`, `open_email`, `acquisitions_page`, `buy_company`,
       `make_contribution`, `toggle_government_supply`
 - [x] At least 5 pages — _where:_ start page (`index`), company page
@@ -24,12 +25,13 @@ off what is done and name the exact function or field that satisfies it.
       (`inbox_page`), opened email page (`open_email`), Acquisitions
       page (`acquisitions_page`), Debug page
       (`debug_page`, demo tool)
-- [x] `State` dataclass with at least 4 fields — _where:_ `State` (41 fields)
+- [x] `State` dataclass with at least 4 fields — _where:_ `State` (43 fields)
 - [x] At least one State field is a list/dict of a second dataclass —
       _where:_ `State.owned_artifacts: list[Artifact]`,
       `State.buy_items: list[BuyItem]`,
       `State.goods_types: list[GoodsType]`, `State.policies: list[Policy]`,
       `State.research: list[Research]`, `State.attackers: list[Attacker]`,
+      `State.next_wave: list[Attacker]`,
       `State.defenses: list[DefenseEquipment]`,
       `State.inbox: list[Email]`, `State.companies: list[Company]`
 - [x] At least 4 State fields, including that list/dict, are meaningfully
@@ -45,9 +47,14 @@ off what is done and name the exact function or field that satisfies it.
       `money`, and `news_feed` (`buy_research`, through `complete_research`),
       `game_phase`, `war_goods_sold`, and `threat` (`tick`, through
       `run_war_economy`; also `debug_jump`), `attackers` (`.hp`, in `tick`
-      through `run_wave` / `damage_attackers`), `defenses` (`.owned`, in
-      `buy_defense`), `wave_number`, `wave_ms_left`, `waves_defended`,
-      `raid_ms_left`, `last_wave_report` (`tick`), `inbox` and
+      through `run_wave` / `damage_attackers`; spawned attackers added
+      by `run_spawners`), `next_wave` and `attackers` (`start_next_wave`
+      through `start_wave`; `tick` through `end_wave` /
+      `generate_next_wave`), `defenses` (`.owned`, in `buy_defense`; taken
+      in `tick` through `confiscate_defenses`), `buy_items` (`.owned`
+      lost in `tick` through `lose_company_items`), `wave_number`,
+      `wave_ms_left`, `threat` (`start_next_wave`), `waves_defended`,
+      `war_won`, `raid_ms_left`, `last_wave_report` (`tick`), `inbox` and
       `sent_email_keys` (`start_game` and `tick`, through `send_email`;
       `.is_read` in `open_email`), `companies` (`.is_owned`, in
       `buy_company` through `acquire_company`), `government_opinion`
@@ -83,7 +90,15 @@ off what is done and name the exact function or field that satisfies it.
       `describe_research_effect` (sanction recovery, parallel imports),
       `active_effect_lines` (wartime sanctions tag),
       `apply_debug_jump` (which shortcut), `run_intermission` (meter full,
-      briefing read), `run_wave` (wave won or out of time), `end_wave` (won
+      briefing unread), `wave_blocker` (why a wave can't start: no war,
+      wave running, briefing, boss war goods), `start_next_wave`
+      (nothing blocks the wave), `is_boss_wave`, `boss_requirement`,
+      `era_for_wave` (era limits), `pick_row_index` (weighted roll),
+      `run_spawners` (spawner alive and timer up), `spawn_attackers`
+      (attacker cap), `waiting_penalty` (cap), `penalty_reduction`
+      (research done / artifact placed), `most_owned_item_index`
+      (repeatable and owned most), `buy_defense` (foreign costs
+      opinion), `defense_origin_text` (foreign or domestic), `run_wave` (wave won or out of time), `end_wave` (won
       or broke through; last wave ends the war), `finish_war` (won or
       lost), `war_page` (war over: which report), `damage_attackers` (same
       altitude and alive),
@@ -119,7 +134,13 @@ off what is done and name the exact function or field that satisfies it.
       (`state.goods_types`, counts war goods being sold);
       `damage_attackers` loops over `state.attackers` and carries leftover
       damage to the next attacker (`enemy_hp`, `count_survivors` too);
-      `total_dps` loops over `state.defenses`; `count_unread`,
+      `run_spawners` loops over `state.attackers` to count down spawner
+      timers and launch new attackers; `count_attacker_kinds` loops over
+      `state.next_wave` for the preview; `total_dps` and
+      `confiscate_defenses` loop over `state.defenses`;
+      `lose_company_items` / `most_owned_item_index` loop over
+      `state.buy_items`; `penalty_reduction` loops over `state.research`
+      and `state.owned_artifacts`; `count_unread`,
       `is_email_unread`, and `build_inbox_list` loop over `state.inbox`;
       `supplier_bonus` and `total_company_effect` loop over
       `state.companies` to total the bonuses of owned companies;
@@ -144,7 +165,7 @@ off what is done and name the exact function or field that satisfies it.
       (Clock), `tick` (Fragment), `build_start_content` (RemovePersistent),
       `build_top_bar` (Div ids), `build_buy_amount_controls` (Argument),
       `roll_strike` (`random.random`), `roll_rarity`, `roll_artifact_row`,
-      `roll_prompt` (`random.randint`), `parse_bet` (`.isascii`), and
+      `roll_prompt`, `roll_wave_choices` (`random.randint`), `parse_bet` (`.isascii`), and
       `save_goods` / `save_policies` (default parameter values `= False`)
 
 ## Code quality
@@ -160,7 +181,10 @@ off what is done and name the exact function or field that satisfies it.
       random helpers, exempt, and say so in their docstrings;
       `start_typing_round` uses randomness (its docstring says so) and only
       its rejected-bet paths are tested; `roll_prompt` is exempt; the scoring
-      function `calculate_payout` is pure and tested
+      function `calculate_payout` is pure and tested;
+      `roll_wave_choices` and `generate_next_wave` are random helpers
+      (docstrings say so); `build_wave` is pure and tested with fixed
+      rolls, and `start_next_wave` is tested with a stored wave
 - [x] Lines under 80 characters (hard limit 120)
 - [x] Type hints on every function header
 - [x] A Google-format docstring as the first line of every function body

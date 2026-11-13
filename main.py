@@ -84,6 +84,8 @@ RESTRUCTURING_STUDY = "Corporate Restructuring Study"
 PARALLEL_IMPORTS = "Parallel Imports Scheme"
 SHELL_COMPANY = "Offshore Shell Company"
 REBRANDING = "Patriotic Rebranding"
+SHELTER_RESEARCH = "Basement Bomb Shelter Program"
+SIREN_RESEARCH = "Siren Desensitization Training"
 NO_REQUIREMENT = ""
 
 # Each row: name, emoji, base cost, effect kind, effect amount, whether
@@ -177,6 +179,9 @@ CATEGORY_UNLOCK = "unlock"
 CATEGORY_WORLD = "world"
 # Workarounds win back income lost to wartime sanctions.
 CATEGORY_WORKAROUND = "workaround"
+# Civil defense research shrinks the war's waiting penalty
+# (THREAT_PENALTY_REDUCTIONS).
+CATEGORY_CIVIL_DEFENSE = "civil defense"
 
 # Sanctions: from the moment the war starts until it ends, the profit on
 # each sale (what it earns above UNIT_COST) is multiplied by
@@ -293,6 +298,16 @@ RESEARCH_ROWS = [
      CATEGORY_WORKAROUND, 18000.0, 0.0, 0.0, 0, "", 0.0, PARALLEL_IMPORTS,
      0.0, "Foreign brands 'were always local', says the new packaging.",
      True, WORKAROUND_RECOVERY],
+    [SHELTER_RESEARCH, "🧱",
+     "The basement is now a shelter. The shelter is now a break room.",
+     CATEGORY_CIVIL_DEFENSE, 10000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT,
+     0.0, "Warehouse staff now take lunch underground 'for morale'.",
+     True, 0.0],
+    [SIREN_RESEARCH, "🔕",
+     "Workers learn to hear an air raid siren as 'ambient music'.",
+     CATEGORY_CIVIL_DEFENSE, 20000.0, 0.0, 0.0, 0, "", 0.0, SHELTER_RESEARCH,
+     0.0, "Productivity unaffected by sirens; experts call it 'worrying'.",
+     True, 0.0],
 ]
 
 # ---------------------------------------------------------------------------
@@ -419,19 +434,46 @@ SANCTIONS_NEWS = ("Sanctions ban electronics and luxury imports; "
 SIRENS_NEWS = ("Air raid sirens sound citywide. Read the briefing in your "
                + "Inbox before the first attack.")
 
-WAVE_COUNT = 35
-# Every 10th wave, and the last wave, is a dire wave.
-DIRE_WAVE_EVERY = 10
+WAVE_COUNT = 30
+# Every 10th wave is a boss wave. Boss waves are tougher and can only be
+# started once enough war goods have been sold (BOSS_WAR_GOODS).
+BOSS_WAVE_EVERY = 10
+# The war has three eras of WAVES_PER_ERA waves; each has its own enemies
+# (the era column of ATTACKER_ROWS) and its own waiting penalty.
+WAVES_PER_ERA = 10
+# War goods sold needed before boss waves 10, 20, and 30 can start.
+BOSS_WAR_GOODS = [2000, 10000, 25000]
 # Raise this (e.g. to 10) to make waves and intermissions 10x shorter
 # while testing. Keep it at 1 for the real game.
 DEBUG_WAR_SPEED = 1
 
 MAX_THREAT = 100.0
-# Threat added per second, plus a little more for each war good sold in
-# the latest tick. The cap keeps intermissions from getting too short.
+# Threat added per second between waves, plus a little more for each war
+# good sold in the latest tick. The cap keeps the meter from filling too
+# fast. Starting a wave empties the meter.
 THREAT_PER_SECOND = 2.0
 THREAT_PER_WAR_UNIT = 0.05
 MAX_THREAT_PER_SECOND = 5.0
+
+# Waiting penalty: while the player waits between waves, the profit on
+# each sale shrinks by threat x this era's factor (era 1, 2, 3), so a full
+# meter costs 20%, 40%, or 60%. Penalty-reducing research and placed
+# artifacts shrink it (at most MAX_PENALTY_REDUCTION), and it is never
+# more than MAX_WAITING_PENALTY. Like sanctions, it only cuts profit, so a
+# sale always earns back UNIT_COST.
+ERA_PENALTY_PER_THREAT = [0.002, 0.004, 0.006]
+MAX_WAITING_PENALTY = 0.5
+MAX_PENALTY_REDUCTION = 0.75
+HARD_HAT_ARTIFACT = "Hard Hat of Plausible Deniability"
+RADIO_ARTIFACT = "Propaganda Radio"
+# How much each research (once done) or artifact (once placed in the grid)
+# reduces the waiting penalty.
+THREAT_PENALTY_REDUCTIONS = {
+    SHELTER_RESEARCH: 0.25,
+    SIREN_RESEARCH: 0.25,
+    HARD_HAT_ARTIFACT: 0.15,
+    RADIO_ARTIFACT: 0.25,
+}
 
 # --- W2: air defense ---
 PAGE_WAR = "war"
@@ -441,48 +483,84 @@ ALTITUDE_LOW = "low"
 ALTITUDES = [ALTITUDE_HIGH, ALTITUDE_MEDIUM, ALTITUDE_LOW]
 
 # Attackers per wave: WAVE_BASE_ATTACKERS, plus one more every
-# WAVES_PER_EXTRA_ATTACKER waves, plus DIRE_EXTRA_ATTACKERS on dire waves,
-# never more than MAX_ATTACKERS.
-MAX_ATTACKERS = 20
+# WAVES_PER_EXTRA_ATTACKER waves, plus BOSS_EXTRA_ATTACKERS on boss waves,
+# never more than MAX_GENERATED_ATTACKERS. Spawners (see ATTACKER_ROWS)
+# can add more during the wave, but a wave never holds more than
+# MAX_ATTACKERS.
+MAX_ATTACKERS = 30
+MAX_GENERATED_ATTACKERS = 24
 WAVE_BASE_ATTACKERS = 3
 WAVES_PER_EXTRA_ATTACKER = 2
-DIRE_EXTRA_ATTACKERS = 5
-# Attacker HP grows by this fraction each wave; dire waves multiply it.
-WAVE_HP_GROWTH = 0.10
-DIRE_HP_MULTIPLIER = 1.5
+BOSS_EXTRA_ATTACKERS = 5
+# Attacker HP grows by this fraction each wave; boss waves multiply it.
+WAVE_HP_GROWTH = 0.05
+BOSS_HP_MULTIPLIER = 1.5
 # How long the defenders have to destroy a wave, in real time.
 WAVE_DURATION_MS = 30000
 
+KALIBAR_NAME = 'BGM-14 "Kalibar" cruise missile'
+MIRV_NAME = '"Sarmatt" MIRV warhead'
 # Each row: name, emoji, altitude, the altitude every second attacker of
-# this kind flies at instead, base HP, and the first wave it appears in.
+# this kind flies at instead, base HP, its era (1-3), its pick weight in
+# that era (0 = only ever spawned), and what it spawns: the attacker's
+# name ("" for none), how many, and after how many ms. A spawner that is
+# still alive when its timer runs out adds those attackers to the wave.
 ATTACKER_ROWS = [
-    ['9M456 "Pengvin" drone', "🛩️", ALTITUDE_LOW, ALTITUDE_LOW, 30.0, 1],
-    ['BGM-14 "Kalibar" cruise missile', "🚀", ALTITUDE_MEDIUM, ALTITUDE_LOW,
-     60.0, 4],
-    ['B-95 "Mishka" bomber', "✈️", ALTITUDE_HIGH, ALTITUDE_HIGH, 200.0, 8],
+    ['9M456 "Pengvin" drone', "🛩️", ALTITUDE_LOW, ALTITUDE_LOW, 30.0, 1, 5,
+     "", 0, 0],
+    ['Shahid-136 "Lawnmower" drone', "🛵", ALTITUDE_LOW, ALTITUDE_MEDIUM,
+     40.0, 1, 4, "", 0, 0],
+    ['"Garage Kalibar" homemade cruise missile', "🧨", ALTITUDE_MEDIUM,
+     ALTITUDE_LOW, 60.0, 1, 3, "", 0, 0],
+    ['Kh-47 "Kinzhul" hypersonic missile', "☄️", ALTITUDE_HIGH,
+     ALTITUDE_MEDIUM, 150.0, 1, 1, "", 0, 0],
+    ['Su-43 "Flanqer" fighter jet', "⚔️", ALTITUDE_HIGH, ALTITUDE_MEDIUM,
+     250.0, 2, 2, "", 0, 0],
+    ['B-95 "Mishka" bomber', "✈️", ALTITUDE_HIGH, ALTITUDE_HIGH, 400.0, 2, 2,
+     "", 0, 0],
+    [KALIBAR_NAME, "🚀", ALTITUDE_MEDIUM, ALTITUDE_LOW, 120.0, 2, 5, "", 0, 0],
+    ['BM-31 "Smerch-less" guided rocket', "🎆", ALTITUDE_LOW, ALTITUDE_LOW,
+     90.0, 2, 3, "", 0, 0],
+    ['Il-67 "Kandid" missile transport', "🛬", ALTITUDE_HIGH, ALTITUDE_HIGH,
+     350.0, 2, 1, KALIBAR_NAME, 3, 10000],
+    ['Kh-101 "Ghostwriter" stealth cruise missile', "🥷", ALTITUDE_MEDIUM,
+     ALTITUDE_LOW, 300.0, 3, 5, "", 0, 0],
+    ['"Project Unobtanium" experimental weapon', "🧪", ALTITUDE_LOW,
+     ALTITUDE_HIGH, 500.0, 3, 2, "", 0, 0],
+    ['RS-32 "Sarmatt" ICBM', "🌠", ALTITUDE_HIGH, ALTITUDE_HIGH, 1200.0, 3, 1,
+     MIRV_NAME, 4, 8000],
+    [MIRV_NAME, "💣", ALTITUDE_MEDIUM, ALTITUDE_LOW, 250.0, 3, 0, "", 0, 0],
 ]
 
 # Each row: name, emoji, cost, damage per second against high, medium,
-# and low altitude attackers, and how many the company owns at the start.
+# and low altitude attackers, how many the company owns at the start, and
+# whether it is foreign-made. Each kind comes in a domestic and a foreign
+# version: the foreign one is always better, but buying it lowers the
+# Government's opinion by OPINION_LOSS_PER_FOREIGN_DEFENSE.
 DEFENSE_ROWS = [
-    ['9K92 "Zhalo" MANPADS', "🧍", 1500.0, 0.0, 8.0, 15.0, 2],
-    ["LoM-16SM fighter", "🛫", 5000.0, 12.0, 12.0, 6.0, 0],
-    ['MIN-400 "Loyalist" SAM', "🛡️", 8000.0, 40.0, 10.0, 0.0, 0],
+    ['9K92 "Zhalo" MANPADS', "🧍", 1500.0, 0.0, 8.0, 15.0, 2, False],
+    ['FIM-29 "Stingur" MANPADS', "🎯", 2000.0, 0.0, 11.0, 21.0, 0, True],
+    ['MyG-29 "Fulcrumb" fighter', "🛫", 5000.0, 12.0, 12.0, 6.0, 0, False],
+    ['LoM-16SM "Fighting Falkon"', "🦅", 6500.0, 17.0, 17.0, 8.0, 0, True],
+    ['Z-300 "Grumbler" SAM', "🗼", 8000.0, 40.0, 10.0, 0.0, 0, False],
+    ['MIN-400 "Loyalist" SAM', "🛡️", 10000.0, 56.0, 14.0, 0.0, 0, True],
 ]
+OPINION_LOSS_PER_FOREIGN_DEFENSE = 2.0
 
-# What a failed wave costs: each surviving attacker destroys some stock and
-# adds time to an air raid penalty on stocking and delivery.
+# What a failed wave costs: each surviving attacker destroys some stock,
+# adds time to an air raid penalty on stocking and delivery, and destroys
+# ITEMS_LOST_PER_SURVIVOR owned Company page items (at most
+# MAX_ITEMS_LOST_PER_WAVE per wave).
 STOCK_LOSS_PER_SURVIVOR = 10
 RAID_PENALTY_MS_PER_SURVIVOR = 3000
 MAX_RAID_PENALTY_MS = 60000
 RAID_PENALTY_MULTIPLIER = 0.6
-# Failing a dire wave also destroys this fraction of each defense type.
-DIRE_EQUIPMENT_LOSS_FRACTION = 0.25
+ITEMS_LOST_PER_SURVIVOR = 1
+MAX_ITEMS_LOST_PER_WAVE = 5
 
 # --- W3: the end of the war ---
 PAGE_WAR_REPORT = "war_report"
-# War goods that must be sold during the war to win it.
-WAR_VICTORY_GOODS = 30000
+# The war is won by repelling the last (boss) wave.
 WAR_WON_NEWS = ("CEASEFIRE: The " + ENEMY_COUNTRY + " withdraws! The "
                 + "warehouse is declared a 'national hero'.")
 WAR_LOST_NEWS = ("CEASEFIRE: The " + HOME_COUNTRY + " signs a humiliating "
@@ -523,6 +601,11 @@ CONTRIBUTION_NEWS = ("Company donates to the war effort; the Ministry "
 CONFISCATION_EVERY_WAVES = 5
 CONFISCATION_BASE_FRACTION = 0.05
 CONFISCATION_OPINION_FRACTION = 0.25
+# The same confiscation also takes this fraction of each kind of air
+# defense (rounded down). The company is credited war goods sold for
+# them: this many per Ŧ1 of the equipment's price.
+DEFENSE_CONFISCATION_FRACTION = 0.2
+WAR_GOODS_PER_CONFISCATED_MONEY = 0.05
 
 # ---------------------------------------------------------------------------
 # Emails: the inbox and its catalog of templates
@@ -611,15 +694,19 @@ EMAIL_ROWS = [
      + "air defense. The enemy will not attack until you have opened this "
      + "email. I asked; they were surprisingly reasonable about it.\n\n"
      + "- The " + ENEMY_COUNTRY + " attacks in " + str(WAVE_COUNT)
-     + " waves. A wave starts when the threat meter is full.\n"
-     + "- Selling war goods fills the meter faster, but war goods sold "
-     + "decide who wins the war.\n"
+     + " waves, in three eras of ever sillier weapons. You start each "
+     + "wave yourself, with the button on the War page. The War page "
+     + "also previews the next wave.\n"
+     + "- While you wait, the threat meter fills and cuts your profit. "
+     + "Starting a wave empties it. Selling war goods fills it faster.\n"
      + "- Attackers fly high, medium, or low. Each defense is good at "
-     + "some altitudes and useless at others.\n"
+     + "some altitudes and useless at others. Foreign defenses are "
+     + "better, but the Government notices who you buy from.\n"
      + "- Shoot down every attacker before the wave's timer runs out, or "
-     + "the survivors destroy stock and cut production for a while.\n"
-     + "- Every " + str(DIRE_WAVE_EVERY) + "th wave (and the last) is "
-     + "dire: tougher, and losing it damages your defenses.\n"
+     + "the survivors destroy stock and equipment and cut production.\n"
+     + "- Every " + str(BOSS_WAVE_EVERY) + "th wave is a boss wave. The "
+     + "front will not let you start it until you have sold enough war "
+     + "goods. Repel wave " + str(WAVE_COUNT) + " to win the war.\n"
      + "- Air defense is sold on the War page at any time, even "
      + "mid-wave.\n\n"
      + "I will be advising from the basement.\n\nJohn Johnson",
@@ -628,7 +715,9 @@ EMAIL_ROWS = [
      "Notice of Patriotic Contribution",
      "Citizen-Enterprise,\n\n"
      + "Under the Wartime Logistics Act, a portion of your property has "
-     + "been reclassified as 'the State's'.\n\n"
+     + "been reclassified as 'the State's'. This includes some of your "
+     + "air defense, which the front needs more than your roof does. "
+     + "Its value has been credited to your war goods sold.\n\n"
      + "No action is required on your part. No action is possible on your "
      + "part. A receipt will be issued after the war, subject to the "
      + "outcome of the war.\n\n"
@@ -747,7 +836,7 @@ DEBUG_JUMP_RESEARCH = "research"
 DEBUG_JUMP_WAR = "war"
 DEBUG_JUMP_THREAT = "threat"
 DEBUG_JUMP_WAVE = "wave"
-DEBUG_JUMP_DIRE = "dire"
+DEBUG_JUMP_BOSS = "boss"
 DEBUG_JUMP_LAST = "last"
 DEBUG_JUMP_WIN = "win"
 DEBUG_JUMP_LOSE = "lose"
@@ -797,6 +886,12 @@ ARTIFACT_ROWS = [
      "The axes are unlabeled, so the investors are thrilled."],
     ["🧿", "Eye of the Shift Supervisor", RARITY_RARE, 0.10,
      "Sees every bathroom break. Forgives none of them."],
+    # These two also shrink the war's waiting penalty while placed
+    # (THREAT_PENALTY_REDUCTIONS).
+    ["🪖", HARD_HAT_ARTIFACT, RARITY_RARE, 0.02,
+     "Protects against falling debris and follow-up questions."],
+    ["📻", RADIO_ARTIFACT, RARITY_LEGENDARY, 0.10,
+     "Only plays good news. Every station. Even the weather."],
     ["👑", "Crown of Synergy", RARITY_LEGENDARY, 0.20,
      "Whoever wears it may say 'circle back' without consequence."],
     ["🏆", "Employee of the Millennium", RARITY_LEGENDARY, 0.30,
@@ -1470,12 +1565,19 @@ class Attacker:
         altitude: One of the ALTITUDE_ constants.
         max_hp: Its starting HP.
         hp: HP left; 0 means it was shot down.
+        spawn_name: The attacker it spawns ("" if it spawns nothing).
+        spawn_count: How many it spawns.
+        spawn_ms_left: Milliseconds until it spawns (0 once it has, or
+            if it never does).
     """
     name: str
     emoji: str
     altitude: str
     max_hp: float
     hp: float
+    spawn_name: str
+    spawn_count: int
+    spawn_ms_left: int
 
 
 @dataclass
@@ -1490,6 +1592,8 @@ class DefenseEquipment:
         dps_medium: Damage per second against medium altitude attackers.
         dps_low: Damage per second against low altitude attackers.
         owned: How many units the company owns.
+        is_foreign: Whether it is foreign-made (buying it lowers the
+            Government's opinion).
     """
     name: str
     emoji: str
@@ -1498,6 +1602,7 @@ class DefenseEquipment:
     dps_medium: float
     dps_low: float
     owned: int
+    is_foreign: bool
 
 
 @dataclass
@@ -1570,12 +1675,15 @@ class State:
         war_goods_sold: War goods sold since the war started.
         threat: How close the next enemy attack is, from 0 to MAX_THREAT.
         attackers: The attackers in the current wave (empty between waves).
+        next_wave: The attackers of the next wave, generated when the
+            previous wave ends (empty once the last wave has started).
         defenses: Every kind of air defense and how many are owned.
         wave_number: The number of waves started so far.
         wave_ms_left: Milliseconds left in the current wave (0 = no wave).
         waves_defended: How many waves were destroyed in time.
         raid_ms_left: Milliseconds left of the air raid production penalty.
         last_wave_report: A summary of how the latest wave ended.
+        war_won: Whether the last wave was repelled (decides the war).
         inbox: The newest MAX_INBOX_EMAILS emails, newest first.
         sent_email_keys: The key of every template sent so far, so a
             once-only email is never sent twice (one entry per template).
@@ -1616,12 +1724,14 @@ class State:
     war_goods_sold: int
     threat: float
     attackers: list[Attacker]
+    next_wave: list[Attacker]
     defenses: list[DefenseEquipment]
     wave_number: int
     wave_ms_left: int
     waves_defended: int
     raid_ms_left: int
     last_wave_report: str
+    war_won: bool
     inbox: list[Email]
     sent_email_keys: list[str]
     companies: list[Company]
@@ -1717,7 +1827,7 @@ def make_starting_defenses() -> list[DefenseEquipment]:
     defenses = []
     for row in DEFENSE_ROWS:
         defenses.append(DefenseEquipment(row[0], row[1], row[2], row[3],
-                                         row[4], row[5], row[6]))
+                                         row[4], row[5], row[6], row[7]))
     return defenses
 
 
@@ -1757,12 +1867,14 @@ def make_new_state() -> State:
         war_goods_sold=0,
         threat=0.0,
         attackers=[],
+        next_wave=[],
         defenses=make_starting_defenses(),
         wave_number=0,
         wave_ms_left=0,
         waves_defended=0,
         raid_ms_left=0,
         last_wave_report="",
+        war_won=False,
         inbox=[],
         sent_email_keys=[],
         companies=make_starting_companies(),
@@ -2647,6 +2759,36 @@ def make_nearly_threatened_state() -> State:
     return state
 
 
+def make_waiting_state() -> State:
+    """Build the war State waiting before wave 1 with the meter half full.
+
+    Returns:
+        The war State with a threat of 50.
+    """
+    state = make_war_state()
+    state.threat = 50.0
+    return state
+
+
+def make_boss_ready_state(war_goods_sold: int) -> State:
+    """Build a briefed war State waiting before boss wave 10.
+
+    Args:
+        war_goods_sold: War goods sold so far.
+
+    Returns:
+        A war State after wave 9 with a full threat meter and a stored
+        next wave (built from fixed rolls).
+    """
+    state = make_war_state()
+    skip_briefing(state)
+    state.wave_number = 9
+    state.threat = MAX_THREAT
+    state.war_goods_sold = war_goods_sold
+    state.next_wave = build_wave(10, [0, 5, 9, 12])
+    return state
+
+
 def make_test_attacker(altitude: str, hp: float) -> Attacker:
     """Build an attacker with the given altitude and HP for tests.
 
@@ -2657,7 +2799,7 @@ def make_test_attacker(altitude: str, hp: float) -> Attacker:
     Returns:
         An Attacker named "Test".
     """
-    return Attacker("Test", "T", altitude, hp, hp)
+    return Attacker("Test", "T", altitude, hp, hp, "", 0, 0)
 
 
 def make_briefed_threat_state() -> State:
@@ -2727,11 +2869,13 @@ def make_losing_wave_state() -> State:
     """Build a war State in wave 1 that its defenses can't win.
 
     Returns:
-        A war State with a strong bomber, 500 ms left, and 50 in stock.
+        A war State with a strong bomber, 500 ms left, 50 in stock, and 3
+        Procurement Agents.
     """
     state = make_wave_state()
     state.wave_ms_left = 500
     state.goods_in_stock = 50
+    state.buy_items[0].owned = 3
     state.attackers = [make_test_attacker(ALTITUDE_HIGH, 500.0)]
     return state
 
@@ -2761,27 +2905,31 @@ def expected_after_buying_manpads() -> State:
     return state
 
 
-def make_last_wave_state(war_goods_sold: int) -> State:
-    """Build a war State fighting the last wave, about to win it.
+def make_last_wave_state(is_winning: bool) -> State:
+    """Build a war State fighting the last wave.
 
     Args:
-        war_goods_sold: War goods sold so far.
+        is_winning: Whether the defenses win it in the next 1000 ms tick
+            (one weak drone left) or lose it (a strong bomber, 500 ms
+            left).
 
     Returns:
-        A war State in wave WAVE_COUNT with one weak drone left.
+        A war State in wave WAVE_COUNT.
     """
-    state = make_wave_state()
+    if is_winning:
+        state = make_wave_state()
+    else:
+        state = make_losing_wave_state()
     state.wave_number = WAVE_COUNT
     state.waves_defended = WAVE_COUNT - 1
-    state.war_goods_sold = war_goods_sold
     return state
 
 
-def make_finished_war_state(war_goods_sold: int) -> State:
+def make_finished_war_state(is_won: bool) -> State:
     """Build a State whose war is over.
 
     Args:
-        war_goods_sold: War goods sold during the war.
+        is_won: Whether the last wave was repelled.
 
     Returns:
         A war-over State after all WAVE_COUNT waves.
@@ -2790,21 +2938,22 @@ def make_finished_war_state(war_goods_sold: int) -> State:
     state.game_phase = PHASE_WAR_OVER
     skip_briefing(state)
     state.wave_number = WAVE_COUNT
-    state.waves_defended = 30
-    state.war_goods_sold = war_goods_sold
+    state.waves_defended = 25
+    state.war_goods_sold = 100
+    state.war_won = is_won
     return state
 
 
-def make_report_view_state(war_goods_sold: int) -> State:
+def make_report_view_state(is_won: bool) -> State:
     """Build the finished war State while it views the war report.
 
     Args:
-        war_goods_sold: War goods sold during the war.
+        is_won: Whether the last wave was repelled.
 
     Returns:
         The finished war State with the war report page showing.
     """
-    state = make_finished_war_state(war_goods_sold)
+    state = make_finished_war_state(is_won)
     state.current_page = PAGE_WAR_REPORT
     return state
 
@@ -2817,6 +2966,35 @@ def make_war_view_state() -> State:
     """
     state = make_war_state()
     state.current_page = PAGE_WAR
+    return state
+
+
+def make_boss_view_state() -> State:
+    """Build the boss-ready State (no war goods) while it views the War page.
+
+    Returns:
+        make_boss_ready_state(0) with the War page showing.
+    """
+    state = make_boss_ready_state(0)
+    state.current_page = PAGE_WAR
+    return state
+
+
+def expected_after_starting_boss() -> State:
+    """Build the State expected after starting boss wave 10.
+
+    Returns:
+        The boss-ready State, on the War page, fighting its stored wave.
+    """
+    state = make_boss_ready_state(BOSS_WAR_GOODS[0])
+    state.current_page = PAGE_WAR
+    state.wave_number = 10
+    state.attackers = make_boss_ready_state(0).next_wave
+    state.next_wave = []
+    state.wave_ms_left = wave_duration_ms()
+    state.threat = 0.0
+    state.news_feed = add_news(state.news_feed, wave_start_headline(
+        10, len(state.attackers)))
     return state
 
 
@@ -3526,8 +3704,49 @@ assert_equal(is_confiscation_wave(CONFISCATION_EVERY_WAVES), True)
 assert_equal(is_confiscation_wave(1), False)
 
 
+def confiscate_defenses(defenses: list[DefenseEquipment]) -> float:
+    """Take DEFENSE_CONFISCATION_FRACTION of each kind of air defense.
+
+    Args:
+        defenses: Every kind of air defense.
+
+    Returns:
+        The total price of the units taken.
+    """
+    value = 0.0
+    for defense in defenses:
+        taken = int(defense.owned * DEFENSE_CONFISCATION_FRACTION)
+        defense.owned = defense.owned - taken
+        value = value + taken * defense.cost
+    return value
+
+
+# 2 MANPADS: int(0.4) = 0 taken. 10 SAMs costing 100: 2 taken, worth 200.
+assert_equal(confiscate_defenses(make_new_state().defenses), 0.0)
+assert_equal(confiscate_defenses([DefenseEquipment("S", "S", 100.0, 1.0, 1.0,
+                                                   1.0, 10, False)]), 200.0)
+
+
+def confiscated_war_goods(value: float) -> int:
+    """Find the war goods sold credited for confiscated air defense.
+
+    Args:
+        value: The total price of the confiscated units.
+
+    Returns:
+        WAR_GOODS_PER_CONFISCATED_MONEY per Ŧ1, rounded down.
+    """
+    return int(value * WAR_GOODS_PER_CONFISCATED_MONEY)
+
+
+assert_equal(confiscated_war_goods(2000.0),
+             int(2000 * WAR_GOODS_PER_CONFISCATED_MONEY))
+
+
 def confiscate(state: State) -> None:
-    """Take a share of the company's money and send the notice.
+    """Take a share of money and air defense, and send the notice.
+
+    The company is credited war goods sold for the air defense taken.
 
     Args:
         state: The game state to update.
@@ -3535,10 +3754,24 @@ def confiscate(state: State) -> None:
     amount = state.money * confiscation_fraction(state.government_opinion,
                                                  state.companies)
     state.money = state.money - amount
+    credit = confiscated_war_goods(confiscate_defenses(state.defenses))
+    state.war_goods_sold = state.war_goods_sold + credit
     state.news_feed = add_news(
         state.news_feed, "The Government 'borrows' " + CURRENCY_SYMBOL
-        + str(round(amount)) + " from the company for the war effort.")
+        + str(round(amount)) + " and some air defense for the war effort ("
+        + "+" + str(credit) + " war goods credited).")
     send_email(state, EMAIL_CONFISCATION)
+
+
+def make_armed_state() -> State:
+    """Build a new-game State that owns 10 domestic SAMs.
+
+    Returns:
+        A new State with 10 Z-300 SAMs.
+    """
+    state = make_new_state()
+    state.defenses[4].owned = 10
+    return state
 
 
 def state_after_confiscation(state: State) -> State:
@@ -3559,6 +3792,11 @@ assert_equal(round(state_after_confiscation(make_new_state()).money, 2),
              STARTING_MONEY * 0.85)
 assert_equal(state_after_confiscation(make_new_state()).inbox[0].key,
              EMAIL_CONFISCATION)
+# 2 of 10 SAMs are taken and credited as war goods.
+assert_equal(state_after_confiscation(make_armed_state()).defenses[4].owned,
+             8)
+assert_equal(state_after_confiscation(make_armed_state()).war_goods_sold,
+             confiscated_war_goods(2 * DEFENSE_ROWS[4][2]))
 
 
 # ---------------------------------------------------------------------------
@@ -3659,41 +3897,84 @@ assert_equal(add_threat(10.0, 2.0, 500), 11.0)
 assert_equal(add_threat(99.5, 2.0, 1000), MAX_THREAT)
 
 
-def is_dire_wave(wave_number: int) -> bool:
-    """Check whether a wave is a dire wave (every 10th, and the last).
+def is_boss_wave(wave_number: int) -> bool:
+    """Check whether a wave is a boss wave (every BOSS_WAVE_EVERY-th).
 
     Args:
         wave_number: The wave's number, starting at 1.
 
     Returns:
-        True for a dire wave.
+        True for a boss wave.
     """
-    return wave_number % DIRE_WAVE_EVERY == 0 or wave_number == WAVE_COUNT
+    return wave_number % BOSS_WAVE_EVERY == 0
 
 
-assert_equal(is_dire_wave(9), False)
-assert_equal(is_dire_wave(10), True)
-assert_equal(is_dire_wave(WAVE_COUNT), True)
+assert_equal(is_boss_wave(9), False)
+assert_equal(is_boss_wave(10), True)
+assert_equal(is_boss_wave(WAVE_COUNT), True)
+
+
+def era_for_wave(wave_number: int) -> int:
+    """Find which era of the war a wave belongs to.
+
+    Args:
+        wave_number: The wave's number, starting at 1.
+
+    Returns:
+        1 for waves 1-10, 2 for waves 11-20, 3 for waves 21-30 (never
+        less than 1 or more than the number of eras).
+    """
+    era = (wave_number - 1) // WAVES_PER_ERA + 1
+    if era < 1:
+        return 1
+    if era > len(ERA_PENALTY_PER_THREAT):
+        return len(ERA_PENALTY_PER_THREAT)
+    return era
+
+
+assert_equal(era_for_wave(0), 1)
+assert_equal(era_for_wave(10), 1)
+assert_equal(era_for_wave(11), 2)
+assert_equal(era_for_wave(WAVE_COUNT), 3)
+
+
+def boss_requirement(wave_number: int) -> int:
+    """Find the war goods sold needed before a wave can be started.
+
+    Args:
+        wave_number: The wave's number, starting at 1.
+
+    Returns:
+        This era's BOSS_WAR_GOODS for a boss wave, otherwise 0.
+    """
+    if not is_boss_wave(wave_number):
+        return 0
+    return BOSS_WAR_GOODS[era_for_wave(wave_number) - 1]
+
+
+assert_equal(boss_requirement(9), 0)
+assert_equal(boss_requirement(10), BOSS_WAR_GOODS[0])
+assert_equal(boss_requirement(30), BOSS_WAR_GOODS[2])
 
 
 def attacker_count(wave_number: int) -> int:
-    """Calculate how many attackers a wave has.
+    """Calculate how many attackers a wave starts with.
 
     Args:
         wave_number: The wave's number, starting at 1.
 
     Returns:
-        The number of attackers, never more than MAX_ATTACKERS.
+        The number of attackers, never more than MAX_GENERATED_ATTACKERS.
     """
     count = WAVE_BASE_ATTACKERS + wave_number // WAVES_PER_EXTRA_ATTACKER
-    if is_dire_wave(wave_number):
-        count = count + DIRE_EXTRA_ATTACKERS
-    return min(count, MAX_ATTACKERS)
+    if is_boss_wave(wave_number):
+        count = count + BOSS_EXTRA_ATTACKERS
+    return min(count, MAX_GENERATED_ATTACKERS)
 
 
 assert_equal(attacker_count(1), 3)
 assert_equal(attacker_count(10), 13)
-assert_equal(attacker_count(WAVE_COUNT), MAX_ATTACKERS)
+assert_equal(attacker_count(WAVE_COUNT), 23)
 
 
 def wave_hp_multiplier(wave_number: int) -> float:
@@ -3703,37 +3984,106 @@ def wave_hp_multiplier(wave_number: int) -> float:
         wave_number: The wave's number, starting at 1.
 
     Returns:
-        The HP multiplier, bigger on dire waves.
+        The HP multiplier, bigger on boss waves.
     """
     multiplier = 1 + WAVE_HP_GROWTH * (wave_number - 1)
-    if is_dire_wave(wave_number):
-        multiplier = multiplier * DIRE_HP_MULTIPLIER
+    if is_boss_wave(wave_number):
+        multiplier = multiplier * BOSS_HP_MULTIPLIER
     return multiplier
 
 
 assert_equal(wave_hp_multiplier(1), 1.0)
-assert_equal(round(wave_hp_multiplier(3), 2), 1.2)
-assert_equal(round(wave_hp_multiplier(10), 2), 2.85)
+assert_equal(round(wave_hp_multiplier(3), 2), 1.1)
+assert_equal(round(wave_hp_multiplier(10), 3), 2.175)
 
 
-def attacker_rows_for_wave(wave_number: int) -> list[list]:
-    """Find the kinds of attackers that have appeared by this wave.
+def attacker_rows_for_era(era: int) -> list[list]:
+    """Find the kinds of attackers a wave of this era can be built from.
+
+    Args:
+        era: The war's era, from 1 to 3.
+
+    Returns:
+        The rows of ATTACKER_ROWS from that era with a pick weight above
+        0 (spawned-only attackers like MIRV warheads are left out).
+    """
+    rows = []
+    for row in ATTACKER_ROWS:
+        if row[5] == era and row[6] > 0:
+            rows.append(row)
+    return rows
+
+
+assert_equal(len(attacker_rows_for_era(1)), 4)
+assert_equal(len(attacker_rows_for_era(2)), 5)
+assert_equal(len(attacker_rows_for_era(3)), 3)
+
+
+def total_pick_weight(rows: list[list]) -> int:
+    """Add up the pick weights of some attacker rows.
+
+    Args:
+        rows: Rows of ATTACKER_ROWS.
+
+    Returns:
+        The sum of their weights.
+    """
+    total = 0
+    for row in rows:
+        total = total + row[6]
+    return total
+
+
+assert_equal(total_pick_weight(attacker_rows_for_era(1)), 13)
+
+
+def pick_row_index(rows: list[list], roll: int) -> int:
+    """Turn a roll into a weighted choice of attacker row.
+
+    A row with weight 5 covers 5 roll values, so it is picked 5 times as
+    often as a row with weight 1.
+
+    Args:
+        rows: Rows of ATTACKER_ROWS to choose from.
+        roll: A number from 0 up to (but not including) their total weight.
+
+    Returns:
+        The index of the chosen row in rows.
+    """
+    for index in range(len(rows)):
+        if roll < rows[index][6]:
+            return index
+        roll = roll - rows[index][6]
+    return len(rows) - 1
+
+
+# Era 1 weights are 5, 4, 3, 1: rolls 0-4 pick the first row, 12 the last.
+assert_equal(pick_row_index(attacker_rows_for_era(1), 0), 0)
+assert_equal(pick_row_index(attacker_rows_for_era(1), 4), 0)
+assert_equal(pick_row_index(attacker_rows_for_era(1), 5), 1)
+assert_equal(pick_row_index(attacker_rows_for_era(1), 12), 3)
+
+
+def roll_wave_choices(wave_number: int) -> list[int]:
+    """Randomly roll one weighted pick for each attacker in a wave.
+
+    Uses randomness, so it has no unit test (build_wave is tested with
+    hand-picked rolls).
 
     Args:
         wave_number: The wave's number, starting at 1.
 
     Returns:
-        The rows of ATTACKER_ROWS whose first wave has been reached.
+        attacker_count(wave_number) rolls, each from 0 up to the era's
+        total pick weight.
     """
-    rows = []
-    for row in ATTACKER_ROWS:
-        if row[5] <= wave_number:
-            rows.append(row)
-    return rows
-
-
-assert_equal(len(attacker_rows_for_wave(1)), 1)
-assert_equal(len(attacker_rows_for_wave(8)), 3)
+    total = total_pick_weight(attacker_rows_for_era(era_for_wave(wave_number)))
+    rolls = []
+    for index in range(attacker_count(wave_number)):
+        # ADVANCED: random.randint(a, b) picks a whole number from a to b,
+        # including both ends.
+        rolls.append(random.randint(0, total - 1))
+    return rolls
 
 
 def make_attacker(row: list, copy_number: int,
@@ -3742,51 +4092,189 @@ def make_attacker(row: list, copy_number: int,
 
     Args:
         row: The attacker's row.
-        copy_number: How many of this kind are already in the wave; every
-            second one flies at the row's second altitude.
+        copy_number: Its position in the wave; every second one flies at
+            the row's second altitude.
         hp_multiplier: The wave's HP multiplier.
 
     Returns:
-        A new Attacker at full HP.
+        A new Attacker at full HP, with its spawn timer (if any) sped up
+        by DEBUG_WAR_SPEED.
     """
     altitude = row[2]
     if copy_number % 2 == 1:
         altitude = row[3]
     hp = float(round(row[4] * hp_multiplier))
-    return Attacker(row[0], row[1], altitude, hp, hp)
+    return Attacker(row[0], row[1], altitude, hp, hp, row[7], row[8],
+                    row[9] // DEBUG_WAR_SPEED)
 
 
-assert_equal(make_attacker(ATTACKER_ROWS[1], 0, 2.0).altitude,
+assert_equal(make_attacker(ATTACKER_ROWS[2], 0, 2.0).altitude,
              ALTITUDE_MEDIUM)
-assert_equal(make_attacker(ATTACKER_ROWS[1], 1, 2.0).altitude, ALTITUDE_LOW)
-assert_equal(make_attacker(ATTACKER_ROWS[1], 1, 2.0).hp, 120.0)
+assert_equal(make_attacker(ATTACKER_ROWS[2], 1, 2.0).altitude, ALTITUDE_LOW)
+assert_equal(make_attacker(ATTACKER_ROWS[2], 1, 2.0).hp, 120.0)
+# The missile transport spawns Kalibars.
+assert_equal(make_attacker(ATTACKER_ROWS[8], 0, 1.0).spawn_name,
+             KALIBAR_NAME)
 
 
-def make_wave(wave_number: int) -> list[Attacker]:
-    """Generate a wave's attackers from its number (no hand-written list).
+def build_wave(wave_number: int, rolls: list[int]) -> list[Attacker]:
+    """Build a wave's attackers from its number and one roll per attacker.
 
-    Kinds take turns: with drones and missiles unlocked, the wave goes
-    drone, missile, drone, missile, and so on.
+    Keeping the rolls separate (see roll_wave_choices) means this
+    function has no randomness and can be tested.
 
     Args:
         wave_number: The wave's number, starting at 1.
+        rolls: One weighted roll per attacker.
 
     Returns:
-        The wave's attackers, at most MAX_ATTACKERS of them.
+        The wave's attackers, from its era's catalog.
     """
-    rows = attacker_rows_for_wave(wave_number)
+    rows = attacker_rows_for_era(era_for_wave(wave_number))
     hp_multiplier = wave_hp_multiplier(wave_number)
     attackers = []
-    for index in range(attacker_count(wave_number)):
-        row = rows[index % len(rows)]
-        attackers.append(make_attacker(row, index // len(rows),
-                                       hp_multiplier))
+    for index, roll in enumerate(rolls):
+        row = rows[pick_row_index(rows, roll)]
+        attackers.append(make_attacker(row, index, hp_multiplier))
     return attackers
 
 
-assert_equal(make_wave(1), [Attacker(ATTACKER_ROWS[0][0], "🛩️", ALTITUDE_LOW,
-                                     30.0, 30.0)] * 3)
-assert_equal(len(make_wave(WAVE_COUNT)), MAX_ATTACKERS)
+assert_equal(build_wave(1, [0, 0, 0])[0], make_attacker(ATTACKER_ROWS[0], 0,
+                                                       1.0))
+assert_equal(len(build_wave(1, [0, 0, 0])), 3)
+# Era 2 rolls 0 and 14 pick the fighter jet and the missile transport.
+assert_equal(build_wave(11, [0, 14])[1].name,
+             'Il-67 "Kandid" missile transport')
+assert_equal(len(build_wave(WAVE_COUNT, [0] * attacker_count(WAVE_COUNT))),
+             attacker_count(WAVE_COUNT))
+
+
+def generate_next_wave(state: State) -> None:
+    """Randomly generate the wave after the current one and store it.
+
+    Uses randomness (through roll_wave_choices), so it has no unit test
+    of the attackers it picks.
+
+    Args:
+        state: The game state to update.
+    """
+    next_number = state.wave_number + 1
+    if next_number > WAVE_COUNT:
+        state.next_wave = []
+    else:
+        state.next_wave = build_wave(next_number,
+                                     roll_wave_choices(next_number))
+
+
+def find_attacker_row(name: str) -> int:
+    """Search ATTACKER_ROWS for an attacker by name (linear search).
+
+    Args:
+        name: The attacker's name.
+
+    Returns:
+        Its index in ATTACKER_ROWS, or NOT_FOUND.
+    """
+    for index in range(len(ATTACKER_ROWS)):
+        if ATTACKER_ROWS[index][0] == name:
+            return index
+    return NOT_FOUND
+
+
+assert_equal(find_attacker_row(MIRV_NAME), len(ATTACKER_ROWS) - 1)
+assert_equal(find_attacker_row("Nope"), NOT_FOUND)
+
+
+def spawn_attackers(attackers: list[Attacker], spawner: Attacker,
+                    hp_multiplier: float) -> int:
+    """Add the attackers a spawner launches, never past MAX_ATTACKERS.
+
+    Args:
+        attackers: The wave's attackers (the new ones are added here).
+        spawner: The attacker whose timer ran out.
+        hp_multiplier: The wave's HP multiplier.
+
+    Returns:
+        How many attackers were added.
+    """
+    row_index = find_attacker_row(spawner.spawn_name)
+    if row_index == NOT_FOUND:
+        return 0
+    added = 0
+    while added < spawner.spawn_count and len(attackers) < MAX_ATTACKERS:
+        attackers.append(make_attacker(ATTACKER_ROWS[row_index],
+                                       len(attackers), hp_multiplier))
+        added = added + 1
+    return added
+
+
+def make_spawner_wave(spawner_hp: float, ms_left: int) -> list[Attacker]:
+    """Build a test wave holding one ICBM with the given HP and timer.
+
+    Args:
+        spawner_hp: The ICBM's HP (0 means it was shot down).
+        ms_left: Milliseconds until it spawns its warheads.
+
+    Returns:
+        A one-attacker wave.
+    """
+    icbm = make_attacker(ATTACKER_ROWS[11], 0, 1.0)
+    icbm.hp = spawner_hp
+    icbm.spawn_ms_left = ms_left
+    return [icbm]
+
+
+assert_equal(spawn_attackers(make_spawner_wave(10.0, 0),
+                             make_spawner_wave(10.0, 0)[0], 1.0), 4)
+# A full wave has no room left.
+assert_equal(spawn_attackers(make_spawner_wave(10.0, 0) * MAX_ATTACKERS,
+                             make_spawner_wave(10.0, 0)[0], 1.0), 0)
+
+
+def run_spawners(attackers: list[Attacker], interval_ms: int,
+                 hp_multiplier: float) -> None:
+    """Count down every living spawner and launch what its timer releases.
+
+    Only the attackers present at the start of the tick are checked, so
+    attackers spawned this tick wait until the next one.
+
+    Args:
+        attackers: The wave's attackers.
+        interval_ms: The length of one tick in milliseconds.
+        hp_multiplier: The wave's HP multiplier.
+    """
+    start_count = len(attackers)
+    for index in range(start_count):
+        attacker = attackers[index]
+        if attacker.hp > 0 and attacker.spawn_ms_left > 0:
+            attacker.spawn_ms_left = attacker.spawn_ms_left - interval_ms
+            if attacker.spawn_ms_left <= 0:
+                attacker.spawn_ms_left = 0
+                spawn_attackers(attackers, attacker, hp_multiplier)
+
+
+def spawner_wave_after(spawner_hp: float, ms_left: int) -> list[Attacker]:
+    """Run one 1000 ms tick of spawners on a one-ICBM test wave.
+
+    Args:
+        spawner_hp: The ICBM's HP.
+        ms_left: Milliseconds until it spawns.
+
+    Returns:
+        The test wave after the tick.
+    """
+    attackers = make_spawner_wave(spawner_hp, ms_left)
+    run_spawners(attackers, 1000, 1.0)
+    return attackers
+
+
+# A living ICBM whose timer runs out releases 4 MIRV warheads.
+assert_equal(len(spawner_wave_after(10.0, 1000)), 5)
+assert_equal(spawner_wave_after(10.0, 1000)[4].name, MIRV_NAME)
+# Not yet, or already shot down: nothing is added.
+assert_equal(len(spawner_wave_after(10.0, 3000)), 1)
+assert_equal(spawner_wave_after(10.0, 3000)[0].spawn_ms_left, 2000)
+assert_equal(len(spawner_wave_after(0.0, 1000)), 1)
 
 
 def wave_duration_ms() -> int:
@@ -3799,6 +4287,84 @@ def wave_duration_ms() -> int:
 
 
 assert_equal(wave_duration_ms(), WAVE_DURATION_MS // DEBUG_WAR_SPEED)
+
+
+def penalty_reduction(research: list[Research],
+                      artifacts: list[Artifact]) -> float:
+    """Add up how much research and placed artifacts shrink the penalty.
+
+    Args:
+        research: Every research project.
+        artifacts: The player's artifacts (only placed ones count).
+
+    Returns:
+        The reduction as a fraction, at most MAX_PENALTY_REDUCTION.
+    """
+    total = 0.0
+    for project in research:
+        if project.is_done and project.name in THREAT_PENALTY_REDUCTIONS:
+            total = total + THREAT_PENALTY_REDUCTIONS[project.name]
+    for artifact in artifacts:
+        is_placed = artifact.slot != NOT_PLACED
+        if is_placed and artifact.name in THREAT_PENALTY_REDUCTIONS:
+            total = total + THREAT_PENALTY_REDUCTIONS[artifact.name]
+    return min(total, MAX_PENALTY_REDUCTION)
+
+
+assert_equal(penalty_reduction(make_new_state().research, []), 0.0)
+# Done research counts; an artifact counts only once it is placed.
+assert_equal(penalty_reduction(
+    [make_test_research(SHELTER_RESEARCH, "", True)],
+    [make_test_artifact(RADIO_ARTIFACT, 0.1, 1, NOT_PLACED)]), 0.25)
+assert_equal(penalty_reduction(
+    [make_test_research(SHELTER_RESEARCH, "", True)],
+    [make_test_artifact(RADIO_ARTIFACT, 0.1, 1, 0)]), 0.5)
+
+
+def waiting_penalty(threat: float, era: int, reduction: float) -> float:
+    """Calculate the share of profit lost while waiting between waves.
+
+    Args:
+        threat: The threat meter, from 0 to MAX_THREAT.
+        era: The era of the next wave, from 1 to 3.
+        reduction: The penalty_reduction fraction.
+
+    Returns:
+        The fraction of profit lost, at most MAX_WAITING_PENALTY.
+    """
+    penalty = threat * ERA_PENALTY_PER_THREAT[era - 1] * (1 - reduction)
+    return min(penalty, MAX_WAITING_PENALTY)
+
+
+assert_equal(waiting_penalty(0.0, 1, 0.0), 0.0)
+assert_equal(round(waiting_penalty(MAX_THREAT, 1, 0.0), 2), 0.2)
+assert_equal(round(waiting_penalty(MAX_THREAT, 2, 0.5), 2), 0.2)
+assert_equal(waiting_penalty(MAX_THREAT, 3, 0.0), MAX_WAITING_PENALTY)
+
+
+def current_waiting_penalty(state: State) -> float:
+    """Find the waiting penalty on the company's profit right now.
+
+    Starting a wave empties the threat meter, so the penalty is 0 during
+    a wave. It is also 0 outside the war.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The fraction of profit lost.
+    """
+    if state.game_phase != PHASE_WAR:
+        return 0.0
+    era = era_for_wave(min(state.wave_number + 1, WAVE_COUNT))
+    return waiting_penalty(state.threat, era,
+                           penalty_reduction(state.research,
+                                             state.owned_artifacts))
+
+
+assert_equal(current_waiting_penalty(make_new_state()), 0.0)
+# Threat 50 before wave 1 (era 1): 50 x 0.002 = 10%.
+assert_equal(round(current_waiting_penalty(make_waiting_state()), 2), 0.1)
 
 
 def defense_dps(defense: DefenseEquipment, altitude: str) -> float:
@@ -3818,7 +4384,7 @@ def defense_dps(defense: DefenseEquipment, altitude: str) -> float:
     return defense.dps_low
 
 
-assert_equal(defense_dps(make_new_state().defenses[2], ALTITUDE_HIGH), 40.0)
+assert_equal(defense_dps(make_new_state().defenses[4], ALTITUDE_HIGH), 40.0)
 assert_equal(defense_dps(make_new_state().defenses[0], ALTITUDE_LOW), 15.0)
 
 
@@ -3960,7 +4526,46 @@ def war_badge(state: State) -> str:
 assert_equal(war_badge(make_new_state()), "")
 assert_equal(war_badge(make_war_state()), "")
 assert_equal(war_badge(make_wave_state()), " ⚠️")
-assert_equal(war_badge(make_finished_war_state(0)), " 📜")
+assert_equal(war_badge(make_finished_war_state(True)), " 📜")
+
+
+def wave_blocker(state: State) -> str:
+    """Find what stops the player from starting the next wave.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A short reason, or "" if the next wave can be started now.
+    """
+    if state.game_phase != PHASE_WAR:
+        return "No war is being fought."
+    if is_wave_active(state):
+        return "A wave is already being fought."
+    if state.wave_number >= WAVE_COUNT:
+        return "The last wave has been fought."
+    if EMAIL_FIRST_WAVE not in state.sent_email_keys:
+        return ("The air defense briefing arrives at "
+                + str(int(BRIEFING_THREAT)) + "% threat.")
+    if is_email_unread(state.inbox, EMAIL_FIRST_WAVE):
+        return "Read the air defense briefing in your Inbox first."
+    needed = boss_requirement(state.wave_number + 1)
+    if state.war_goods_sold < needed:
+        return ("Boss wave: sell " + str(needed) + " war goods first ("
+                + str(state.war_goods_sold) + " so far).")
+    return ""
+
+
+assert_equal(wave_blocker(make_new_state()), "No war is being fought.")
+assert_equal(wave_blocker(make_war_state()),
+             "The air defense briefing arrives at "
+             + str(int(BRIEFING_THREAT)) + "% threat.")
+assert_equal(wave_blocker(make_unbriefed_war_state()),
+             "Read the air defense briefing in your Inbox first.")
+assert_equal(wave_blocker(make_boss_ready_state(0)),
+             "Boss wave: sell " + str(BOSS_WAR_GOODS[0])
+             + " war goods first (0 so far).")
+assert_equal(wave_blocker(make_boss_ready_state(BOSS_WAR_GOODS[0])), "")
 
 
 def wave_start_headline(wave_number: int, count: int) -> str:
@@ -3971,66 +4576,79 @@ def wave_start_headline(wave_number: int, count: int) -> str:
         count: How many attackers it has.
 
     Returns:
-        The headline, louder for a dire wave.
+        The headline, louder for a boss wave.
     """
     text = ("Wave " + str(wave_number) + "/" + str(WAVE_COUNT) + ": "
             + str(count) + " attackers inbound from the " + ENEMY_COUNTRY
             + "!")
-    if is_dire_wave(wave_number):
-        return "☠️ DIRE " + text
+    if is_boss_wave(wave_number):
+        return "☠️ BOSS " + text
     return "🚨 " + text
 
 
 assert_equal(wave_start_headline(1, 3),
              "🚨 Wave 1/" + str(WAVE_COUNT) + ": 3 attackers inbound from the "
              + ENEMY_COUNTRY + "!")
-assert_equal("DIRE Wave 10/" in wave_start_headline(10, 13), True)
+assert_equal("BOSS Wave 10/" in wave_start_headline(10, 13), True)
 
 
 def start_wave(state: State) -> None:
-    """Start the next wave and empty the threat meter.
+    """Start the stored next wave and empty the threat meter.
+
+    If no next wave is stored yet, one is generated first (randomly).
 
     Args:
         state: The game state to update.
     """
+    if len(state.next_wave) == 0:
+        generate_next_wave(state)
     state.wave_number = state.wave_number + 1
-    state.attackers = make_wave(state.wave_number)
+    state.attackers = state.next_wave
+    state.next_wave = []
     state.wave_ms_left = wave_duration_ms()
     state.threat = 0.0
     state.news_feed = add_news(state.news_feed, wave_start_headline(
         state.wave_number, len(state.attackers)))
 
 
-def is_war_won(war_goods_sold: int) -> bool:
-    """Check whether enough war goods were sold to win the war.
+def state_after_starting_wave(state: State) -> State:
+    """Start the stored next wave and return the State.
 
     Args:
-        war_goods_sold: War goods sold during the war.
+        state: The State to update.
 
     Returns:
-        True if it reached WAR_VICTORY_GOODS.
+        The same State, after start_wave.
     """
-    return war_goods_sold >= WAR_VICTORY_GOODS
+    start_wave(state)
+    return state
 
 
-assert_equal(is_war_won(WAR_VICTORY_GOODS - 1), False)
-assert_equal(is_war_won(WAR_VICTORY_GOODS), True)
+# The stored preview becomes the wave, and the meter empties.
+assert_equal(state_after_starting_wave(make_boss_ready_state(0)).attackers,
+             make_boss_ready_state(0).next_wave)
+assert_equal(state_after_starting_wave(make_boss_ready_state(0)).next_wave, [])
+assert_equal(state_after_starting_wave(make_boss_ready_state(0)).threat, 0.0)
+assert_equal(state_after_starting_wave(
+    make_boss_ready_state(0)).wave_number, 10)
 
 
 def finish_war(state: State) -> None:
     """End the war: switch to the war-over phase and post the outcome.
 
-    The economy keeps running afterwards, and sanctions are lifted.
+    The economy keeps running afterwards, and sanctions are lifted. The
+    outcome was decided by the last wave (state.war_won).
 
     Args:
         state: The game state to update.
     """
     state.game_phase = PHASE_WAR_OVER
     state.attackers = []
+    state.next_wave = []
     state.wave_ms_left = 0
     state.threat = 0.0
     state.news_feed = add_news(state.news_feed, SANCTIONS_LIFTED_NEWS)
-    if is_war_won(state.war_goods_sold):
+    if state.war_won:
         state.news_feed = add_news(state.news_feed, WAR_WON_NEWS)
     else:
         state.news_feed = add_news(state.news_feed, WAR_LOST_NEWS)
@@ -4054,34 +4672,83 @@ assert_equal(raid_multiplier(0), 1.0)
 assert_equal(raid_multiplier(500), RAID_PENALTY_MULTIPLIER)
 
 
-def lose_dire_equipment(defenses: list[DefenseEquipment]) -> int:
-    """Destroy part of each kind of air defense after a failed dire wave.
+def most_owned_item_index(items: list[BuyItem]) -> int:
+    """Find the repeatable buy item the company owns the most of.
+
+    One-time unlocks are never chosen.
 
     Args:
-        defenses: Every kind of air defense.
+        items: The player's buy items.
 
     Returns:
-        How many units were destroyed in total.
+        Its index in items, or NOT_FOUND if none is owned.
     """
-    total_lost = 0
-    for defense in defenses:
-        lost = int(defense.owned * DIRE_EQUIPMENT_LOSS_FRACTION)
-        defense.owned = defense.owned - lost
-        total_lost = total_lost + lost
-    return total_lost
+    best_index = NOT_FOUND
+    best_owned = 0
+    for index, item in enumerate(items):
+        if not item.is_one_time and item.owned > best_owned:
+            best_index = index
+            best_owned = item.owned
+    return best_index
 
 
-# 2 MANPADS lose int(0.5) = 0; 8 SAMs would lose 2.
-assert_equal(lose_dire_equipment(make_new_state().defenses), 0)
-assert_equal(lose_dire_equipment([DefenseEquipment("S", "S", 1.0, 1.0, 1.0,
-                                                   1.0, 8)]), 2)
+assert_equal(most_owned_item_index(make_new_state().buy_items), NOT_FOUND)
+assert_equal(most_owned_item_index([make_test_item(EFFECT_STOCKING, 1, 2),
+                                    make_test_item(EFFECT_DELIVERY, 1, 5)]),
+             1)
+
+
+def lose_company_items(items: list[BuyItem], count: int) -> int:
+    """Destroy owned Company page items, one at a time.
+
+    Each unit lost comes from the repeatable item owned the most.
+
+    Args:
+        items: The player's buy items.
+        count: How many units to destroy (kept small by
+            MAX_ITEMS_LOST_PER_WAVE).
+
+    Returns:
+        How many units were actually destroyed.
+    """
+    lost = 0
+    for unit in range(count):
+        index = most_owned_item_index(items)
+        if index == NOT_FOUND:
+            return lost
+        items[index].owned = items[index].owned - 1
+        lost = lost + 1
+    return lost
+
+
+assert_equal(lose_company_items(make_new_state().buy_items, 3), 0)
+assert_equal(lose_company_items([make_test_item(EFFECT_STOCKING, 1, 2),
+                                 make_test_item(EFFECT_DELIVERY, 1, 3)], 3),
+             3)
+
+
+def items_lost_for(survivors: int) -> int:
+    """Find how many Company page items a failed wave destroys.
+
+    Args:
+        survivors: How many attackers got through.
+
+    Returns:
+        ITEMS_LOST_PER_SURVIVOR per survivor, at most
+        MAX_ITEMS_LOST_PER_WAVE.
+    """
+    return min(survivors * ITEMS_LOST_PER_SURVIVOR, MAX_ITEMS_LOST_PER_WAVE)
+
+
+assert_equal(items_lost_for(2), 2 * ITEMS_LOST_PER_SURVIVOR)
+assert_equal(items_lost_for(100), MAX_ITEMS_LOST_PER_WAVE)
 
 
 def apply_raid_damage(state: State, survivors: int) -> str:
     """Apply the damage done by attackers that got through.
 
-    Each survivor destroys some stock and adds to the production penalty;
-    a failed dire wave also destroys some air defense.
+    Each survivor destroys some stock, adds to the production penalty,
+    and destroys owned Company page items (capped).
 
     Args:
         state: The game state to update.
@@ -4094,21 +4761,18 @@ def apply_raid_damage(state: State, survivors: int) -> str:
     state.goods_in_stock = state.goods_in_stock - stock_lost
     state.raid_ms_left = min(MAX_RAID_PENALTY_MS, state.raid_ms_left
                              + survivors * RAID_PENALTY_MS_PER_SURVIVOR)
-    text = (str(stock_lost) + " units destroyed, production cut for "
+    items_lost = lose_company_items(state.buy_items, items_lost_for(survivors))
+    return (str(stock_lost) + " units and " + str(items_lost)
+            + " equipment destroyed, production cut for "
             + str(state.raid_ms_left // 1000) + "s")
-    if is_dire_wave(state.wave_number):
-        lost = lose_dire_equipment(state.defenses)
-        if lost > 0:
-            text = (text + ", " + str(lost)
-                    + " air defense units destroyed")
-    return text
 
 
 def end_wave(state: State) -> None:
     """Finish the current wave: record a win, or apply the raid damage.
 
     Every CONFISCATION_EVERY_WAVES waves, the Government then confiscates
-    money. After the last wave, this also ends the war.
+    money and air defense. After the last wave, this ends the war (won if
+    that wave was repelled); otherwise it generates the next wave.
 
     Args:
         state: The game state to update.
@@ -4130,14 +4794,18 @@ def end_wave(state: State) -> None:
     if is_confiscation_wave(state.wave_number):
         confiscate(state)
     if state.wave_number >= WAVE_COUNT:
+        state.war_won = survivors == 0
         finish_war(state)
+    else:
+        generate_next_wave(state)
 
 
 def run_wave(state: State, interval_ms: int) -> None:
     """Fight the current wave for one tick.
 
     Each altitude's total damage this tick hits that altitude's attackers.
-    The wave ends when all are shot down or its time runs out.
+    Then living spawners count down and may add attackers. The wave ends
+    when all are shot down or its time runs out.
 
     Args:
         state: The game state to update.
@@ -4146,6 +4814,8 @@ def run_wave(state: State, interval_ms: int) -> None:
     for altitude in ALTITUDES:
         damage = total_dps(state.defenses, altitude) * interval_ms / 1000
         damage_attackers(state.attackers, altitude, damage)
+    run_spawners(state.attackers, interval_ms,
+                 wave_hp_multiplier(state.wave_number))
     state.wave_ms_left = state.wave_ms_left - interval_ms
     if count_survivors(state.attackers) == 0 or state.wave_ms_left <= 0:
         end_wave(state)
@@ -4164,23 +4834,30 @@ def state_after_wave_tick(state: State) -> State:
     return state
 
 
-# The MANPADS shoot down the last drone: the wave is won.
+# The MANPADS shoot down the last drone: the wave is won, and wave 2 is
+# generated for the preview.
 assert_equal(state_after_wave_tick(make_wave_state()).waves_defended, 1)
 assert_equal(state_after_wave_tick(make_wave_state()).wave_ms_left, 0)
-# The bomber survives the time limit: stock is lost and production is cut.
+assert_equal(len(state_after_wave_tick(make_wave_state()).next_wave),
+             attacker_count(2))
+# The bomber survives the time limit: stock and a Procurement Agent are
+# lost, and production is cut.
 assert_equal(state_after_wave_tick(make_losing_wave_state()).goods_in_stock,
              40)
+assert_equal(state_after_wave_tick(
+    make_losing_wave_state()).buy_items[0].owned, 2)
 assert_equal(state_after_wave_tick(make_losing_wave_state()).raid_ms_left,
              RAID_PENALTY_MS_PER_SURVIVOR)
 assert_equal(state_after_wave_tick(make_losing_wave_state()).waves_defended,
              0)
-# Ending the last wave ends the war; war goods sold decide the outcome.
-assert_equal(state_after_wave_tick(
-    make_last_wave_state(WAR_VICTORY_GOODS)).game_phase, PHASE_WAR_OVER)
-assert_equal(state_after_wave_tick(
-    make_last_wave_state(WAR_VICTORY_GOODS)).news_feed[0], WAR_WON_NEWS)
-assert_equal(state_after_wave_tick(make_last_wave_state(0)).news_feed[0],
+# Ending the last wave ends the war: repelling it wins.
+assert_equal(state_after_wave_tick(make_last_wave_state(True)).game_phase,
+             PHASE_WAR_OVER)
+assert_equal(state_after_wave_tick(make_last_wave_state(True)).news_feed[0],
+             WAR_WON_NEWS)
+assert_equal(state_after_wave_tick(make_last_wave_state(False)).news_feed[0],
              WAR_LOST_NEWS)
+assert_equal(state_after_wave_tick(make_last_wave_state(True)).next_wave, [])
 # Wave 5 ends in a confiscation: opinion 60 and no banks take 15%.
 assert_equal(round(state_after_wave_tick(
     make_confiscation_wave_state()).money, 2), 850.0)
@@ -4188,11 +4865,11 @@ assert_equal(state_after_wave_tick(make_wave_state()).money, STARTING_MONEY)
 
 
 def run_intermission(state: State, war_units: int, interval_ms: int) -> None:
-    """Fill the threat meter between waves; start a wave when it is full.
+    """Fill the threat meter between waves (raising the waiting penalty).
 
     The air defense briefing email is sent once the meter reaches
-    BRIEFING_THREAT. No wave starts while that email is unread, and no
-    wave starts after the last one.
+    BRIEFING_THREAT. Waves never start on their own: the player starts
+    them with the Start button (start_next_wave).
 
     Args:
         state: The game state to update.
@@ -4204,16 +4881,15 @@ def run_intermission(state: State, war_units: int, interval_ms: int) -> None:
                               interval_ms)
     if state.threat >= BRIEFING_THREAT:
         send_email(state, EMAIL_FIRST_WAVE)
-    if state.threat == MAX_THREAT:
-        is_briefed = not is_email_unread(state.inbox, EMAIL_FIRST_WAVE)
-        if is_briefed and state.wave_number < WAVE_COUNT:
-            start_wave(state)
-        elif old_threat < MAX_THREAT:
-            state.news_feed = add_news(state.news_feed, SIRENS_NEWS)
+    is_unread = is_email_unread(state.inbox, EMAIL_FIRST_WAVE)
+    if state.threat == MAX_THREAT and old_threat < MAX_THREAT and is_unread:
+        state.news_feed = add_news(state.news_feed, SIRENS_NEWS)
 
 
 def start_war(state: State) -> None:
     """Start the war: change the phase, apply sanctions, post the news.
+
+    Also generates wave 1 (randomly), so the War page can preview it.
 
     Args:
         state: The game state to update.
@@ -4226,6 +4902,7 @@ def start_war(state: State) -> None:
     state.news_feed = add_news(state.news_feed, WAR_START_NEWS)
     send_email(state, EMAIL_WAR)
     send_email(state, EMAIL_CRASH)
+    generate_next_wave(state)
 
 
 def run_war_economy(state: State, interval_ms: int) -> None:
@@ -4277,6 +4954,9 @@ assert_equal(state_after_war_economy(make_veteran_state()).game_phase,
              PHASE_WAR)
 assert_equal(state_after_war_economy(make_veteran_state()).news_feed[0],
              WAR_START_NEWS)
+# The war starts with wave 1 already generated for the preview.
+assert_equal(len(state_after_war_economy(make_veteran_state()).next_wave),
+             attacker_count(1))
 # During the war: 5 of 10 units were war goods, and the threat fills.
 assert_equal(state_after_war_economy(make_war_state()).war_goods_sold, 5)
 assert_equal(state_after_war_economy(make_war_state()).threat,
@@ -4291,15 +4971,14 @@ assert_equal(state_after_war_economy(make_veteran_state()).inbox[1].key,
              EMAIL_WAR)
 assert_equal(state_after_war_economy(make_veteran_state()).inbox[0].key,
              EMAIL_CRASH)
-# The briefing email arrives unread, and wave 1 waits for it to be read.
+# The briefing email arrives unread at BRIEFING_THREAT.
 assert_equal(is_email_unread(state_after_war_economy(
     make_nearly_threatened_state()).inbox, EMAIL_FIRST_WAVE), True)
-assert_equal(state_after_war_economy(
-    make_nearly_threatened_state()).wave_number, 0)
-# After the briefing, a full meter starts wave 1 and empties.
+# A full meter never starts a wave by itself, even after the briefing.
 assert_equal(state_after_war_economy(make_briefed_threat_state()).wave_number,
-             1)
-assert_equal(state_after_war_economy(make_briefed_threat_state()).threat, 0.0)
+             0)
+assert_equal(state_after_war_economy(make_briefed_threat_state()).threat,
+             MAX_THREAT)
 # During a wave, the defenses fight it (here they win).
 assert_equal(state_after_war_economy(make_wave_state()).waves_defended, 1)
 # Sanctioned goods selected before the war stop being sold (and lose their
@@ -4711,6 +5390,26 @@ assert_equal(sanctions_multiplier(make_war_state().research, PHASE_WAR_OVER),
 assert_equal(round(sanctions_multiplier(make_workaround_state().research,
                                         PHASE_WAR), 2),
              round(SANCTIONS_INCOME_MULTIPLIER + 3 * WORKAROUND_RECOVERY, 2))
+
+
+def profit_multiplier(state: State) -> float:
+    """Combine everything that cuts the profit on each sale.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The sanctions multiplier times what the war's waiting penalty
+        leaves (1.0 in peace).
+    """
+    return (sanctions_multiplier(state.research, state.game_phase)
+            * (1 - current_waiting_penalty(state)))
+
+
+assert_equal(profit_multiplier(make_new_state()), 1.0)
+# Sanctions (0.2) and a 10% waiting penalty: 0.2 x 0.9.
+assert_equal(round(profit_multiplier(make_waiting_state()), 2),
+             round(SANCTIONS_INCOME_MULTIPLIER * 0.9, 2))
 
 
 # ---------------------------------------------------------------------------
@@ -5244,8 +5943,8 @@ def artifact_rows_of_rarity(rarity: str) -> list[list]:
 
 
 assert_equal(len(artifact_rows_of_rarity(RARITY_COMMON)), 6)
-assert_equal(len(artifact_rows_of_rarity(RARITY_RARE)), 5)
-assert_equal(len(artifact_rows_of_rarity(RARITY_LEGENDARY)), 3)
+assert_equal(len(artifact_rows_of_rarity(RARITY_RARE)), 6)
+assert_equal(len(artifact_rows_of_rarity(RARITY_LEGENDARY)), 4)
 assert_equal(artifact_rows_of_rarity("imaginary"), [])
 
 
@@ -5887,8 +6586,7 @@ def max_income_per_tick(state: State) -> float:
     return calculate_income(effective_delivery_capacity(state),
                             calculate_sale_price(state.markup),
                             calculate_total_bonus(state),
-                            sanctions_multiplier(state.research,
-                                                 state.game_phase))
+                            profit_multiplier(state))
 
 
 assert_equal(max_income_per_tick(make_new_state()),
@@ -6040,8 +6738,7 @@ def run_selling(state: State) -> None:
     )
     income = calculate_income(units, calculate_sale_price(state.markup),
                               calculate_total_bonus(state),
-                              sanctions_multiplier(state.research,
-                                                   state.game_phase))
+                              profit_multiplier(state))
     state.goods_in_stock = state.goods_in_stock - units
     state.money = state.money + income
     state.total_earned = state.total_earned + income
@@ -6709,6 +7406,9 @@ def describe_research_effect(project: Research) -> str:
                 + " profit under sanctions, ")
     if project.name == PARALLEL_IMPORTS:
         text = text + "sanctioned goods can be sold, "
+    if project.name in THREAT_PENALTY_REDUCTIONS:
+        text = (text + percent_text(-THREAT_PENALTY_REDUCTIONS[project.name])
+                + " waiting penalty, ")
     return text[:-2]
 
 
@@ -6982,6 +7682,10 @@ def active_effect_lines(state: State) -> list[str]:
         multiplier = sanctions_multiplier(state.research, state.game_phase)
         lines.append("🚫 Sanctions: " + percent_text(multiplier - 1)
                      + " profit")
+        penalty = current_waiting_penalty(state)
+        if penalty > 0:
+            lines.append("📉 Waiting for the next wave: "
+                         + percent_text(-penalty) + " profit")
         if state.supplies_government:
             lines.append("🏛️ Supplying the Government: "
                          + str(GOVERNMENT_SUPPLY_UNITS_PER_TICK)
@@ -7091,6 +7795,30 @@ assert_equal(build_opinion_chip(make_distrusted_state()),
              build_chip("🏛️ Gov. opinion", "1/100", "chip warn"))
 
 
+def build_penalty_chip(state: State) -> Div:
+    """Build the chip showing the waiting penalty on profit.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A "📉 Waiting penalty" chip, in the warning color when above 0.
+    """
+    penalty = current_waiting_penalty(state)
+    if penalty > 0:
+        return build_chip("📉 Waiting penalty",
+                          percent_text(-penalty) + " profit", "chip warn")
+    return build_chip("📉 Waiting penalty", "none", "chip")
+
+
+assert_equal(build_penalty_chip(make_war_state()),
+             build_chip("📉 Waiting penalty", "none", "chip"))
+assert_equal(build_penalty_chip(make_waiting_state()),
+             build_chip("📉 Waiting penalty",
+                        percent_text(-current_waiting_penalty(
+                            make_waiting_state())) + " profit", "chip warn"))
+
+
 def build_war_chips(state: State) -> list[Div]:
     """Build the war chips shown on every page once the war starts.
 
@@ -7109,30 +7837,14 @@ def build_war_chips(state: State) -> list[Div]:
                                     "chip warn"))
         else:
             chips.append(build_chip("⚠️ Threat", threat_text(state), "chip"))
+        chips.append(build_penalty_chip(state))
     chips.append(build_chip("War goods sold", str(state.war_goods_sold),
                             "chip"))
     return chips
 
 
 assert_equal(build_war_chips(make_new_state()), [])
-assert_equal(len(build_war_chips(make_war_state())), 2)
-
-
-def seconds_until_wave(state: State) -> int:
-    """Estimate the seconds until the threat meter fills.
-
-    Args:
-        state: The current game state.
-
-    Returns:
-        Whole seconds left at the current fill speed.
-    """
-    war_units = war_units_sold(state.goods_sold_last_tick, state.goods_types)
-    return int((MAX_THREAT - state.threat) / threat_per_second(war_units))
-
-
-assert_equal(seconds_until_wave(make_war_state()),
-             int(MAX_THREAT / threat_per_second(5)))
+assert_equal(len(build_war_chips(make_war_state())), 3)
 
 
 def wave_status_text(state: State) -> str:
@@ -7149,13 +7861,19 @@ def wave_status_text(state: State) -> str:
                 + " · " + str((state.wave_ms_left + 999) // 1000) + "s left")
     if state.wave_number >= WAVE_COUNT:
         return "Last wave fought"
+    if EMAIL_FIRST_WAVE not in state.sent_email_keys:
+        return "Briefing at " + str(int(BRIEFING_THREAT)) + "% threat"
     if is_email_unread(state.inbox, EMAIL_FIRST_WAVE):
         return "Read your Inbox"
-    return ("Wave " + str(state.wave_number + 1) + " in ~"
-            + str(seconds_until_wave(state)) + "s")
+    if wave_blocker(state) != "":
+        return "Sell more war goods"
+    return "Wave " + str(state.wave_number + 1) + " ready to start"
 
 
 assert_equal(wave_status_text(make_unbriefed_war_state()), "Read your Inbox")
+assert_equal(wave_status_text(make_boss_ready_state(0)), "Sell more war goods")
+assert_equal(wave_status_text(make_boss_ready_state(BOSS_WAR_GOODS[0])),
+             "Wave 10 ready to start")
 assert_equal(wave_status_text(make_wave_state()),
              "Wave 1/" + str(WAVE_COUNT) + " · 1s left")
 
@@ -7208,6 +7926,89 @@ def build_attacker_row(attacker: Attacker) -> Div:
                classes="list-row")
 
 
+def count_attacker_kinds(attackers: list[Attacker]) -> dict:
+    """Count how many attackers of each kind a wave holds.
+
+    Args:
+        attackers: The wave's attackers.
+
+    Returns:
+        A dictionary from "emoji name" to how many there are, in the
+        order each kind first appears.
+    """
+    counts = {}
+    for attacker in attackers:
+        label = attacker.emoji + " " + attacker.name
+        if label in counts:
+            counts[label] = counts[label] + 1
+        else:
+            counts[label] = 1
+    return counts
+
+
+assert_equal(count_attacker_kinds([make_test_attacker(ALTITUDE_LOW, 1.0),
+                                   make_test_attacker(ALTITUDE_HIGH, 2.0)]),
+             {"T Test": 2})
+
+
+def spawn_note(attackers: list[Attacker]) -> str:
+    """Describe what the first spawner in a wave will launch.
+
+    Args:
+        attackers: The wave's attackers.
+
+    Returns:
+        A warning naming what it launches and when, or "" if the wave has
+        no spawners.
+    """
+    for attacker in attackers:
+        if attacker.spawn_name != "":
+            return ("⏱️ Kill spawners fast: each launches "
+                    + str(attacker.spawn_count) + " × "
+                    + attacker.spawn_name + " after "
+                    + str(attacker.spawn_ms_left // 1000) + "s.")
+    return ""
+
+
+assert_equal(spawn_note([]), "")
+assert_equal(spawn_note(make_spawner_wave(1.0, 8000)),
+             "⏱️ Kill spawners fast: each launches 4 × " + MIRV_NAME
+             + " after 8s.")
+
+
+def build_preview_card(state: State) -> Div:
+    """Build the preview of the stored next wave, shown between waves.
+
+    For a boss wave it also shows the war goods requirement and progress.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        A card listing each kind of attacker and how many are coming.
+    """
+    number = state.wave_number + 1
+    title = ("Next: wave " + str(number) + "/" + str(WAVE_COUNT) + " · era "
+             + str(era_for_wave(number)))
+    if is_boss_wave(number):
+        title = "☠️ " + title + " · BOSS"
+    rows = []
+    counts = count_attacker_kinds(state.next_wave)
+    for label in counts:
+        rows.append(Div(Span(label), Span("× " + str(counts[label])),
+                        classes="list-row"))
+    note = spawn_note(state.next_wave)
+    if note != "":
+        rows.append(Div(note, classes="muted"))
+    needed = boss_requirement(number)
+    if needed > 0:
+        rows.append(Div(Span("War goods needed to start"),
+                        Span(str(min(state.war_goods_sold, needed)) + " / "
+                             + str(needed)), classes="list-row"))
+    return Div(build_card_head(title, []), Div(rows, classes="scroll-list"),
+               classes="card")
+
+
 def build_attacker_card(state: State) -> Div:
     """Build the scrollable list of the current wave's attackers.
 
@@ -7217,6 +8018,8 @@ def build_attacker_card(state: State) -> Div:
     Returns:
         A card listing every attacker, or a note between waves.
     """
+    if not is_wave_active(state) and len(state.next_wave) > 0:
+        return build_preview_card(state)
     title = ("Incoming (" + str(count_survivors(state.attackers))
              + " left)")
     rows = []
@@ -7332,6 +8135,26 @@ def build_war_board(state: State) -> Div:
                build_altitude_summary(state), classes="war-board")
 
 
+def defense_origin_text(defense: DefenseEquipment) -> str:
+    """Describe where a defense is made and what that costs.
+
+    Args:
+        defense: The equipment.
+
+    Returns:
+        "🏠 Domestic", or "🌍 Foreign (-N opinion)" for foreign equipment.
+    """
+    if defense.is_foreign:
+        return ("🌍 Foreign (-" + str(round(OPINION_LOSS_PER_FOREIGN_DEFENSE))
+                + " opinion)")
+    return "🏠 Domestic"
+
+
+assert_equal(defense_origin_text(make_new_state().defenses[0]), "🏠 Domestic")
+assert_equal(defense_origin_text(make_new_state().defenses[1]),
+             "🌍 Foreign (-2 opinion)")
+
+
 def build_defense_row(defense: DefenseEquipment, defense_index: int) -> Div:
     """Build one row of the air defense shop.
 
@@ -7345,8 +8168,9 @@ def build_defense_row(defense: DefenseEquipment, defense_index: int) -> Div:
     return Div(
         Span(defense.emoji, classes="emoji"),
         Div(Div(defense.name, classes="item-name"),
-            Div("Each: " + dps_text(defense.dps_high, defense.dps_medium,
-                                    defense.dps_low), classes="muted")),
+            Div(defense_origin_text(defense) + " · Each: "
+                + dps_text(defense.dps_high, defense.dps_medium,
+                           defense.dps_low), classes="muted")),
         Button("Buy for " + format_money(defense.cost), "buy_defense",
                [Argument("defense_index", defense_index)]),
         classes="buy-row",
@@ -7382,12 +8206,11 @@ def war_report_lines(state: State) -> list[str]:
         + str(state.wave_number),
         "Waves that broke through: "
         + str(state.wave_number - state.waves_defended),
-        "War goods sold: " + str(state.war_goods_sold) + " (needed "
-        + str(WAR_VICTORY_GOODS) + " to win)",
+        "War goods sold: " + str(state.war_goods_sold),
     ]
 
 
-assert_equal(war_report_lines(make_finished_war_state(100))[1],
+assert_equal(war_report_lines(make_finished_war_state(True))[1],
              "Waves that broke through: 5")
 
 
@@ -7403,11 +8226,12 @@ def build_war_report_content(state: State, is_victory: bool) -> list:
     """
     if is_victory:
         title = "🏆 Victory"
-        message = ("The " + ENEMY_COUNTRY + " ran out of patience before "
-                   + "the warehouse ran out of war goods.")
+        message = ("The final assault was shot down over the loading "
+                   + "dock. The " + ENEMY_COUNTRY + " ran out of missiles "
+                   + "before the warehouse ran out of war goods.")
     else:
         title = "🏳️ Defeat"
-        message = ("The front collapsed for lack of supplies. Somewhere, a "
+        message = ("The final assault broke through. Somewhere, a "
                    + "spreadsheet says it was not our fault.")
     return [
         Div(build_live_content(state), id="live_area"),
@@ -7421,6 +8245,24 @@ def build_war_report_content(state: State, is_victory: bool) -> list:
                 classes="card"),
             classes="page two-col"),
     ]
+
+
+def build_wave_controls() -> Div:
+    """Build the card with the button that starts the next wave.
+
+    It sits outside the live area, so a tick never redraws the button.
+    The button is always shown; start_next_wave refuses when a wave can't
+    start (the reason shows in the preview and the Status chip).
+
+    Returns:
+        The Command Post card.
+    """
+    return Div(build_card_head("🎖️ Command Post", []),
+               Div("Starting a wave empties the threat meter and ends the "
+                   + "waiting penalty.", classes="muted"),
+               Div(Button("🚨 Start the next wave", "start_next_wave"),
+                   classes="button-row"),
+               classes="card")
 
 
 def build_war_content(state: State) -> list:
@@ -7441,7 +8283,8 @@ def build_war_content(state: State) -> list:
                                    Div("All quiet... for now.",
                                        classes="muted"), classes="card"),
                                classes="page")]
-    return [live_area, Div(build_defense_shop(state), classes="page")]
+    return [live_area, Div(build_wave_controls(), build_defense_shop(state),
+                           classes="page")]
 
 
 def build_live_numbers(state: State) -> list:
@@ -8770,10 +9613,10 @@ def war_victory_page(state: State) -> Page:
     return Page(state, build_war_report_content(state, True))
 
 
-assert_equal(war_victory_page(make_finished_war_state(WAR_VICTORY_GOODS)),
-             Page(make_report_view_state(WAR_VICTORY_GOODS),
+assert_equal(war_victory_page(make_finished_war_state(True)),
+             Page(make_report_view_state(True),
                   build_war_report_content(
-                      make_report_view_state(WAR_VICTORY_GOODS), True)))
+                      make_report_view_state(True), True)))
 
 
 @route
@@ -8790,9 +9633,9 @@ def war_defeat_page(state: State) -> Page:
     return Page(state, build_war_report_content(state, False))
 
 
-assert_equal(war_defeat_page(make_finished_war_state(0)),
-             Page(make_report_view_state(0),
-                  build_war_report_content(make_report_view_state(0),
+assert_equal(war_defeat_page(make_finished_war_state(False)),
+             Page(make_report_view_state(False),
+                  build_war_report_content(make_report_view_state(False),
                                            False)))
 
 
@@ -8809,7 +9652,7 @@ def war_page(state: State) -> Page:
         The War page.
     """
     if state.game_phase == PHASE_WAR_OVER:
-        if is_war_won(state.war_goods_sold):
+        if state.war_won:
             return war_victory_page(state)
         return war_defeat_page(state)
     state.current_page = PAGE_WAR
@@ -8819,10 +9662,10 @@ def war_page(state: State) -> Page:
 assert_equal(war_page(make_war_state()),
              make_expected_war_page(make_war_view_state()))
 # After the war, the War page shows the right report.
-assert_equal(war_page(make_finished_war_state(WAR_VICTORY_GOODS)),
-             war_victory_page(make_finished_war_state(WAR_VICTORY_GOODS)))
-assert_equal(war_page(make_finished_war_state(0)),
-             war_defeat_page(make_finished_war_state(0)))
+assert_equal(war_page(make_finished_war_state(True)),
+             war_victory_page(make_finished_war_state(True)))
+assert_equal(war_page(make_finished_war_state(False)),
+             war_defeat_page(make_finished_war_state(False)))
 
 
 @route
@@ -8894,6 +9737,8 @@ def buy_defense(state: State, defense_index: int) -> Page:
         defense = state.defenses[defense_index]
         state.money = state.money - defense.cost
         defense.owned = defense.owned + 1
+        if defense.is_foreign:
+            change_opinion(state, -OPINION_LOSS_PER_FOREIGN_DEFENSE)
     return war_page(state)
 
 
@@ -8902,6 +9747,31 @@ assert_equal(buy_defense(make_rich_war_state(), 0),
 # Too poor: nothing changes.
 assert_equal(buy_defense(make_war_state(), 0),
              make_expected_war_page(make_war_view_state()))
+# A foreign MANPADS costs Government opinion.
+assert_equal(buy_defense(make_rich_war_state(), 1).state.government_opinion,
+             STARTING_OPINION - OPINION_LOSS_PER_FOREIGN_DEFENSE)
+
+
+@route
+def start_next_wave(state: State) -> Page:
+    """Start the stored next wave, if nothing stops it (see wave_blocker).
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The refreshed War page.
+    """
+    if wave_blocker(state) == "":
+        start_wave(state)
+    return war_page(state)
+
+
+assert_equal(start_next_wave(make_boss_ready_state(BOSS_WAR_GOODS[0])),
+             make_expected_war_page(expected_after_starting_boss()))
+# Not enough war goods for the boss wave: nothing changes.
+assert_equal(start_next_wave(make_boss_ready_state(0)),
+             make_expected_war_page(make_boss_view_state()))
 
 
 @route
@@ -9374,6 +10244,7 @@ def debug_start_wave(state: State, waves_before: int) -> None:
     if state.game_phase == PHASE_WAR and not is_wave_active(state):
         if waves_before > state.wave_number:
             state.wave_number = waves_before
+            generate_next_wave(state)
         start_wave(state)
 
 
@@ -9386,12 +10257,9 @@ def debug_end_war(state: State, is_victory: bool) -> None:
     """
     debug_ensure_war(state)
     if state.game_phase == PHASE_WAR:
+        state.war_won = is_victory
         if is_victory:
-            state.war_goods_sold = max(state.war_goods_sold,
-                                       WAR_VICTORY_GOODS)
             state.waves_defended = WAVE_COUNT
-        else:
-            state.war_goods_sold = 0
         state.wave_number = WAVE_COUNT
         finish_war(state)
 
@@ -9420,8 +10288,8 @@ def apply_debug_jump(state: State, target: str) -> State:
         state.threat = MAX_THREAT - 1
     elif target == DEBUG_JUMP_WAVE:
         debug_start_wave(state, 0)
-    elif target == DEBUG_JUMP_DIRE:
-        debug_start_wave(state, DIRE_WAVE_EVERY - 1)
+    elif target == DEBUG_JUMP_BOSS:
+        debug_start_wave(state, BOSS_WAVE_EVERY - 1)
     elif target == DEBUG_JUMP_LAST:
         debug_start_wave(state, WAVE_COUNT - 1)
     elif target == DEBUG_JUMP_WIN or target == DEBUG_JUMP_LOSE:
@@ -9444,8 +10312,8 @@ assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_THREAT).threat,
              MAX_THREAT - 1)
 assert_equal(apply_debug_jump(make_new_state(), DEBUG_JUMP_WAVE).wave_number,
              1)
-assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_DIRE).wave_number,
-             DIRE_WAVE_EVERY)
+assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_BOSS).wave_number,
+             BOSS_WAVE_EVERY)
 assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_LAST).wave_number,
              WAVE_COUNT)
 assert_equal(apply_debug_jump(make_new_state(), DEBUG_JUMP_WIN).news_feed[0],
@@ -9488,15 +10356,15 @@ def build_debug_card() -> Div:
                    [Argument("target", DEBUG_JUMP_THREAT)]),
             Button("Start next wave now", "debug_jump",
                    [Argument("target", DEBUG_JUMP_WAVE)]),
-            Button("Skip to dire wave " + str(DIRE_WAVE_EVERY), "debug_jump",
-                   [Argument("target", DEBUG_JUMP_DIRE)]),
+            Button("Skip to boss wave " + str(BOSS_WAVE_EVERY), "debug_jump",
+                   [Argument("target", DEBUG_JUMP_BOSS)]),
             Button("Skip to the last wave", "debug_jump",
                    [Argument("target", DEBUG_JUMP_LAST)]),
             Button("End the war (win)", "debug_jump",
                    [Argument("target", DEBUG_JUMP_WIN)]),
             Button("End the war (lose)", "debug_jump",
                    [Argument("target", DEBUG_JUMP_LOSE)]),
-            Button("Confiscate money now", "debug_jump",
+            Button("Run a confiscation now", "debug_jump",
                    [Argument("target", DEBUG_JUMP_CONFISCATION)]),
             Button("+" + str(round(DEBUG_OPINION_AMOUNT)) + " Gov. opinion",
                    "debug_jump", [Argument("target", DEBUG_JUMP_OPINION)]),

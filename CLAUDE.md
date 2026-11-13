@@ -275,7 +275,10 @@ Business page's Government Relations card. Below `LOW_OPINION_WARNING`,
 the Government sends `EMAIL_LOW_OPINION` once. Every
 `CONFISCATION_EVERY_WAVES` waves, `end_wave` calls `confiscate`: it takes
 `confiscation_fraction` of money (bigger as opinion falls, shielded by
-banks), posts a headline, and sends `EMAIL_CONFISCATION` (repeatable).
+banks) and `DEFENSE_CONFISCATION_FRACTION` of each air defense
+(`confiscate_defenses`), credits war goods sold for the defenses' value
+(`confiscated_war_goods`), posts a headline, and sends
+`EMAIL_CONFISCATION` (repeatable).
 
 **Sanctions crash (economy rework E2 built):** from the war's start until
 it ends (`finish_war` posts a "sanctions lifted" headline), the profit
@@ -309,37 +312,73 @@ researched or the war ends, and all income is cut (see Sanctions crash).
 War research (`Research.requires_war`): Defense Procurement License
 (unlocks the war goods Body Armor and Drone Components), the workarounds,
 and the wartime food research (see Wartime food). `war_goods_sold` adds the war goods' share of each tick's
-sales (`war_units_sold`). `threat` fills per real second (scaled by the tick
-length, x `DEBUG_WAR_SPEED`), faster with more war goods sold, capped at
-`MAX_THREAT_PER_SECOND`.
+sales (`war_units_sold`). `threat` fills per real second between waves
+(scaled by the tick length, x `DEBUG_WAR_SPEED`), faster with more war
+goods sold, capped at `MAX_THREAT_PER_SECOND`. Starting a wave empties it.
 
-**War page (phase W2 built: air defense):** the War nav button appears once
-the war starts (badge ⚠️ during a wave). The air defense briefing is an
-email (`EMAIL_FIRST_WAVE`, see Emails); wave 1 waits until it is opened.
-Between waves the threat meter fills; when full, `start_wave` generates the
-next wave with `make_wave(wave_number)` (count, HP, and attacker mix grow;
-dire waves every `DIRE_WAVE_EVERY` and the last; capped at `MAX_ATTACKERS`)
-and empties the meter. `ATTACKER_ROWS`: Pengvin drones (low), Kalibar cruise
-missiles (medium/low), Mishka bombers (high). `DEFENSE_ROWS` (bought any
-time, kept between waves, flat cost): Zhalo MANPADS (medium/low), LoM-16SM
-fighter (mixed), MIN-400 Loyalist SAM (high); 2 MANPADS at the start. A
-wave lasts `WAVE_DURATION_MS / DEBUG_WAR_SPEED` real ms (`wave_ms_left` minus
-`tick_interval` each tick). `run_wave`: each altitude's damage hits the first
-living attacker there, leftovers carry over. Failing a wave (`end_wave` /
-`apply_raid_damage`): each survivor destroys stock and adds to
-`raid_ms_left`, a production penalty applied with strikes through
-`rate_penalty` -> `apply_rate_modifiers`; failing a dire wave also destroys
-`DIRE_EQUIPMENT_LOSS_FRACTION` of each defense. On the War page the top bar
-is not sticky and `#live_numbers` holds the whole battle board (Drafter
-2.1.4 Fragments update one element); the shop sits outside it.
-**End of the war (phase W3 built):** when wave `WAVE_COUNT` ends,
-`end_wave` calls `finish_war`: `game_phase` becomes war_over and a ceasefire
-headline is posted. The war is won if `war_goods_sold >= WAR_VICTORY_GOODS`
-(`is_war_won`); failed waves matter because their production penalty means
-fewer war goods sold. The War button becomes "War 📜", and `war_page` then
-shows `war_victory_page` or `war_defeat_page` (waves defended, waves that
-broke through, war goods sold, and an Epilogue placeholder for the ending
-that comes later). The economy keeps running after the war.
+**Waiting penalty (war rework):** while the player waits between waves,
+`current_waiting_penalty` cuts the profit on each sale by threat x the
+next wave's era factor (`ERA_PENALTY_PER_THREAT`, 20/40/60% at a full
+meter), shrunk by `penalty_reduction` (civil defense research Basement
+Bomb Shelter Program / Siren Desensitization Training, and the placed
+artifacts Hard Hat of Plausible Deniability / Propaganda Radio; amounts in
+`THREAT_PENALTY_REDUCTIONS`, at most `MAX_PENALTY_REDUCTION`), capped at
+`MAX_WAITING_PENALTY`. Like sanctions it only cuts profit
+(`profit_multiplier` = sanctions x (1 - penalty), used by `run_selling`
+and `max_income_per_tick`). Shown by the "📉 Waiting penalty" chip (war
+chips, every page) and a Company page effect tag.
+
+**War page (W2 air defense, reworked):** the War nav button appears once
+the war starts (badge ⚠️ during a wave). `WAVE_COUNT` = 30 waves in three
+eras of `WAVES_PER_ERA` (`era_for_wave`). The player starts every wave with
+the "🚨 Start the next wave" button (route `start_next_wave`, in the
+Command Post card `build_wave_controls`, outside `#live_area`); it refuses
+when `wave_blocker` gives a reason: the briefing email
+(`EMAIL_FIRST_WAVE`, sent at `BRIEFING_THREAT`) not yet arrived or unread,
+a wave running, or a boss wave whose war goods requirement isn't met.
+Boss waves (`is_boss_wave`: 10, 20, 30) need `boss_requirement` war goods
+sold (`BOSS_WAR_GOODS`) before they can start, and are tougher
+(`BOSS_EXTRA_ATTACKERS`, `BOSS_HP_MULTIPLIER`).
+The next wave is generated when the previous one ends (and wave 1 in
+`start_war`) and stored in `State.next_wave` (`generate_next_wave`);
+between waves the battle board shows it (`build_preview_card`: attacker
+counts, spawner warning, boss requirement and progress); `start_wave`
+moves it into `attackers` and empties the meter. Randomness is isolated
+in `roll_wave_choices` (one weighted roll per attacker); `build_wave`
+(pure, tested) turns rolls into attackers with `pick_row_index`.
+`ATTACKER_ROWS` (columns: era, pick weight, spawn): era 1 Pengvin drones,
+Shahid "Lawnmower" drones, "Garage Kalibar" homemade cruise missiles, a
+rare Kinzhul hypersonic; era 2 Flanqer fighters, Mishka bombers, Kalibar
+cruise missiles, Smerch-less guided rockets, the Il-67 Kandid missile
+transport (spawner); era 3 Ghostwriter stealth cruise missiles, Project
+Unobtanium experimental weapons, the Sarmatt ICBM (spawner; MIRV warheads
+have weight 0, spawned only). **Spawners:** `run_spawners` (in `run_wave`)
+counts down `Attacker.spawn_ms_left` of living spawners; when it runs out,
+`spawn_attackers` adds `spawn_count` x `spawn_name`, never past
+`MAX_ATTACKERS` (generated waves stop at `MAX_GENERATED_ATTACKERS` to
+leave room). `DEFENSE_ROWS` (bought any time, kept between waves, flat
+cost): each kind has a domestic and a better foreign version
+(`DefenseEquipment.is_foreign`; buying foreign costs
+`OPINION_LOSS_PER_FOREIGN_DEFENSE` opinion in `buy_defense`): Zhalo /
+Stingur MANPADS, Fulcrumb / LoM-16SM fighters, Grumbler / MIN-400 SAMs;
+2 Zhalo MANPADS at the start. A wave lasts `WAVE_DURATION_MS /
+DEBUG_WAR_SPEED` real ms (spawn timers are sped up too). `run_wave`: each
+altitude's damage hits the first living attacker there, leftovers carry
+over. Failing a wave (`end_wave` / `apply_raid_damage`): each survivor
+destroys stock, adds to `raid_ms_left` (production penalty through
+`rate_penalty`), and destroys `ITEMS_LOST_PER_SURVIVOR` Company page items
+(at most `MAX_ITEMS_LOST_PER_WAVE`; `lose_company_items` takes from the
+repeatable item owned most). On the War page the top bar is not sticky
+and `#live_numbers` holds the whole battle board (Drafter 2.1.4 Fragments
+update one element); the Command Post and shop sit outside it.
+**End of the war (W3, reworked):** when wave `WAVE_COUNT` ends, `end_wave`
+sets `State.war_won` (true if that wave was repelled) and calls
+`finish_war`: `game_phase` becomes war_over and a ceasefire headline is
+posted. War goods matter through the boss-wave requirements. The War
+button becomes "War 📜", and `war_page` then shows `war_victory_page` or
+`war_defeat_page` (waves defended, waves that broke through, war goods
+sold, and an Epilogue placeholder for the ending that comes later). The
+economy keeps running after the war.
 
 **Emails (Inbox page):** `EMAIL_ROWS` is the catalog of templates (trigger
 key, sender, subject, body, repeatable). `send_email(state, key)` copies one
@@ -350,8 +389,8 @@ sent, even after trimming. Senders: John Johnson (the advisor), Corporate
 HQ, the Government. Tone: dry corporate satire. Triggers: welcome
 (`start_game`), research (`run_email_triggers` in the tick, when research
 is first available), war (`start_war`), first wave (`run_intermission`,
-when threat reaches `BRIEFING_THREAT`; no wave starts while it is unread:
-`is_email_unread`), crash (`start_war`), food empire and low opinion
+when threat reaches `BRIEFING_THREAT`; no wave can be started until it
+has arrived and been read: `wave_blocker`), crash (`start_war`), food empire and low opinion
 (`run_email_triggers`), first acquisition (`acquire_company`),
 confiscation (repeatable; `confiscate`). The nav shows "Inbox (N)" (`inbox_badge`,
 part of `controls_signature`; it never depends on money). `inbox_page`
@@ -362,8 +401,8 @@ row to `EMAIL_ROWS` and one `send_email` call at the trigger.
 **Debug page (🐞 in the nav, hidden when `DEBUG_TOOLS = False`):** buttons
 that add money and jump ahead (restart in peace, unlock peacetime research,
 start the war, fill the threat meter, start the next wave now, skip to
-dire wave 10, skip to the last wave, end the war with a win or a loss,
-confiscate money now, add 50 Government opinion), for
+boss wave 10, skip to the last wave, end the war with a win or a loss,
+run a confiscation now, add 50 Government opinion), for
 demos and play-testing.
 
 **Artifacts page (gacha):** pay for expeditions (buttons for X1, X5, X10,
@@ -386,7 +425,6 @@ multiplier), more research projects, HOI4-style
 decisions (pay a cost now, effect lands N ticks later), more casino games
 (pick-a-color pixel game on a code-generated colored grid, AI-image
 geoguessr parody), stock market, artifact adjacency bonuses, the war
-mechanic's later phases (air defense waves, the end of the war) that
-eventually change
+mechanic's later phases that eventually change
 how the game is played (like Universal Paperclips' phases), and a game
 ending.
