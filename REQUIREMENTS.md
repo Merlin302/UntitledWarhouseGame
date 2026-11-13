@@ -5,7 +5,7 @@ off what is done and name the exact function or field that satisfies it.
 
 ## Site
 
-- [x] At least 7 routes — _where:_ 31 routes: `index`, `start_game`,
+- [x] At least 7 routes — _where:_ 32 routes: `index`, `start_game`,
       `company_page`, `business_page`, `research_page`, `buy_research`,
       `artifacts_page`, `organize_page`,
       `casino_page`, `start_typing_round`, `submit_typing_round`,
@@ -13,7 +13,8 @@ off what is done and name the exact function or field that satisfies it.
       `set_buy_amount`, `buy_item`, `raise_markup`, `lower_markup`, `tick`,
       `debug_page`, `debug_add_money`, `debug_jump`, `war_page`,
       `buy_defense`, `war_victory_page`, `war_defeat_page`,
-      `inbox_page`, `open_email`, `acquisitions_page`, `buy_company`
+      `inbox_page`, `open_email`, `acquisitions_page`, `buy_company`,
+      `make_contribution`
 - [x] At least 5 pages — _where:_ start page (`index`), company page
       (`company_page`), Business page (`business_page`), Research page
       (`research_page`), Artifacts page
@@ -23,7 +24,7 @@ off what is done and name the exact function or field that satisfies it.
       (`inbox_page`), opened email page (`open_email`), Acquisitions
       page (`acquisitions_page`), Debug page
       (`debug_page`, demo tool)
-- [x] `State` dataclass with at least 4 fields — _where:_ `State` (38 fields)
+- [x] `State` dataclass with at least 4 fields — _where:_ `State` (40 fields)
 - [x] At least one State field is a list/dict of a second dataclass —
       _where:_ `State.owned_artifacts: list[Artifact]`,
       `State.buy_items: list[BuyItem]`,
@@ -49,7 +50,10 @@ off what is done and name the exact function or field that satisfies it.
       `raid_ms_left`, `last_wave_report` (`tick`), `inbox` and
       `sent_email_keys` (`start_game` and `tick`, through `send_email`;
       `.is_read` in `open_email`), `companies` (`.is_owned`, in
-      `buy_company` through `acquire_company`)
+      `buy_company` through `acquire_company`), `government_opinion`
+      (`make_contribution`, `buy_item`, `buy_research`, and `tick`),
+      `contributions_made` (`make_contribution`), `money` (`tick`,
+      through `end_wave` / `confiscate`)
 - [x] At least 3 input fields (TextBox, CheckBox, SelectBox, TextArea)
       — _where:_ `TextBox("company_name")` in `build_start_content`, one
       `CheckBox` per goods type in `build_goods_form`, one `CheckBox` per
@@ -88,7 +92,13 @@ off what is done and name the exact function or field that satisfies it.
       `build_email_row` (read or unread icon), `buy_company` (can
       buy), `is_company_for_sale` (owned or research missing),
       `describe_company_effect` (which sector), `goods_detail_text`
-      (no supplier owned)
+      (no supplier owned), `clamp_opinion` (out of range),
+      `foreign_purchase_opinion_loss` (foreign item in wartime),
+      `war_goods_opinion_loss` (too few war goods), `end_wave`
+      (confiscation wave), `make_contribution` (can contribute),
+      `build_opinion_chip` (low opinion), `is_food_empire_complete`
+      (missing supplier or research), `run_email_triggers` (food
+      empire, low opinion)
 - [x] At least 1 loop over the list/dict of dataclass instances, used in a
       meaningful way — _where (main answer):_ `total_artifact_bonus` loops
       over `state.owned_artifacts`, skips unplaced artifacts, and totals the
@@ -107,7 +117,9 @@ off what is done and name the exact function or field that satisfies it.
       `supplier_bonus` and `total_company_effect` loop over
       `state.companies` to total the bonuses of owned companies;
       `sanctions_multiplier` loops over `state.research` to add the
-      income each completed workaround wins back
+      income each completed workaround wins back;
+      `is_food_empire_complete` loops over `state.companies` and
+      `state.research` to check every canned food source is owned
 - [x] Legitimate purpose (entertainment: it's a game) — _where:_ the whole site
 - [x] No global variables; only ALL_CAPS constants, never mutated — _where:_
       constants block; `make_starting_items`, `make_starting_goods`,

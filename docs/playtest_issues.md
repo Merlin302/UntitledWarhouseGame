@@ -23,10 +23,12 @@ pass.
 | 10 | 2026-11-11, W3 | Debug | "End the war (lose)" sets war goods sold to 0 and counts all 35 waves as broken through, so a defeat demo shows extreme numbers. | open |
 | 11 | 2026-11-12, lost-click fix | Pacing | The marketing campaign, warehouse expansion, and corporate organization items now need research (Social Media Playbook, Warehouse Zoning Permit, Corporate Restructuring Study), so the research chip shows 3 available within seconds of a new game (see #1). Their costs (100 / 250 / 750) are guesses. | deferred |
 | 12 | 2026-11-13, Emails | Pacing | The research email arrives on tick 1, right after the welcome email, because some research is available almost at once (see #1 and #11). Raising the early `unlock_at_earned` values would space them out. | deferred |
-| 13 | 2026-11-13, Emails | Emails | The confiscation notice has no real trigger yet: there is no confiscation mechanic, so only the Debug button sends it. | open |
 | 14 | 2026-11-13, E1 | Balance | Company costs and bonuses in `COMPANY_ROWS` are guesses. Supplier bonuses match the old free goods bonuses, so early income is lower than before until suppliers are bought. | deferred |
 | 16 | 2026-11-13, E2 | Balance | The 1.5x war income target is checked only for the worked example (all four peacetime suppliers plus the two war goods suppliers). A player without suppliers recovers only to 95% of pre-war. Workaround costs (8000 / 12000 / 18000) are guesses. | deferred |
 | 17 | 2026-11-13, E2 | UI | The "Income bonus" chip doesn't include the sanctions cut; it shows only in the "🚫 Sanctions" effect tag. | open |
+| 18 | 2026-11-13, E3 | Balance | Opinion numbers are guesses: start 60, -10 per workaround, -1 per foreign unit, -0.1/s with too few war goods, +10 per contribution (Ŧ2000, x1.5 each). Doing all three workarounds alone drops opinion from 60 to 30, which blocks acquisitions. | deferred |
+| 19 | 2026-11-13, E3 | Balance | A player who sells no goods types at all counts as selling no war goods, so opinion drains from the first second of the war. | open |
+| 20 | 2026-11-13, E3 | UI | The Government Relations card and the Acquisitions note are drawn on click, so they don't show live opinion; the chip does. | open |
 
 ## Resolved
 
@@ -38,3 +40,4 @@ pass.
 | R4 | 2026-11-10, Research | UI | Lost clicks on the Company page (part of #2): a tick that redrew `#live_area` rebuilt the Buy, X1/X5/X10, and markup buttons, swallowing a click held across the redraw. Fixed: those buttons moved outside `#live_area` (`build_company_controls`), World News moved above them, the research count became a chip in `#live_numbers` instead of a nav badge, and new buy items appear only through research, so no tick ever redraws them. Checked in the browser: a wave-start tick redrew the header while all 7 Company buttons stayed the same elements. | this commit |
 | R5 | 2026-11-12, lost-click fix | UI | The sticky top bar scrolled away on pages where `#live_area` held only the top bar (e.g. Business at phone width), because a sticky element only sticks inside its parent. Fixed with `#live_area {display: contents}`. | this commit |
 | R6 | 2026-11-13, E1 | Balance | Household Goods and Canned Food got a free wartime bonus (`war_bonus`) without a supplier. Removed: `GoodsType.war_bonus` and `goods_war_bonus` are gone. | E2 commit |
+| R7 | 2026-11-13, Emails | Emails | The confiscation notice had no real trigger. Now `end_wave` calls `confiscate` every `CONFISCATION_EVERY_WAVES` waves, which sends it. | E3 commit |

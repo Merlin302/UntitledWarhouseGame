@@ -223,14 +223,43 @@ bought once on the Acquisitions page (`acquisitions_page`, `buy_company`,
 reached from the "Open Acquisitions" button). Sectors (`SECTOR_`):
 supplier (gives its `goods_name` an income bonus: `supplier_bonus` ->
 `goods_income_bonus`), logistics (market size: `current_market_size`),
-media (loyalty target: `calculate_loyalty_target`), bank (none yet; it
-will shrink confiscations in E3). Advertising research (Canned Food Jingle
-Campaign, Influencer Unboxing Program) adds to a goods type's bonus.
-Companies with a `required_research` are hidden until it is done. The
-Acquire buttons sit outside `#live_area`. Still to build: E3 (government
-opinion 0-100, patriotic contributions, confiscations).
+media (loyalty target: `calculate_loyalty_target`), bank (shields part
+of each confiscation: `bank_protection`). Advertising research (Canned
+Food Jingle Campaign, Influencer Unboxing Program) adds to a goods type's
+bonus. Companies with a `required_research` are hidden until it is done;
+`Company.requires_war` companies (fleeing foreign owners: Gourmond Foods,
+Brunsvik Preserves, ParcelPro, Ozonix) only come up for sale once the war
+starts. The Acquire buttons sit outside `#live_area`.
 
-**Sanctions crash (economy rework E2 built):** from the war's start, all
+**Wartime food (no free bonus):** Canned Food earns more in wartime only
+through what the player buys: the fleeing food suppliers (Gourmond,
+Brunsvik) plus war research Dynamic Goods Pricing and Expiry Date
+Flexibility Study (both `goods_name` Canned Food). With every Canned Food
+supplier and research (`is_food_empire_complete`), Canned Food earns +55%
+(comment by `COMPANY_ROWS`, tested) and John Johnson sends the food empire
+email (`EMAIL_FOOD_EMPIRE`, from `run_email_triggers`). His crash email
+(`EMAIL_CRASH`, sent by `start_war`) advises this, the workarounds, and
+minding the Government.
+
+**Government opinion (economy rework E3 built):** `State.government_opinion`
+(0-100, starts at `STARTING_OPINION`; `change_opinion` clamps it), shown by
+the "🏛️ Gov. opinion" chip in `#live_numbers` (warning color below
+`ACQUISITION_MIN_OPINION`). During the war it falls for foreign-made buy
+items (`BuyItem.is_foreign`: pickup truck, conveyor belt;
+`foreign_purchase_opinion_loss` in `buy_item`), for each workaround
+research (`complete_research`), and per second while war goods are under
+`MIN_WAR_GOODS_SHARE` of sales (`war_goods_opinion_loss` in
+`run_war_economy`). It rises only through patriotic contributions
+(`make_contribution` route, button in the Business page's Government
+Relations card; price grows by `CONTRIBUTION_COST_GROWTH` per
+`contributions_made`). Below `ACQUISITION_MIN_OPINION`, `can_buy_company`
+refuses, and the Government sends `EMAIL_LOW_OPINION` once. Every
+`CONFISCATION_EVERY_WAVES` waves, `end_wave` calls `confiscate`: it takes
+`confiscation_fraction` of money (bigger as opinion falls, shielded by
+banks), posts a headline, and sends `EMAIL_CONFISCATION` (repeatable).
+
+**Sanctions crash (economy rework E2 built):** from the war's start until
+it ends (`finish_war` posts a "sanctions lifted" headline), all
 income is multiplied by `sanctions_multiplier` (`calculate_income`'s
 `multiplier`): `SANCTIONS_INCOME_MULTIPLIER` (0.5) plus
 `Research.sanction_recovery` of each completed workaround research
@@ -251,10 +280,10 @@ total_earned reaches `WAR_START_EARNED` (`start_war`, run by
 invades the Republic of Varnia (fictional). In wartime, sanctioned goods
 (`GoodsType.is_sanctioned`: Electronics, Imported Luxuries) are shown as
 "🚫 Sanctioned" and forced off until the Parallel Imports Scheme is
-researched, and all income is cut (see Sanctions crash). War research (`Research.requires_war`): Defense
-Procurement License (unlocks the war goods Body Armor and Drone
-Components), and world research that buys out fleeing competitors (ParcelPro,
-then Ozonix). `war_goods_sold` adds the war goods' share of each tick's
+researched or the war ends, and all income is cut (see Sanctions crash).
+War research (`Research.requires_war`): Defense Procurement License
+(unlocks the war goods Body Armor and Drone Components), the workarounds,
+and the wartime food research (see Wartime food). `war_goods_sold` adds the war goods' share of each tick's
 sales (`war_units_sold`). `threat` fills per real second (scaled by the tick
 length, x `DEBUG_WAR_SPEED`), faster with more war goods sold, capped at
 `MAX_THREAT_PER_SECOND`.
@@ -297,8 +326,9 @@ HQ, the Government. Tone: dry corporate satire. Triggers: welcome
 (`start_game`), research (`run_email_triggers` in the tick, when research
 is first available), war (`start_war`), first wave (`run_intermission`,
 when threat reaches `BRIEFING_THREAT`; no wave starts while it is unread:
-`is_email_unread`), confiscation (repeatable; Debug button only until a
-confiscation mechanic exists). The nav shows "Inbox (N)" (`inbox_badge`,
+`is_email_unread`), crash (`start_war`), food empire and low opinion
+(`run_email_triggers`), first acquisition (`acquire_company`),
+confiscation (repeatable; `confiscate`). The nav shows "Inbox (N)" (`inbox_badge`,
 part of `controls_signature`; it never depends on money). `inbox_page`
 lists emails inside `#live_area`, so new mail appears at once;
 `open_email` marks one read and shows it (`PAGE_EMAIL`). New emails: add a
@@ -308,7 +338,7 @@ row to `EMAIL_ROWS` and one `send_email` call at the trigger.
 that add money and jump ahead (restart in peace, unlock peacetime research,
 start the war, fill the threat meter, start the next wave now, skip to
 dire wave 10, skip to the last wave, end the war with a win or a loss,
-send the confiscation email), for
+confiscate money now), for
 demos and play-testing.
 
 **Artifacts page (gacha):** pay for expeditions (buttons for X1, X5, X10,
