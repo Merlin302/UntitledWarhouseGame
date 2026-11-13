@@ -241,19 +241,25 @@ email (`EMAIL_FOOD_EMPIRE`, from `run_email_triggers`). His crash email
 (`EMAIL_CRASH`, sent by `start_war`) advises this, the workarounds, and
 minding the Government.
 
-**Government opinion (economy rework E3 built):** `State.government_opinion`
+**Government opinion (economy rework E3, reworked):** `State.government_opinion`
 (0-100, starts at `STARTING_OPINION`; `change_opinion` clamps it), shown by
 the "🏛️ Gov. opinion" chip in `#live_numbers` (warning color below
-`ACQUISITION_MIN_OPINION`). During the war it falls for foreign-made buy
-items (`BuyItem.is_foreign`: pickup truck, conveyor belt;
-`foreign_purchase_opinion_loss` in `buy_item`), for each workaround
-research (`complete_research`), and per second while war goods are under
-`MIN_WAR_GOODS_SHARE` of sales (`war_goods_opinion_loss` in
-`run_war_economy`). It rises only through patriotic contributions
-(`make_contribution` route, button in the Business page's Government
-Relations card; price grows by `CONTRIBUTION_COST_GROWTH` per
-`contributions_made`). Below `ACQUISITION_MIN_OPINION`, `can_buy_company`
-refuses, and the Government sends `EMAIL_LOW_OPINION` once. Every
+`LOW_OPINION_WARNING`). It is a second currency and never falls on its
+own. Spent on: acquisitions (`Company.opinion_cost`, paid in
+`acquire_company`; `can_buy_company` needs enough). Drained by: policies
+with `Policy.opinion_drain` per second while active
+(`run_policy_opinion_drain` in the tick: Gig Worker Reclassification,
+Wartime Price Gouging, Hire Draft Dodgers), and foreign-made buy items
+bought during the war (`BuyItem.is_foreign`; `foreign_purchase_opinion_loss`
+in `buy_item`). Sanction workarounds cost nothing. Raised by: patriotic
+contributions (`make_contribution`; price grows by
+`CONTRIBUTION_COST_GROWTH` per `contributions_made`) and, after the Parallel
+Imports Scheme, supplying the Government (`toggle_government_supply` sets
+`State.supplies_government`; during the war `run_government_supply` hands
+over `GOVERNMENT_SUPPLY_UNITS_PER_TICK` units of stock per tick, before
+selling, for `OPINION_PER_SUPPLIED_UNIT` each). Both buttons sit in the
+Business page's Government Relations card. Below `LOW_OPINION_WARNING`,
+the Government sends `EMAIL_LOW_OPINION` once. Every
 `CONFISCATION_EVERY_WAVES` waves, `end_wave` calls `confiscate`: it takes
 `confiscation_fraction` of money (bigger as opinion falls, shielded by
 banks), posts a headline, and sends `EMAIL_CONFISCATION` (repeatable).
@@ -261,15 +267,17 @@ banks), posts a headline, and sends `EMAIL_CONFISCATION` (repeatable).
 **Sanctions crash (economy rework E2 built):** from the war's start until
 it ends (`finish_war` posts a "sanctions lifted" headline), all
 income is multiplied by `sanctions_multiplier` (`calculate_income`'s
-`multiplier`): `SANCTIONS_INCOME_MULTIPLIER` (0.5) plus
+`multiplier`): `SANCTIONS_INCOME_MULTIPLIER` (0.2, an 80% cut) plus
 `Research.sanction_recovery` of each completed workaround research
 (`CATEGORY_WORKAROUND`, war-only: Parallel Imports Scheme, Offshore Shell
 Company, Patriotic Rebranding; each `WORKAROUND_RECOVERY`). The Parallel
 Imports Scheme also makes sanctioned goods sellable again
-(`is_sanctioned_now`). There is no free wartime goods bonus. Target: every
-workaround plus the war goods suppliers gives about 1.5x pre-war income;
-the worked example is in a comment by the constants and is tested below
-`calculate_income` (`example_income_ratio`). The Company page shows a
+(`is_sanctioned_now`). There is no free wartime goods bonus. Target: about
+1.5x pre-war income by the end of the war; every workaround plus the war
+goods suppliers gives about 1.05x, and artifacts, food acquisitions, and
+policies are meant to make up the rest. The worked example is in a comment
+by the constants and is tested below `calculate_income`
+(`example_income_ratio`). The Company page shows a
 "🚫 Sanctions" effect tag in wartime. `start_war` sends the crash email
 (`EMAIL_CRASH`).
 
@@ -338,7 +346,7 @@ row to `EMAIL_ROWS` and one `send_email` call at the trigger.
 that add money and jump ahead (restart in peace, unlock peacetime research,
 start the war, fill the threat meter, start the next wave now, skip to
 dire wave 10, skip to the last wave, end the war with a win or a loss,
-confiscate money now), for
+confiscate money now, add 50 Government opinion), for
 demos and play-testing.
 
 **Artifacts page (gacha):** pay for expeditions (buttons for X1, X5, X10,

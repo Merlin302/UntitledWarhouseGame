@@ -154,17 +154,21 @@ STARTING_GOODS_ROWS = [
 
 # Each row: name, emoji, CheckBox name (must match a save_policies parameter),
 # stocking bonus, delivery bonus, income bonus, loyalty target change,
-# strike risk per tick, whether it needs an unlock purchase, and the
-# research it requires.
+# strike risk per tick, whether it needs an unlock purchase, the research
+# it requires, and the Government opinion it drains per second while active.
 STARTING_POLICY_ROWS = [
     ["Unpaid Overtime", "⏰", "unpaid_overtime",
-     0.5, 0.0, 0.0, -5.0, 0.03, False, NO_REQUIREMENT],
+     0.5, 0.0, 0.0, -5.0, 0.03, False, NO_REQUIREMENT, 0.0],
     ["Aggressive Upselling", "💬", "aggressive_upselling",
-     0.0, 0.0, 0.15, -8.0, 0.0, False, NO_REQUIREMENT],
+     0.0, 0.0, 0.15, -8.0, 0.0, False, NO_REQUIREMENT, 0.0],
     ["Algorithmic Route Quotas", "🗺️", "route_quotas",
-     0.0, 0.5, 0.0, -3.0, 0.05, True, NO_REQUIREMENT],
+     0.0, 0.5, 0.0, -3.0, 0.05, True, NO_REQUIREMENT, 0.0],
     ["Gig Worker Reclassification", "📋", "gig_reclassification",
-     0.0, 0.0, 0.20, -6.0, 0.02, False, LABOR_CONSULTANCY],
+     0.0, 0.0, 0.20, -6.0, 0.02, False, LABOR_CONSULTANCY, 0.05],
+    ["Wartime Price Gouging", "💰", "price_gouging",
+     0.0, 0.0, 0.30, -10.0, 0.0, False, DYNAMIC_PRICING, 0.15],
+    ["Hire Draft Dodgers", "🫥", "draft_dodgers",
+     0.4, 0.2, 0.0, 0.0, 0.01, False, DEFENSE_LICENSE, 0.1],
 ]
 
 CATEGORY_STAT = "stat"
@@ -180,18 +184,20 @@ CATEGORY_WORKAROUND = "workaround"
 # sanctioned goods be sold again.
 #
 # Target: a player who finds every workaround and sells the war goods
-# should end the war at about 1.5x their pre-war income. Worked example
+# should end the war at about 1.5x their pre-war income. The workarounds
+# and war goods suppliers alone get back to about pre-war income; the rest
+# comes from artifacts, food acquisitions, and policies. Worked example
 # (tested below calculate_income):
 #   Pre-war: sells Household, Canned, Electronics, and War Supplies with
 #     all four suppliers: bonus 0.05 + 0.10 + 0.15 + 1.00 = 1.30, so each
 #     sale earns 2.30x the base price.
-#   War starts: Electronics is banned (bonus 1.15) and income is halved:
-#     2.15 x 0.5 = 1.075, about 47% of pre-war. This is the crash.
+#   War starts: Electronics is banned (bonus 1.15) and income is cut by
+#     80%: 2.15 x 0.2 = 0.43, about 19% of pre-war. This is the crash.
 #   All three workarounds: Electronics is back and the multiplier is
-#     0.5 + 3 x 0.15 = 0.95: 2.30 x 0.95 = 2.185, about 95% of pre-war.
+#     0.2 + 3 x 0.15 = 0.65: 2.30 x 0.65 = 1.495, about 65% of pre-war.
 #   Plus the Body Armor and Drone Components suppliers (+0.60, +0.80):
-#     3.70 x 0.95 = 3.515, about 1.53x pre-war.
-SANCTIONS_INCOME_MULTIPLIER = 0.5
+#     3.70 x 0.65 = 2.405, about 1.05x pre-war.
+SANCTIONS_INCOME_MULTIPLIER = 0.2
 WORKAROUND_RECOVERY = 0.15
 
 # Each row: name, emoji, description, category, cost, stocking bonus,
@@ -304,8 +310,10 @@ SECTOR_MEDIA = "media"
 # income bonus fraction for suppliers, customers for logistics, loyalty
 # target points for media, the fraction of confiscations shielded for
 # banks), the goods type a supplier supplies ("" for other sectors), the
-# research it requires (NO_REQUIREMENT if none), and whether it only comes
-# up for sale once the war starts (its foreign owners are fleeing).
+# research it requires (NO_REQUIREMENT if none), whether it only comes up
+# for sale once the war starts (its foreign owners are fleeing), and the
+# Government opinion it costs (every acquisition needs the State's
+# blessing).
 #
 # Wartime food target: with every Canned Food supplier (Tushonka, Gourmond,
 # Brunsvik) and every Canned Food research (Canned Food Jingle Campaign,
@@ -315,57 +323,57 @@ COMPANY_ROWS = [
     ["Cleanex Home Products", "🧴",
      "Makes one soap and forty labels for it.",
      SECTOR_SUPPLIER, 1500.0, 0.05, HOUSEHOLD_GOODS, NO_REQUIREMENT,
-     False],
+     False, 2.0],
     ["Tushonka Canning Co.", "🥫",
      "Own the cans, own the soup, own the supply chain of soup.",
      SECTOR_SUPPLIER, 4000.0, 0.10, CANNED_FOOD, NO_REQUIREMENT,
-     False],
+     False, 5.0],
     ["Voltik Electronics Plant", "🔌",
      "Every television is tested by being switched on once.",
      SECTOR_SUPPLIER, 8000.0, 0.15, ELECTRONICS, NO_REQUIREMENT,
-     False],
+     False, 5.0],
     ["Granit Arms Works", "🏭",
      "Its brochure says 'agricultural machinery'. Its machinery does not.",
      SECTOR_SUPPLIER, 15000.0, 1.00, WAR_SUPPLIES, NO_REQUIREMENT,
-     False],
+     False, 10.0],
     ["Maison Lux Importers", "👜",
      "Handbags with a waiting list and a customs problem.",
      SECTOR_SUPPLIER, 12000.0, 0.25, IMPORTED_LUXURIES, IMPORT_LICENSES,
-     False],
+     False, 5.0],
     ["Bronik Armor Factory", "🦺",
      "Formerly made raincoats. The pattern barely changed.",
      SECTOR_SUPPLIER, 25000.0, 0.60, BODY_ARMOR, DEFENSE_LICENSE,
-     False],
+     False, 10.0],
     ["Zhuzh Drone Works", "🛸",
      "A toy company that read the news and pivoted.",
      SECTOR_SUPPLIER, 35000.0, 0.80, DRONE_COMPONENTS, DEFENSE_LICENSE,
-     False],
+     False, 10.0],
     ["Boxly Logistics", "📦",
      "Buy the competition, then politely forget it ever existed.",
-     SECTOR_LOGISTICS, 25000.0, 50, "", NO_REQUIREMENT, False],
+     SECTOR_LOGISTICS, 25000.0, 50, "", NO_REQUIREMENT, False, 10.0],
     ["Varnia Today", "📰",
      "A newspaper with strong opinions, soon to be yours.",
-     SECTOR_MEDIA, 10000.0, 5, "", NO_REQUIREMENT, False],
+     SECTOR_MEDIA, 10000.0, 5, "", NO_REQUIREMENT, False, 15.0],
     ["Narodny Savings Bank", "🏦",
      "Has never lost a deposit, mostly by never returning one.",
-     SECTOR_BANK, 20000.0, 0.25, "", NO_REQUIREMENT, False],
+     SECTOR_BANK, 20000.0, 0.25, "", NO_REQUIREMENT, False, 10.0],
     ["Gourmond Foods Varnia", "🧀",
      "Its Swiss owners left a note: 'back after the war'.",
      SECTOR_SUPPLIER, 12000.0, 0.10, CANNED_FOOD, NO_REQUIREMENT,
-     True],
+     True, 10.0],
     ["Brunsvik Preserves", "🫙",
      "Pickles, jam, and a CEO who now lives abroad.",
      SECTOR_SUPPLIER, 8000.0, 0.05, CANNED_FOOD, NO_REQUIREMENT,
-     True],
+     True, 5.0],
     ["ParcelPro", "🏃",
      "Its foreign owners left in a hurry. Their customers did not.",
-     SECTOR_LOGISTICS, 30000.0, 40, "", NO_REQUIREMENT, True],
+     SECTOR_LOGISTICS, 30000.0, 40, "", NO_REQUIREMENT, True, 15.0],
     ["Ozonix Marketplace", "🛒",
      "Patriotic duty requires that we own the second-biggest marketplace.",
-     SECTOR_LOGISTICS, 60000.0, 60, "", NO_REQUIREMENT, True],
+     SECTOR_LOGISTICS, 60000.0, 60, "", NO_REQUIREMENT, True, 25.0],
     ["Cayman Trust of Varnia", "🏝️",
      "Headquartered on a beach. Answers the phone only in July.",
-     SECTOR_BANK, 30000.0, 0.25, "", SHELL_COMPANY, False],
+     SECTOR_BANK, 30000.0, 0.25, "", SHELL_COMPANY, False, 20.0],
 ]
 
 # ---------------------------------------------------------------------------
@@ -384,7 +392,7 @@ WAR_START_EARNED = 40000.0
 WAR_START_NEWS = ("BREAKING: The " + ENEMY_COUNTRY + " invades the "
                   + HOME_COUNTRY + "! Markets 'mildly concerned'.")
 SANCTIONS_NEWS = ("Sanctions ban electronics and luxury imports; "
-                  + "analysts expect revenue to 'halve, at minimum'.")
+                  + "analysts expect revenue to 'drop 80%, at minimum'.")
 SIRENS_NEWS = ("Air raid sirens sound citywide. Read the briefing in your "
                + "Inbox before the first attack.")
 
@@ -467,16 +475,18 @@ SANCTIONS_LIFTED_NEWS = ("Sanctions lifted! Electronics return to shelves "
 STARTING_OPINION = 60.0
 MIN_OPINION = 0.0
 MAX_OPINION = 100.0
-# Below this opinion, the Government blocks acquisitions.
-ACQUISITION_MIN_OPINION = 40.0
+# Opinion is also a currency: each acquisition costs some (COMPANY_ROWS),
+# and some policies drain it while active (STARTING_POLICY_ROWS). It never
+# falls on its own. Below this, the opinion chip turns red and the
+# Government sends a warning.
+LOW_OPINION_WARNING = 20.0
 # Opinion lost for each foreign-made unit bought during the war.
 OPINION_LOSS_PER_FOREIGN_ITEM = 1.0
-# Opinion lost for each sanctions workaround researched.
-OPINION_LOSS_PER_WORKAROUND = 10.0
-# During the war, opinion falls this much per second while war goods are
-# less than MIN_WAR_GOODS_SHARE of the units sold.
-MIN_WAR_GOODS_SHARE = 0.25
-OPINION_LOSS_PER_SECOND = 0.1
+# Once the Parallel Imports Scheme is done, the company can supply the
+# Government during the war: each tick it hands over this many units from
+# stock and gains this much opinion per unit.
+GOVERNMENT_SUPPLY_UNITS_PER_TICK = 2
+OPINION_PER_SUPPLIED_UNIT = 0.1
 # A patriotic contribution raises opinion; each costs more than the last.
 CONTRIBUTION_BASE_COST = 2000.0
 CONTRIBUTION_COST_GROWTH = 1.5
@@ -613,8 +623,8 @@ EMAIL_ROWS = [
      + "which is the first thing that changed.\n\nCorporate HQ",
      False],
     [EMAIL_CRASH, SENDER_ADVISOR,
-     "Our income has been halved (by our own Government)",
-     "Sanctions took effect this morning. Every sale now earns half of "
+     "Our income has been cut by 80% (by our own Government)",
+     "Sanctions took effect this morning. Every sale now earns a fifth of "
      + "what it did yesterday, and electronics and luxury imports may no "
      + "longer be sold. The Government calls this 'shared sacrifice'. I "
      + "checked, and we are the ones doing the sharing.\n\n"
@@ -627,14 +637,17 @@ EMAIL_ROWS = [
      + "food research, and food becomes our best business.\n"
      + "2. 'Creative compliance'. The Lab also lists a Parallel Imports "
      + "Scheme, an Offshore Shell Company, and Patriotic Rebranding. Each "
-     + "wins back part of the income we lost. None of them are illegal "
-     + "yet, but the Government will notice, and it remembers.\n"
+     + "wins back part of the income we lost. The Government knows, and "
+     + "has decided not to know, especially if some of what we import "
+     + "ends up in its own warehouses.\n"
      + "3. The Government. Its opinion of us is now a number on every "
-     + "page. It drops if we buy foreign equipment, use workarounds, or "
-     + "sell too few war goods. Below " + str(round(ACQUISITION_MIN_OPINION))
-     + ", it blocks acquisitions; the lower it goes, the more it 'borrows' "
-     + "from us every " + str(CONFISCATION_EVERY_WAVES) + " waves. A "
-     + "patriotic contribution (Business page) cheers it up.\n\n"
+     + "page, and unofficially a second currency: every acquisition needs "
+     + "its blessing, which costs opinion. Raise it with a patriotic "
+     + "contribution, or by supplying it from our stock once Parallel "
+     + "Imports is running (both on the Business page). Some policies "
+     + "cost opinion while they are active. The lower it goes, the more "
+     + "it 'borrows' from us every " + str(CONFISCATION_EVERY_WAVES)
+     + " waves.\n\n"
      + "John Johnson",
      False],
     [EMAIL_FOOD_EMPIRE, SENDER_ADVISOR,
@@ -651,12 +664,13 @@ EMAIL_ROWS = [
      + "John Johnson\nSenior Advisor, Food Security (self-appointed)",
      False],
     [EMAIL_LOW_OPINION, SENDER_GOVERNMENT,
-     "NOTICE: acquisitions suspended",
+     "NOTICE: your standing with the State",
      "Citizen-Enterprise,\n\n"
      + "Your recent conduct has been noted, filed, and discussed at a "
      + "meeting you were not invited to.\n\n"
-     + "Until the State's opinion of you improves, you may not acquire "
-     + "companies. Future confiscations will be larger. Patriotic "
+     + "The State's opinion of you is low. Acquisitions require its "
+     + "blessing, which you can no longer easily afford, and future "
+     + "confiscations will be larger. Patriotic "
      + "contributions are accepted on the Business page and are entirely "
      + "voluntary, in the sense that you may choose the amount, provided "
      + "it is the amount we choose.",
@@ -681,6 +695,9 @@ DEBUG_JUMP_LAST = "last"
 DEBUG_JUMP_WIN = "win"
 DEBUG_JUMP_LOSE = "lose"
 DEBUG_JUMP_CONFISCATION = "confiscation"
+DEBUG_JUMP_OPINION = "opinion"
+# Opinion added by the debug button.
+DEBUG_OPINION_AMOUNT = 50.0
 # Lifetime earnings that make every peacetime research appear.
 DEBUG_RESEARCH_EARNED = 25000.0
 
@@ -1267,6 +1284,7 @@ class Policy:
         needs_unlock: Whether an unlock purchase is required first.
         required_research: Research needed before it can be used ("" =
             none).
+        opinion_drain: Government opinion lost per second while active.
         is_active: Whether the policy is currently in force.
     """
     name: str
@@ -1279,6 +1297,7 @@ class Policy:
     strike_risk: float
     needs_unlock: bool
     required_research: str
+    opinion_drain: float
     is_active: bool
 
 
@@ -1340,6 +1359,7 @@ class Company:
         required_research: Research needed for it to appear ("" = none).
         requires_war: Whether it only comes up for sale once the war
             starts.
+        opinion_cost: The Government opinion it costs to acquire.
         is_owned: Whether the player has acquired it.
     """
     name: str
@@ -1351,6 +1371,7 @@ class Company:
     goods_name: str
     required_research: str
     requires_war: bool
+    opinion_cost: float
     is_owned: bool
 
 
@@ -1497,9 +1518,11 @@ class State:
             once-only email is never sent twice (one entry per template).
         companies: Every company that can be acquired, and whether it is.
         government_opinion: The Government's opinion of the company,
-            from 0 to 100.
+            from 0 to 100; also spent to acquire companies.
         contributions_made: Patriotic contributions paid so far; raises
             the price of the next one.
+        supplies_government: Whether the company hands some stock to the
+            Government each wartime tick.
     """
     company_name: str
     money: float
@@ -1541,6 +1564,7 @@ class State:
     companies: list[Company]
     government_opinion: float
     contributions_made: int
+    supplies_government: bool
 
 
 def make_no_typing_round() -> TypingRound:
@@ -1587,7 +1611,8 @@ def make_starting_policies() -> list[Policy]:
     policies = []
     for row in STARTING_POLICY_ROWS:
         policies.append(Policy(row[0], row[1], row[2], row[3], row[4], row[5],
-                               row[6], row[7], row[8], row[9], False))
+                               row[6], row[7], row[8], row[9], row[10],
+                               False))
     return policies
 
 
@@ -1615,7 +1640,8 @@ def make_starting_companies() -> list[Company]:
     companies = []
     for row in COMPANY_ROWS:
         companies.append(Company(row[0], row[1], row[2], row[3], row[4],
-                                 row[5], row[6], row[7], row[8], False))
+                                 row[5], row[6], row[7], row[8], row[9],
+                                 False))
     return companies
 
 
@@ -1679,6 +1705,7 @@ def make_new_state() -> State:
         companies=make_starting_companies(),
         government_opinion=STARTING_OPINION,
         contributions_made=0,
+        supplies_government=False,
     )
 
 
@@ -1744,7 +1771,7 @@ def make_test_company(sector: str, effect_amount: float,
     if sector == SECTOR_SUPPLIER:
         goods_name = "Test"
     return Company("Test Co.", "C", "Testing.", sector, 100.0,
-                   effect_amount, goods_name, NO_REQUIREMENT, False,
+                   effect_amount, goods_name, NO_REQUIREMENT, False, 5.0,
                    is_owned)
 
 
@@ -1779,11 +1806,13 @@ def expected_after_buying_cleanex() -> State:
     """Build the State expected after acquiring the first company.
 
     Returns:
-        The acquisitions State owning Cleanex, with the money paid, the
-        headline posted, and the first-acquisition email sent.
+        The acquisitions State owning Cleanex, with the money and
+        opinion paid, the headline posted, and the first-acquisition email
+        sent.
     """
     state = make_acquisitions_state()
     state.money = 5000.0 - COMPANY_ROWS[0][4]
+    state.government_opinion = STARTING_OPINION - COMPANY_ROWS[0][9]
     state.companies[0].is_owned = True
     state.news_feed = add_news(state.news_feed,
                                acquisition_headline(state.companies[0]))
@@ -1792,13 +1821,13 @@ def expected_after_buying_cleanex() -> State:
 
 
 def make_distrusted_state() -> State:
-    """Build the acquisitions State after the Government lost trust in it.
+    """Build the acquisitions State after it spent all its opinion.
 
     Returns:
-        The acquisitions State with opinion below ACQUISITION_MIN_OPINION.
+        The acquisitions State with 1 opinion, less than any company costs.
     """
     state = make_acquisitions_state()
-    state.government_opinion = ACQUISITION_MIN_OPINION - 10
+    state.government_opinion = 1.0
     return state
 
 
@@ -1862,7 +1891,7 @@ def make_test_policy(is_active: bool) -> Policy:
         A Policy that does not need an unlock.
     """
     return Policy("Test", "T", "test_policy", 0.5, 0.25, 0.1, -5.0, 0.03,
-                  False, NO_REQUIREMENT, is_active)
+                  False, NO_REQUIREMENT, 0.0, is_active)
 
 
 def make_locked_policy() -> Policy:
@@ -1872,7 +1901,7 @@ def make_locked_policy() -> Policy:
         A locked Policy with no effects.
     """
     return Policy("Locked", "L", "locked_policy", 0.0, 0.0, 0.0, 0.0, 0.0,
-                  True, NO_REQUIREMENT, False)
+                  True, NO_REQUIREMENT, 0.0, False)
 
 
 def make_striking_state(ticks_left: int) -> State:
@@ -1897,7 +1926,7 @@ def make_certain_strike_state() -> State:
     """
     state = make_new_state()
     state.policies = [Policy("Riot", "R", "riot", 0.0, 0.0, 0.0, 0.0, 1.0,
-                             False, NO_REQUIREMENT, True)]
+                             False, NO_REQUIREMENT, 0.0, True)]
     return state
 
 
@@ -2473,17 +2502,29 @@ def make_food_empire_state() -> State:
     return state
 
 
-def make_no_war_goods_state() -> State:
-    """Build a war State that sold 10 units, none of them war goods.
+def make_gouging_state() -> State:
+    """Build a new-game State with Wartime Price Gouging active.
 
     Returns:
-        A war State selling only Household Goods.
+        A new-game State whose active policy drains 0.15 opinion/s.
     """
     state = make_new_state()
-    state.game_phase = PHASE_WAR
-    state.total_earned = WAR_START_EARNED
-    state.goods_types[0].is_selling = True
-    state.goods_sold_last_tick = 10
+    state.policies[4].is_active = True
+    return state
+
+
+def make_supplier_state(goods_in_stock: int) -> State:
+    """Build a war State that supplies the Government.
+
+    Args:
+        goods_in_stock: Units in the warehouse.
+
+    Returns:
+        The workaround war State with Government supply switched on.
+    """
+    state = make_workaround_state()
+    state.supplies_government = True
+    state.goods_in_stock = goods_in_stock
     return state
 
 
@@ -2812,6 +2853,26 @@ def total_policy_loyalty_change(policies: list[Policy]) -> float:
 
 assert_equal(total_policy_loyalty_change(
     [make_test_policy(True), make_test_policy(False)]), -5.0)
+
+
+def total_policy_opinion_drain(policies: list[Policy]) -> float:
+    """Add up the Government opinion every active policy drains.
+
+    Args:
+        policies: The policies to add up.
+
+    Returns:
+        The opinion lost per second.
+    """
+    total = 0.0
+    for policy in policies:
+        if policy.is_active:
+            total = total + policy.opinion_drain
+    return total
+
+
+assert_equal(total_policy_opinion_drain(make_new_state().policies), 0.0)
+assert_equal(total_policy_opinion_drain(make_gouging_state().policies), 0.15)
 
 
 def total_strike_risk(policies: list[Policy]) -> float:
@@ -3195,28 +3256,99 @@ assert_equal(foreign_purchase_opinion_loss(make_new_state().buy_items[5], 5,
                                            PHASE_PEACE), 0.0)
 
 
-def war_goods_opinion_loss(war_units: int, units_sold: int,
-                           interval_ms: int) -> float:
-    """Find how much opinion one war tick costs for selling too few war goods.
+def run_policy_opinion_drain(state: State, interval_ms: int) -> None:
+    """Lower the Government's opinion for active opinion-draining policies.
 
     Args:
-        war_units: War goods sold in the tick.
-        units_sold: All units sold in the tick.
+        state: The game state to update.
         interval_ms: The length of one tick in milliseconds.
+    """
+    drain = total_policy_opinion_drain(state.policies) * interval_ms / 1000
+    change_opinion(state, -drain)
+
+
+def state_after_policy_drain(state: State) -> State:
+    """Run one 1000 ms tick of policy opinion drain and return the State.
+
+    Args:
+        state: The State to update.
 
     Returns:
-        OPINION_LOSS_PER_SECOND for the tick's length if war goods were
-        less than MIN_WAR_GOODS_SHARE of the units sold (or nothing was
-        sold), otherwise 0.
+        The same State, after run_policy_opinion_drain.
     """
-    if units_sold == 0 or war_units / units_sold < MIN_WAR_GOODS_SHARE:
-        return OPINION_LOSS_PER_SECOND * interval_ms / 1000
-    return 0.0
+    run_policy_opinion_drain(state, 1000)
+    return state
 
 
-assert_equal(war_goods_opinion_loss(5, 10, 1000), 0.0)
-assert_equal(war_goods_opinion_loss(0, 10, 1000), OPINION_LOSS_PER_SECOND)
-assert_equal(war_goods_opinion_loss(0, 0, 500), OPINION_LOSS_PER_SECOND / 2)
+# Opinion never falls on its own, only through policies.
+assert_equal(state_after_policy_drain(make_new_state()).government_opinion,
+             STARTING_OPINION)
+assert_equal(round(state_after_policy_drain(
+    make_gouging_state()).government_opinion, 2), STARTING_OPINION - 0.15)
+
+
+def government_supply_units(goods_in_stock: int, opinion: float) -> int:
+    """Find how many units the company hands the Government this tick.
+
+    Args:
+        goods_in_stock: Units in the warehouse.
+        opinion: The Government's current opinion.
+
+    Returns:
+        GOVERNMENT_SUPPLY_UNITS_PER_TICK, or less if stock is short, or 0
+        once opinion is already at MAX_OPINION.
+    """
+    if opinion >= MAX_OPINION:
+        return 0
+    return min(goods_in_stock, GOVERNMENT_SUPPLY_UNITS_PER_TICK)
+
+
+assert_equal(government_supply_units(10, 50.0),
+             GOVERNMENT_SUPPLY_UNITS_PER_TICK)
+assert_equal(government_supply_units(1, 50.0), 1)
+assert_equal(government_supply_units(10, MAX_OPINION), 0)
+
+
+def run_government_supply(state: State) -> None:
+    """Hand stock to the Government during the war, if switched on.
+
+    The toggle_government_supply route only switches it on after the
+    Parallel Imports Scheme, so this doesn't check the research.
+
+    Args:
+        state: The game state to update.
+    """
+    if state.supplies_government and state.game_phase == PHASE_WAR:
+        units = government_supply_units(state.goods_in_stock,
+                                        state.government_opinion)
+        state.goods_in_stock = state.goods_in_stock - units
+        change_opinion(state, units * OPINION_PER_SUPPLIED_UNIT)
+
+
+def state_after_supply(state: State) -> State:
+    """Run one tick of Government supply and return the State.
+
+    Args:
+        state: The State to update.
+
+    Returns:
+        The same State, after run_government_supply.
+    """
+    run_government_supply(state)
+    return state
+
+
+assert_equal(state_after_supply(make_supplier_state(10)).goods_in_stock,
+             10 - GOVERNMENT_SUPPLY_UNITS_PER_TICK)
+assert_equal(round(state_after_supply(
+    make_supplier_state(10)).government_opinion, 2),
+    STARTING_OPINION
+    + GOVERNMENT_SUPPLY_UNITS_PER_TICK * OPINION_PER_SUPPLIED_UNIT)
+# An empty warehouse gives nothing; switched off, nothing is taken.
+assert_equal(state_after_supply(make_supplier_state(0)).government_opinion,
+             STARTING_OPINION)
+assert_equal(state_after_supply(make_workaround_state()).goods_in_stock,
+             make_workaround_state().goods_in_stock)
 
 
 def contribution_cost(contributions_made: int) -> float:
@@ -4003,8 +4135,7 @@ def start_war(state: State) -> None:
 def run_war_economy(state: State, interval_ms: int) -> None:
     """Start the war when earnings are high enough, or run its economy.
 
-    During the war, this counts war goods sold, lowers the Government's
-    opinion if too few were war goods, then either fights the
+    During the war, this counts war goods sold, then either fights the
     current wave or fills the threat meter between waves (it uses
     goods_sold_last_tick, so call it after run_selling). After the war,
     only the air raid penalty keeps counting down.
@@ -4022,8 +4153,6 @@ def run_war_economy(state: State, interval_ms: int) -> None:
         war_units = war_units_sold(state.goods_sold_last_tick,
                                    state.goods_types)
         state.war_goods_sold = state.war_goods_sold + war_units
-        change_opinion(state, -war_goods_opinion_loss(
-            war_units, state.goods_sold_last_tick, interval_ms))
         state.raid_ms_left = max(0, state.raid_ms_left - interval_ms)
         if is_wave_active(state):
             run_wave(state, interval_ms)
@@ -4053,13 +4182,6 @@ assert_equal(state_after_war_economy(make_veteran_state()).game_phase,
 assert_equal(state_after_war_economy(make_veteran_state()).news_feed[0],
              WAR_START_NEWS)
 # During the war: 5 of 10 units were war goods, and the threat fills.
-# That is enough war goods to keep the Government's opinion.
-assert_equal(state_after_war_economy(make_war_state()).government_opinion,
-             STARTING_OPINION)
-# Selling no war goods at all costs opinion every second.
-assert_equal(state_after_war_economy(
-    make_no_war_goods_state()).government_opinion,
-    STARTING_OPINION - OPINION_LOSS_PER_SECOND)
 assert_equal(state_after_war_economy(make_war_state()).war_goods_sold, 5)
 assert_equal(state_after_war_economy(make_war_state()).threat,
              threat_per_second(5))
@@ -4247,7 +4369,7 @@ def run_email_triggers(state: State) -> None:
     if EMAIL_FOOD_EMPIRE not in sent and is_food_empire_complete(state):
         send_email(state, EMAIL_FOOD_EMPIRE)
     if (EMAIL_LOW_OPINION not in sent
-            and state.government_opinion < ACQUISITION_MIN_OPINION):
+            and state.government_opinion < LOW_OPINION_WARNING):
         send_email(state, EMAIL_LOW_OPINION)
 
 
@@ -4346,8 +4468,6 @@ assert_equal(can_buy_defense(make_rich_state(), 0), False)
 def complete_research(state: State, research_index: int) -> None:
     """Pay for a research project, mark it done, and post its headline.
 
-    A sanctions workaround also lowers the Government's opinion.
-
     Args:
         state: The game state to update.
         research_index: The project's position in state.research.
@@ -4356,8 +4476,6 @@ def complete_research(state: State, research_index: int) -> None:
     state.money = state.money - project.cost
     project.is_done = True
     state.news_feed = add_news(state.news_feed, project.headline)
-    if project.category == CATEGORY_WORKAROUND:
-        change_opinion(state, -OPINION_LOSS_PER_WORKAROUND)
 
 
 def total_research_stocking_bonus(research: list[Research]) -> float:
@@ -4571,16 +4689,16 @@ def can_buy_company(state: State, company_index: int) -> bool:
         company_index: The company's position in state.companies.
 
     Returns:
-        True if it exists, is for sale, the Government's opinion is at
-        least ACQUISITION_MIN_OPINION, and the player can afford it
-        (keeping enough money to restock an empty warehouse).
+        True if it exists, is for sale, the Government's opinion covers
+        its opinion cost, and the player can afford it (keeping enough
+        money to restock an empty warehouse).
     """
     if company_index < 0 or company_index >= len(state.companies):
         return False
     company = state.companies[company_index]
     required = safe_money_required(company.cost, state.goods_in_stock)
     return (is_company_for_sale(company, state.research, state.game_phase)
-            and state.government_opinion >= ACQUISITION_MIN_OPINION
+            and state.government_opinion >= company.opinion_cost
             and required <= state.money)
 
 
@@ -4589,7 +4707,7 @@ assert_equal(can_buy_company(make_acquisitions_state(), 0), True)
 assert_equal(can_buy_company(make_acquisitions_state(), 3), False)
 assert_equal(can_buy_company(make_acquisitions_state(), 4), False)
 assert_equal(can_buy_company(make_acquisitions_state(), 99), False)
-# The Government blocks acquisitions when its opinion is low.
+# Not enough Government opinion to pay for the Government's blessing.
 assert_equal(can_buy_company(make_distrusted_state(), 0), False)
 
 
@@ -4614,7 +4732,7 @@ assert_equal(can_buy_company(expected_after_buying_cleanex(), 0), False)
 
 
 def acquire_company(state: State, company_index: int) -> None:
-    """Pay for a company, mark it owned, and announce it.
+    """Pay for a company in money and opinion, mark it owned, announce it.
 
     The first acquisition also sends an email explaining the sectors.
 
@@ -4624,6 +4742,7 @@ def acquire_company(state: State, company_index: int) -> None:
     """
     company = state.companies[company_index]
     state.money = state.money - company.cost
+    change_opinion(state, -company.opinion_cost)
     company.is_owned = True
     state.news_feed = add_news(state.news_feed, acquisition_headline(company))
     send_email(state, EMAIL_ACQUISITION)
@@ -5523,11 +5642,11 @@ def example_income_ratio(state: State) -> float:
 
 
 # The worked example in the constants block: the war crashes income to
-# about 47% of pre-war, and the workarounds plus the war goods suppliers
-# lift it to about 1.5x.
+# about 19% of pre-war, and the workarounds plus the war goods suppliers
+# lift it back to about pre-war income.
 assert_equal(round(example_income_ratio(make_crashed_tycoon_state()), 2),
-             0.47)
-assert_equal(round(example_income_ratio(make_war_tycoon_state()), 1), 1.5)
+             0.19)
+assert_equal(round(example_income_ratio(make_war_tycoon_state()), 2), 1.05)
 
 
 def max_income_per_tick(state: State) -> float:
@@ -6297,12 +6416,16 @@ def describe_policy(policy: Policy) -> str:
         text = text + str(round(policy.loyalty_change)) + " loyalty target, "
     if policy.strike_risk != 0:
         text = text + percent_text(policy.strike_risk) + " strike risk/tick, "
+    if policy.opinion_drain != 0:
+        text = text + "-" + str(policy.opinion_drain) + " opinion/s, "
     return text[:-2]
 
 
 assert_equal(describe_policy(make_test_policy(False)),
              "+50% stocking, +25% delivery, +10% income, -5 loyalty target, "
              + "+3% strike risk/tick")
+assert_equal(describe_policy(make_new_state().policies[4]),
+             "+30% income, -10 loyalty target, -0.15 opinion/s")
 
 
 def describe_effect(item: BuyItem) -> str:
@@ -6633,6 +6756,10 @@ def active_effect_lines(state: State) -> list[str]:
         multiplier = sanctions_multiplier(state.research, state.game_phase)
         lines.append("🚫 Sanctions: " + percent_text(multiplier - 1)
                      + " income")
+        if state.supplies_government:
+            lines.append("🏛️ Supplying the Government: "
+                         + str(GOVERNMENT_SUPPLY_UNITS_PER_TICK)
+                         + " units/tick")
     return lines
 
 
@@ -6647,9 +6774,12 @@ assert_equal(active_effect_lines(make_state_with_income_bonuses()),
 assert_equal(active_effect_lines(make_owner_state(7)),
              ["📦 Boxly Logistics: +50 market size"])
 assert_equal(active_effect_lines(make_war_state())[-1],
-             "🚫 Sanctions: -50% income")
+             "🚫 Sanctions: -80% income")
 assert_equal(active_effect_lines(make_workaround_state())[-1],
-             "🚫 Sanctions: -5% income")
+             "🚫 Sanctions: -35% income")
+assert_equal(active_effect_lines(make_supplier_state(10))[-1],
+             "🏛️ Supplying the Government: "
+             + str(GOVERNMENT_SUPPLY_UNITS_PER_TICK) + " units/tick")
 
 
 def build_effect_tags(state: State) -> Div:
@@ -6716,10 +6846,10 @@ def build_opinion_chip(state: State) -> Div:
 
     Returns:
         A "🏛️ Gov. opinion" chip, in the warning color when the opinion is
-        low enough to block acquisitions.
+        below LOW_OPINION_WARNING.
     """
     value = str(round(state.government_opinion)) + "/100"
-    if state.government_opinion < ACQUISITION_MIN_OPINION:
+    if state.government_opinion < LOW_OPINION_WARNING:
         return build_chip("🏛️ Gov. opinion", value, "chip warn")
     return build_chip("🏛️ Gov. opinion", value, "chip")
 
@@ -6727,7 +6857,7 @@ def build_opinion_chip(state: State) -> Div:
 assert_equal(build_opinion_chip(make_new_state()),
              build_chip("🏛️ Gov. opinion", "60/100", "chip"))
 assert_equal(build_opinion_chip(make_distrusted_state()),
-             build_chip("🏛️ Gov. opinion", "30/100", "chip warn"))
+             build_chip("🏛️ Gov. opinion", "1/100", "chip warn"))
 
 
 def build_war_chips(state: State) -> list[Div]:
@@ -7657,22 +7787,37 @@ def build_government_card(state: State) -> Div:
         state: The current game state.
 
     Returns:
-        A card explaining opinion, with the patriotic contribution button.
+        A card explaining opinion, with the patriotic contribution button
+        and (after the Parallel Imports Scheme) the supply button.
     """
     cost = contribution_cost(state.contributions_made)
+    buttons = [Button("Patriotic Contribution (" + format_money(cost) + ", +"
+                      + str(round(OPINION_PER_CONTRIBUTION)) + " opinion)",
+                      "make_contribution")]
+    supply_note = ("Research the Parallel Imports Scheme to start "
+                   + "supplying the Government.")
+    if is_research_done(state.research, PARALLEL_IMPORTS):
+        supply_note = ("While supplying during the war, the Government "
+                       + "takes " + str(GOVERNMENT_SUPPLY_UNITS_PER_TICK)
+                       + " units of stock per tick for +"
+                       + str(OPINION_PER_SUPPLIED_UNIT) + " opinion each.")
+        if state.supplies_government:
+            buttons.append(Button("Stop supplying the Government",
+                                  "toggle_government_supply"))
+        else:
+            buttons.append(Button("Start supplying the Government",
+                                  "toggle_government_supply"))
     return Div(
         build_card_head("🏛️ Government Relations", []),
-        Div("During the war, the Government's opinion falls when you buy "
-            + "foreign equipment, use sanction workarounds, or sell too few "
-            + "war goods (under " + percent_text(MIN_WAR_GOODS_SHARE)[1:]
-            + " of sales). Below " + str(round(ACQUISITION_MIN_OPINION))
-            + ", it blocks acquisitions, and the lower it is, the more it "
+        Div("The Government's opinion is a second currency: every "
+            + "acquisition costs some. It never falls on its own, but some "
+            + "policies drain it, and foreign equipment bought during the "
+            + "war costs " + str(round(OPINION_LOSS_PER_FOREIGN_ITEM))
+            + " per unit. The lower it is, the more the Government "
             + "confiscates every " + str(CONFISCATION_EVERY_WAVES)
             + " waves.", classes="muted"),
-        Div(Button("Patriotic Contribution (" + format_money(cost) + ", +"
-                   + str(round(OPINION_PER_CONTRIBUTION)) + " opinion)",
-                   "make_contribution"),
-            classes="button-row"),
+        Div(supply_note, classes="muted"),
+        Div(buttons, classes="button-row"),
         classes="card",
     )
 
@@ -7711,8 +7856,9 @@ def build_company_row(company: Company, company_index: int) -> Div:
             Div(company.description, classes="muted"),
             Div(company.sector.capitalize() + " · "
                 + describe_company_effect(company), classes="muted")),
-        Button("Acquire for " + format_money(company.cost), "buy_company",
-               [Argument("company_index", company_index)]),
+        Button("Acquire: " + format_money(company.cost) + " + "
+               + str(round(company.opinion_cost)) + " opinion",
+               "buy_company", [Argument("company_index", company_index)]),
         classes="buy-row",
     )
 
@@ -7728,10 +7874,8 @@ def build_company_list(state: State) -> Div:
     """
     rows = [build_card_head("For Sale", [Button("← Business",
                                                 "business_page")]),
-            Div("The Government approves every acquisition. It refuses "
-                + "while its opinion of you is below "
-                + str(round(ACQUISITION_MIN_OPINION)) + ".",
-                classes="muted")]
+            Div("Every acquisition needs the Government's blessing, "
+                + "paid in opinion (the 🏛️ chip).", classes="muted")]
     for company_index, company in enumerate(state.companies):
         if is_company_for_sale(company, state.research, state.game_phase):
             rows.append(build_company_row(company, company_index))
@@ -8296,7 +8440,9 @@ assert_equal(save_goods(make_war_state(), False, False, True,
 @route
 def save_policies(state: State, unpaid_overtime: bool,
                   aggressive_upselling: bool, route_quotas: bool,
-                  gig_reclassification: bool = False) -> Page:
+                  gig_reclassification: bool = False,
+                  price_gouging: bool = False,
+                  draft_dodgers: bool = False) -> Page:
     """Save which corporate policies are active.
 
     Args:
@@ -8306,13 +8452,15 @@ def save_policies(state: State, unpaid_overtime: bool,
         route_quotas: Whether Algorithmic Route Quotas is checked.
         gig_reclassification: Whether Gig Worker Reclassification is
             checked.
+        price_gouging: Whether Wartime Price Gouging is checked.
+        draft_dodgers: Whether Hire Draft Dodgers is checked.
 
     Returns:
         The refreshed Business page.
     """
     set_policy_choices(state.policies,
                        [unpaid_overtime, aggressive_upselling, route_quotas,
-                        gig_reclassification],
+                        gig_reclassification, price_gouging, draft_dodgers],
                        state.buy_items, state.research)
     return business_page(state)
 
@@ -8330,6 +8478,10 @@ assert_equal(save_policies(make_new_state(), False, False, False, True),
 assert_equal(save_policies(make_finished_research_state(5), False, False,
                            False, True),
              make_expected_business_page(expected_after_gig_policy()))
+# Wartime Price Gouging needs Dynamic Goods Pricing first.
+assert_equal(save_policies(make_new_state(), False, False, False, False,
+                           True),
+             make_expected_business_page(make_business_state()))
 
 
 @route
@@ -8569,6 +8721,32 @@ assert_equal(make_contribution(make_contribution_state()),
 # Opinion is already at its best: nothing is paid.
 assert_equal(make_contribution(make_beloved_state()),
              make_expected_business_page(make_beloved_state()))
+
+
+@route
+def toggle_government_supply(state: State) -> Page:
+    """Start or stop supplying the Government from stock.
+
+    It can only be switched on after the Parallel Imports Scheme.
+
+    Args:
+        state: The current game state.
+
+    Returns:
+        The refreshed Business page.
+    """
+    if is_research_done(state.research, PARALLEL_IMPORTS):
+        state.supplies_government = not state.supplies_government
+    return business_page(state)
+
+
+assert_equal(toggle_government_supply(
+    make_workaround_state()).state.supplies_government, True)
+assert_equal(toggle_government_supply(
+    make_supplier_state(10)).state.supplies_government, False)
+# Without the Parallel Imports Scheme, nothing changes.
+assert_equal(toggle_government_supply(
+    make_war_state()).state.supplies_government, False)
 
 
 @route
@@ -8975,6 +9153,8 @@ def apply_debug_jump(state: State, target: str) -> State:
         debug_end_war(state, target == DEBUG_JUMP_WIN)
     elif target == DEBUG_JUMP_CONFISCATION:
         confiscate(state)
+    elif target == DEBUG_JUMP_OPINION:
+        change_opinion(state, DEBUG_OPINION_AMOUNT)
     return state
 
 
@@ -8997,6 +9177,9 @@ assert_equal(apply_debug_jump(make_new_state(), DEBUG_JUMP_WIN).news_feed[0],
              WAR_WON_NEWS)
 assert_equal(apply_debug_jump(make_war_state(), DEBUG_JUMP_LOSE).game_phase,
              PHASE_WAR_OVER)
+assert_equal(apply_debug_jump(make_new_state(),
+                              DEBUG_JUMP_OPINION).government_opinion,
+             min(MAX_OPINION, STARTING_OPINION + DEBUG_OPINION_AMOUNT))
 assert_equal(apply_debug_jump(make_new_state(),
                               DEBUG_JUMP_CONFISCATION).inbox[0].key,
              EMAIL_CONFISCATION)
@@ -9040,6 +9223,8 @@ def build_debug_card() -> Div:
                    [Argument("target", DEBUG_JUMP_LOSE)]),
             Button("Confiscate money now", "debug_jump",
                    [Argument("target", DEBUG_JUMP_CONFISCATION)]),
+            Button("+" + str(round(DEBUG_OPINION_AMOUNT)) + " Gov. opinion",
+                   "debug_jump", [Argument("target", DEBUG_JUMP_OPINION)]),
             classes="button-row"),
         classes="card narrow",
     )
@@ -9133,8 +9318,10 @@ def tick(state: State) -> Fragment:
     """
     run_strikes(state)
     run_stocking(state)
+    run_government_supply(state)
     run_selling(state)
     run_war_economy(state, tick_interval(state))
+    run_policy_opinion_drain(state, tick_interval(state))
     run_loyalty_drift(state)
     run_email_triggers(state)
     state.tick_count = state.tick_count + 1

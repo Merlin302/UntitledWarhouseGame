@@ -24,11 +24,11 @@ pass.
 | 11 | 2026-11-12, lost-click fix | Pacing | The marketing campaign, warehouse expansion, and corporate organization items now need research (Social Media Playbook, Warehouse Zoning Permit, Corporate Restructuring Study), so the research chip shows 3 available within seconds of a new game (see #1). Their costs (100 / 250 / 750) are guesses. | deferred |
 | 12 | 2026-11-13, Emails | Pacing | The research email arrives on tick 1, right after the welcome email, because some research is available almost at once (see #1 and #11). Raising the early `unlock_at_earned` values would space them out. | deferred |
 | 14 | 2026-11-13, E1 | Balance | Company costs and bonuses in `COMPANY_ROWS` are guesses. Supplier bonuses match the old free goods bonuses, so early income is lower than before until suppliers are bought. | deferred |
-| 16 | 2026-11-13, E2 | Balance | The 1.5x war income target is checked only for the worked example (all four peacetime suppliers plus the two war goods suppliers). A player without suppliers recovers only to 95% of pre-war. Workaround costs (8000 / 12000 / 18000) are guesses. | deferred |
+| 16 | 2026-11-13, E2 | Balance | Sanctions now cut income by 80%. Every workaround plus the war goods suppliers only gets back to about 1.05x pre-war income; the 1.5x target relies on artifacts, food acquisitions, and policies, which isn't measured yet. Workaround costs (8000 / 12000 / 18000) are guesses. | deferred |
 | 17 | 2026-11-13, E2 | UI | The "Income bonus" chip doesn't include the sanctions cut; it shows only in the "🚫 Sanctions" effect tag. | open |
-| 18 | 2026-11-13, E3 | Balance | Opinion numbers are guesses: start 60, -10 per workaround, -1 per foreign unit, -0.1/s with too few war goods, +10 per contribution (Ŧ2000, x1.5 each). Doing all three workarounds alone drops opinion from 60 to 30, which blocks acquisitions. | deferred |
-| 19 | 2026-11-13, E3 | Balance | A player who sells no goods types at all counts as selling no war goods, so opinion drains from the first second of the war. | open |
+| 18 | 2026-11-13, E3 | Balance | Opinion numbers are guesses: start 60, company costs 2-25 opinion (all 15 cost 157 in total), contributions +10 for Ŧ2000 (x1.5 each), Government supply 2 units/tick for +0.1 each, policy drains 0.05-0.15/s. | deferred |
 | 20 | 2026-11-13, E3 | UI | The Government Relations card and the Acquisitions note are drawn on click, so they don't show live opinion; the chip does. | open |
+| 21 | 2026-11-13, opinion rework | Balance | Government supply takes its units before selling, so it competes with sales for stock, and it is per tick, so a faster tick speed (Admin upgrade) will also speed it up. | open |
 
 ## Resolved
 
@@ -41,3 +41,4 @@ pass.
 | R5 | 2026-11-12, lost-click fix | UI | The sticky top bar scrolled away on pages where `#live_area` held only the top bar (e.g. Business at phone width), because a sticky element only sticks inside its parent. Fixed with `#live_area {display: contents}`. | this commit |
 | R6 | 2026-11-13, E1 | Balance | Household Goods and Canned Food got a free wartime bonus (`war_bonus`) without a supplier. Removed: `GoodsType.war_bonus` and `goods_war_bonus` are gone. | E2 commit |
 | R7 | 2026-11-13, Emails | Emails | The confiscation notice had no real trigger. Now `end_wave` calls `confiscate` every `CONFISCATION_EVERY_WAVES` waves, which sends it. | E3 commit |
+| R8 | 2026-11-13, E3 | Balance | A player who sold no goods types counted as selling no war goods, so opinion drained from the first second of the war. Removed: opinion no longer falls for too few war goods. | opinion rework commit |
