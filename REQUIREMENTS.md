@@ -74,6 +74,9 @@ off what is done and name the exact function or field that satisfies it.
       `build_research_list` (available or
       none), `policy_label` (which lock applies), `run_war_economy` (war
       starts / threat full), `build_goods_row` (sanctioned goods),
+      `sanctions_multiplier` (peace or war), `percent_text` (negative),
+      `describe_research_effect` (sanction recovery, parallel imports),
+      `active_effect_lines` (wartime sanctions tag),
       `apply_debug_jump` (which shortcut), `run_intermission` (meter full,
       briefing read), `run_wave` (wave won or out of time), `end_wave` (won
       or broke through; last wave ends the war), `finish_war` (won or
@@ -102,7 +105,9 @@ off what is done and name the exact function or field that satisfies it.
       `total_dps` loops over `state.defenses`; `count_unread`,
       `is_email_unread`, and `build_inbox_list` loop over `state.inbox`;
       `supplier_bonus` and `total_company_effect` loop over
-      `state.companies` to total the bonuses of owned companies
+      `state.companies` to total the bonuses of owned companies;
+      `sanctions_multiplier` loops over `state.research` to add the
+      income each completed workaround wins back
 - [x] Legitimate purpose (entertainment: it's a game) — _where:_ the whole site
 - [x] No global variables; only ALL_CAPS constants, never mutated — _where:_
       constants block; `make_starting_items`, `make_starting_goods`,

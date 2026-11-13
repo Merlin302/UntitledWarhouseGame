@@ -206,7 +206,8 @@ redrawing the nav buttons. Each
 `Research` (catalog: `RESEARCH_ROWS`) is bought once with money and takes
 effect instantly, posting a World News headline. Categories: stat (%
 stocking/delivery), equipment (unlocks a buy item), unlock (unlocks a goods
-type or policy), world (market size, or a goods type's bonus). Buy items,
+type or policy), world (market size, or a goods type's bonus), workaround
+(wins back income lost to sanctions). Buy items,
 goods types, and policies have a `required_research` field ("" = none):
 locked buy items and goods are hidden, locked policies are shown locked.
 Research bonuses feed `total_stocking_bonus` / `total_delivery_bonus` (into
@@ -226,10 +227,22 @@ media (loyalty target: `calculate_loyalty_target`), bank (none yet; it
 will shrink confiscations in E3). Advertising research (Canned Food Jingle
 Campaign, Influencer Unboxing Program) adds to a goods type's bonus.
 Companies with a `required_research` are hidden until it is done. The
-Acquire buttons sit outside `#live_area`. Still to build: E2 (war-start
-income crash from sanctions, recovered by workaround research; a player who
-finds them should end the war at about 1.5x pre-war income) and E3
-(government opinion 0-100, patriotic contributions, confiscations).
+Acquire buttons sit outside `#live_area`. Still to build: E3 (government
+opinion 0-100, patriotic contributions, confiscations).
+
+**Sanctions crash (economy rework E2 built):** from the war's start, all
+income is multiplied by `sanctions_multiplier` (`calculate_income`'s
+`multiplier`): `SANCTIONS_INCOME_MULTIPLIER` (0.5) plus
+`Research.sanction_recovery` of each completed workaround research
+(`CATEGORY_WORKAROUND`, war-only: Parallel Imports Scheme, Offshore Shell
+Company, Patriotic Rebranding; each `WORKAROUND_RECOVERY`). The Parallel
+Imports Scheme also makes sanctioned goods sellable again
+(`is_sanctioned_now`). There is no free wartime goods bonus. Target: every
+workaround plus the war goods suppliers gives about 1.5x pre-war income;
+the worked example is in a comment by the constants and is tested below
+`calculate_income` (`example_income_ratio`). The Company page shows a
+"🚫 Sanctions" effect tag in wartime. `start_war` sends the crash email
+(`EMAIL_CRASH`).
 
 **The War (phase W1 built: war economy):** `State.game_phase` goes
 peace -> war -> war_over (`PHASE_` constants). The war starts when
@@ -237,9 +250,8 @@ total_earned reaches `WAR_START_EARNED` (`start_war`, run by
 `run_war_economy` in the tick), posting headlines. The Kalyxian Federation
 invades the Republic of Varnia (fictional). In wartime, sanctioned goods
 (`GoodsType.is_sanctioned`: Electronics, Imported Luxuries) are shown as
-"🚫 Sanctioned" and forced off, and goods with a `war_bonus` (Household,
-Canned Food) earn more as the only supplier (both feed
-`goods_income_bonus`). War research (`Research.requires_war`): Defense
+"🚫 Sanctioned" and forced off until the Parallel Imports Scheme is
+researched, and all income is cut (see Sanctions crash). War research (`Research.requires_war`): Defense
 Procurement License (unlocks the war goods Body Armor and Drone
 Components), and world research that buys out fleeing competitors (ParcelPro,
 then Ozonix). `war_goods_sold` adds the war goods' share of each tick's

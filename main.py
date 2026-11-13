@@ -81,6 +81,9 @@ OZONIX_NATIONALIZATION = "Nationalize Ozonix Marketplace"
 MARKETING_PLAYBOOK = "Social Media Playbook"
 ZONING_PERMIT = "Warehouse Zoning Permit"
 RESTRUCTURING_STUDY = "Corporate Restructuring Study"
+PARALLEL_IMPORTS = "Parallel Imports Scheme"
+SHELL_COMPANY = "Offshore Shell Company"
+REBRANDING = "Patriotic Rebranding"
 NO_REQUIREMENT = ""
 
 # Each row: name, emoji, base cost, effect kind, effect amount, whether
@@ -127,26 +130,24 @@ BODY_ARMOR = "Body Armor"
 DRONE_COMPONENTS = "Drone Components"
 
 # Each row: name, emoji, CheckBox name (must match a save_goods parameter),
-# the research it requires, whether it is a war good, whether wartime
-# sanctions ban it, and the extra income bonus it gets during the war (when
-# the company is the only supplier left). A goods type has no income bonus
-# of its own: that comes from owning its supplier (COMPANY_ROWS) and from
-# advertising research.
+# the research it requires, whether it is a war good, and whether wartime
+# sanctions ban it. A goods type has no income bonus of its own: that comes
+# from owning its supplier (COMPANY_ROWS) and from advertising research.
 STARTING_GOODS_ROWS = [
     [HOUSEHOLD_GOODS, "🧺", "sell_household", NO_REQUIREMENT,
-     False, False, 0.10],
+     False, False],
     [CANNED_FOOD, "🥫", "sell_canned_food", NO_REQUIREMENT,
-     False, False, 0.25],
+     False, False],
     [ELECTRONICS, "📺", "sell_electronics", NO_REQUIREMENT,
-     False, True, 0.0],
+     False, True],
     [WAR_SUPPLIES, "💣", "sell_war_supplies", NO_REQUIREMENT,
-     True, False, 0.0],
+     True, False],
     [IMPORTED_LUXURIES, "💎", "sell_imported_luxuries",
-     IMPORT_LICENSES, False, True, 0.0],
+     IMPORT_LICENSES, False, True],
     [BODY_ARMOR, "🦺", "sell_body_armor", DEFENSE_LICENSE,
-     True, False, 0.0],
+     True, False],
     [DRONE_COMPONENTS, "🔧", "sell_drone_parts", DEFENSE_LICENSE,
-     True, False, 0.0],
+     True, False],
 ]
 
 # Each row: name, emoji, CheckBox name (must match a save_policies parameter),
@@ -168,76 +169,116 @@ CATEGORY_STAT = "stat"
 CATEGORY_EQUIPMENT = "equipment"
 CATEGORY_UNLOCK = "unlock"
 CATEGORY_WORLD = "world"
+# Workarounds win back income lost to wartime sanctions.
+CATEGORY_WORKAROUND = "workaround"
+
+# Sanctions: from the moment the war starts, all income is multiplied by
+# SANCTIONS_INCOME_MULTIPLIER. Each workaround research adds
+# WORKAROUND_RECOVERY back, and the Parallel Imports Scheme also lets
+# sanctioned goods be sold again.
+#
+# Target: a player who finds every workaround and sells the war goods
+# should end the war at about 1.5x their pre-war income. Worked example
+# (tested below calculate_income):
+#   Pre-war: sells Household, Canned, Electronics, and War Supplies with
+#     all four suppliers: bonus 0.05 + 0.10 + 0.15 + 1.00 = 1.30, so each
+#     sale earns 2.30x the base price.
+#   War starts: Electronics is banned (bonus 1.15) and income is halved:
+#     2.15 x 0.5 = 1.075, about 47% of pre-war. This is the crash.
+#   All three workarounds: Electronics is back and the multiplier is
+#     0.5 + 3 x 0.15 = 0.95: 2.30 x 0.95 = 2.185, about 95% of pre-war.
+#   Plus the Body Armor and Drone Components suppliers (+0.60, +0.80):
+#     3.70 x 0.95 = 3.515, about 1.53x pre-war.
+SANCTIONS_INCOME_MULTIPLIER = 0.5
+WORKAROUND_RECOVERY = 0.15
 
 # Each row: name, emoji, description, category, cost, stocking bonus,
 # delivery bonus (both fractions), market size bonus, the goods type it
 # boosts ("" for none) and that goods bonus, the prerequisite research
 # (NO_REQUIREMENT if none), lifetime earnings needed to appear, the World
-# News headline posted when it is completed, and whether it only appears
-# once the war has started.
+# News headline posted when it is completed, whether it only appears once
+# the war has started, and the income it wins back from sanctions.
 RESEARCH_ROWS = [
     [LEAN_PROCUREMENT, "📉",
      "Consultants remove three chairs and call it a methodology.",
      CATEGORY_STAT, 800.0, 0.10, 0.0, 0, "", 0.0, NO_REQUIREMENT, 500.0,
-     "Procurement team goes lean; snacks reclassified as 'waste'.", False],
+     "Procurement team goes lean; snacks reclassified as 'waste'.", False,
+     0.0],
     [ROUTE_OPTIMIZATION, "🧭",
      "An app that tells drivers the road is shorter than they think.",
      CATEGORY_STAT, 1000.0, 0.0, 0.10, 0, "", 0.0, NO_REQUIREMENT, 800.0,
-     "Drivers report the app keeps routing them through a lake.", False],
+     "Drivers report the app keeps routing them through a lake.", False, 0.0],
     [PICKUP_TRUCK_STUDY, "🛻",
      "A 40-page study concludes that bigger trucks hold more boxes.",
      CATEGORY_EQUIPMENT, 1500.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT,
-     1500.0, "Study confirms trucks are 'like vans, but more so'.", False],
+     1500.0, "Study confirms trucks are 'like vans, but more so'.", False,
+     0.0],
     [CONVEYOR_RESEARCH, "⚙️",
      "Engineers discover that belts can move boxes without lunch breaks.",
      CATEGORY_EQUIPMENT, 2500.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT,
-     3000.0, "New conveyor belt prototype eats only one intern.", False],
+     3000.0, "New conveyor belt prototype eats only one intern.", False, 0.0],
     [IMPORT_LICENSES, "📜",
      "Paperwork so thick it is itself a taxable import.",
      CATEGORY_UNLOCK, 3000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 3000.0,
-     "Customs office approves licenses after a 'gift basket'.", False],
+     "Customs office approves licenses after a 'gift basket'.", False, 0.0],
     [LABOR_CONSULTANCY, "🤝",
      "Experts in making 'no' sound like 'great question'.",
      CATEGORY_UNLOCK, 4000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 5000.0,
-     "Consultants rename workers 'independent box partners'.", False],
+     "Consultants rename workers 'independent box partners'.", False, 0.0],
     [SOUP_JINGLE, "🎵",
      "Eleven notes, legally distinct from every other jingle.",
      CATEGORY_WORLD, 6000.0, 0.0, 0.0, 0, CANNED_FOOD, 0.10,
      MARKETING_PLAYBOOK, 8000.0,
      "Canned food jingle stuck in the nation's head; doctors baffled.",
-     False],
+     False, 0.0],
     [UNBOXING_PROGRAM, "🤳",
      "Pay strangers to open boxes slowly while gasping.",
      CATEGORY_WORLD, 12000.0, 0.0, 0.0, 0, ELECTRONICS, 0.10,
      MARKETING_PLAYBOOK, 15000.0,
      "Influencer unboxes a television for 40 minutes; views soar.",
-     False],
+     False, 0.0],
     [DEFENSE_LICENSE, "🎖️",
      "A stamp that turns a warehouse into a 'strategic asset'.",
      CATEGORY_UNLOCK, 20000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 0.0,
-     "Ministry of Defense approves warehouse as 'basically a fort'.", True],
+     "Ministry of Defense approves warehouse as 'basically a fort'.", True,
+     0.0],
     [PARCELPRO_ABSORPTION, "🏃",
      "Its foreign owners left in a hurry. Their customers did not.",
      CATEGORY_WORLD, 30000.0, 0.0, 0.0, 40, "", 0.0, NO_REQUIREMENT, 0.0,
-     "ParcelPro warehouses 'find a new home' after owners flee.", True],
+     "ParcelPro warehouses 'find a new home' after owners flee.", True, 0.0],
     [OZONIX_NATIONALIZATION, "🏛️",
      "Patriotic duty requires that we own the second-biggest marketplace.",
      CATEGORY_WORLD, 60000.0, 0.0, 0.0, 60, "", 0.0, PARCELPRO_ABSORPTION,
      0.0, "Ozonix nationalized; shareholders thanked for their service.",
-     True],
+     True, 0.0],
     [MARKETING_PLAYBOOK, "📱",
      "A guide to dancing in front of boxes until people buy them.",
      CATEGORY_EQUIPMENT, 100.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 200.0,
-     "Warehouse staff now legally required to 'go viral' weekly.", False],
+     "Warehouse staff now legally required to 'go viral' weekly.", False, 0.0],
     [ZONING_PERMIT, "🏗️",
      "Permission to build more warehouse, signed in triplicate.",
      CATEGORY_EQUIPMENT, 250.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 500.0,
      "City approves expansion after warehouse promises 'fewer forklifts'.",
-     False],
+     False, 0.0],
     [RESTRUCTURING_STUDY, "🏢",
      "Consultants draw boxes around boxes and call it an org chart.",
      CATEGORY_EQUIPMENT, 750.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT, 1500.0,
-     "Management restructured; everyone now reports to everyone.", False],
+     "Management restructured; everyone now reports to everyone.", False, 0.0],
+    [PARALLEL_IMPORTS, "🔀",
+     "The same televisions, now arriving via three friendly countries.",
+     CATEGORY_WORKAROUND, 8000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT,
+     0.0, "Electronics are back on shelves, labelled in four languages.",
+     True, WORKAROUND_RECOVERY],
+    [SHELL_COMPANY, "🐚",
+     "One employee, one desk, and no idea what it sells.",
+     CATEGORY_WORKAROUND, 12000.0, 0.0, 0.0, 0, "", 0.0, NO_REQUIREMENT,
+     0.0, "Island of 300 people becomes Varnia's biggest trading partner.",
+     True, WORKAROUND_RECOVERY],
+    [REBRANDING, "🏷️",
+     "Same products, new labels, and a flag on every box.",
+     CATEGORY_WORKAROUND, 18000.0, 0.0, 0.0, 0, "", 0.0, PARALLEL_IMPORTS,
+     0.0, "Foreign brands 'were always local', says the new packaging.",
+     True, WORKAROUND_RECOVERY],
 ]
 
 # ---------------------------------------------------------------------------
@@ -303,8 +344,8 @@ ENEMY_COUNTRY = "Kalyxian Federation"
 WAR_START_EARNED = 40000.0
 WAR_START_NEWS = ("BREAKING: The " + ENEMY_COUNTRY + " invades the "
                   + HOME_COUNTRY + "! Markets 'mildly concerned'.")
-SANCTIONS_NEWS = ("Sanctions ban electronics and luxury imports; the "
-                  + "company is now the only supplier of soup.")
+SANCTIONS_NEWS = ("Sanctions ban electronics and luxury imports; "
+                  + "analysts expect revenue to 'halve, at minimum'.")
 SIRENS_NEWS = ("Air raid sirens sound citywide. Read the briefing in your "
                + "Inbox before the first attack.")
 
@@ -400,6 +441,7 @@ EMAIL_WAR = "war"
 EMAIL_FIRST_WAVE = "first wave"
 EMAIL_CONFISCATION = "confiscation"
 EMAIL_ACQUISITION = "acquisition"
+EMAIL_CRASH = "crash"
 
 # Each row: trigger key, sender, subject, body, and whether it can be sent
 # more than once. "\n" in a body starts a new line on the page.
@@ -444,8 +486,8 @@ EMAIL_ROWS = [
      + "Effective immediately:\n"
      + "- Goods marked 🚫 Sanctioned on the Business page may not be "
      + "sold.\n"
-     + "- Essential goods now earn more, as your competitors have "
-     + "relocated abroad. The Government has no comment on this.\n"
+     + "- All other trade will be sanctioned by the rest of the world. "
+     + "The Government has no comment on this.\n"
      + "- A Defense Procurement License is available in your Research "
      + "Lab. War goods sold decide who wins the war. They also make your "
      + "warehouse more interesting to the enemy.\n\n"
@@ -492,6 +534,20 @@ EMAIL_ROWS = [
      + "More companies come up for sale as research is completed. Staff "
      + "of acquired companies have been told that nothing will change, "
      + "which is the first thing that changed.\n\nCorporate HQ",
+     False],
+    [EMAIL_CRASH, SENDER_ADVISOR,
+     "Our income has been halved (by our own Government)",
+     "Sanctions took effect this morning. Every sale now earns half of "
+     + "what it did yesterday, and electronics and luxury imports may no "
+     + "longer be sold.\n\n"
+     + "The Government calls this 'shared sacrifice'. I checked, and we "
+     + "are the ones doing the sharing.\n\n"
+     + "The Research Lab now lists a few projects in what Legal calls "
+     + "'creative compliance': a Parallel Imports Scheme, an Offshore "
+     + "Shell Company, and Patriotic Rebranding. Each one wins back part "
+     + "of what we lost. None of them are illegal yet.\n\n"
+     + "The Government is also buying war goods. I mention this for no "
+     + "particular reason.\n\nJohn Johnson",
      False],
 ]
 
@@ -1069,7 +1125,6 @@ class GoodsType:
         required_research: Research needed for it to appear ("" = none).
         is_war_good: Whether its sales count as war goods sold.
         is_sanctioned: Whether wartime sanctions stop it being sold.
-        war_bonus: Extra income bonus during the war.
         is_selling: Whether the company currently sells it.
     """
     name: str
@@ -1078,7 +1133,6 @@ class GoodsType:
     required_research: str
     is_war_good: bool
     is_sanctioned: bool
-    war_bonus: float
     is_selling: bool
 
 
@@ -1132,6 +1186,8 @@ class Research:
         unlock_at_earned: Lifetime earnings needed for it to appear.
         headline: The World News headline posted when it is done.
         requires_war: Whether it only appears once the war has started.
+        sanction_recovery: Income multiplier won back from sanctions once
+            done (0 for research that isn't a workaround).
         is_done: Whether the player has completed it.
     """
     name: str
@@ -1148,6 +1204,7 @@ class Research:
     unlock_at_earned: float
     headline: str
     requires_war: bool
+    sanction_recovery: float
     is_done: bool
 
 
@@ -1392,7 +1449,7 @@ def make_starting_goods() -> list[GoodsType]:
     goods_types = []
     for row in STARTING_GOODS_ROWS:
         goods_types.append(GoodsType(row[0], row[1], row[2], row[3], row[4],
-                                     row[5], row[6], False))
+                                     row[5], False))
     return goods_types
 
 
@@ -1420,7 +1477,7 @@ def make_starting_research() -> list[Research]:
         research.append(Research(row[0], row[1], row[2], row[3], row[4],
                                  row[5], row[6], row[7], row[8], row[9],
                                  row[10], row[11], row[12], row[13],
-                                 False))
+                                 row[14], False))
     return research
 
 
@@ -1541,7 +1598,7 @@ def make_test_goods(is_selling: bool) -> GoodsType:
         A GoodsType with that value.
     """
     return GoodsType("Test", "T", "sell_test", NO_REQUIREMENT, False, False,
-                     0.0, is_selling)
+                     is_selling)
 
 
 def make_test_company(sector: str, effect_amount: float,
@@ -2058,7 +2115,7 @@ def make_test_research(name: str, prerequisite: str,
     """
     return Research(name, "R", "Testing.", CATEGORY_STAT, 100.0, 0.1, 0.2,
                     10, "Test", 0.5, prerequisite, 100.0, "Test done.",
-                    False, is_done)
+                    False, 0.0, is_done)
 
 
 def make_research_state() -> State:
@@ -2161,6 +2218,64 @@ def make_war_state() -> State:
     state.goods_types[0].is_selling = True
     state.goods_types[3].is_selling = True
     state.goods_sold_last_tick = 10
+    return state
+
+
+def make_workaround_state() -> State:
+    """Build the war State with all three sanction workarounds researched.
+
+    Returns:
+        A war State where every CATEGORY_WORKAROUND research is done.
+    """
+    state = make_war_state()
+    for project in state.research:
+        if project.category == CATEGORY_WORKAROUND:
+            project.is_done = True
+    return state
+
+
+def make_prewar_tycoon_state() -> State:
+    """Build the pre-war example from the sanctions comment (constants).
+
+    Returns:
+        A peacetime State owning the four peacetime suppliers and selling
+        their four goods types.
+    """
+    state = make_new_state()
+    for index in range(4):
+        state.companies[index].is_owned = True
+        state.goods_types[index].is_selling = True
+    return state
+
+
+def make_crashed_tycoon_state() -> State:
+    """Build the pre-war example just after the war starts.
+
+    Returns:
+        The pre-war example State after start_war.
+    """
+    state = make_prewar_tycoon_state()
+    start_war(state)
+    return state
+
+
+def make_war_tycoon_state() -> State:
+    """Build the wartime example from the sanctions comment (constants).
+
+    Returns:
+        The crashed example with every workaround and the Defense
+        Procurement License done, also owning and selling Body Armor and
+        Drone Components.
+    """
+    state = make_crashed_tycoon_state()
+    for project in state.research:
+        if (project.category == CATEGORY_WORKAROUND
+                or project.name == DEFENSE_LICENSE):
+            project.is_done = True
+    for index in range(2, 7):
+        if index != 4:
+            state.companies[index].is_owned = True
+            state.goods_types[index].is_selling = True
     return state
 
 
@@ -2516,7 +2631,8 @@ def set_goods_choices(goods_types: list[GoodsType], choices: list[bool],
         goods.is_selling = (choices[index]
                             and is_requirement_met(goods.required_research,
                                                    research)
-                            and not is_sanctioned_now(goods, game_phase))
+                            and not is_sanctioned_now(goods, research,
+                                                      game_phase))
 
 
 def strike_multiplier(strike_ticks_left: int) -> float:
@@ -2792,46 +2908,6 @@ def is_wartime(game_phase: str) -> bool:
 assert_equal(is_wartime(PHASE_PEACE), False)
 assert_equal(is_wartime(PHASE_WAR), True)
 assert_equal(is_wartime(PHASE_WAR_OVER), True)
-
-
-def goods_war_bonus(goods: GoodsType, game_phase: str) -> float:
-    """Find the extra income bonus a goods type gets during the war.
-
-    Args:
-        goods: The goods type.
-        game_phase: One of the PHASE_ constants.
-
-    Returns:
-        Its war bonus in wartime, otherwise 0.
-    """
-    if is_wartime(game_phase):
-        return goods.war_bonus
-    return 0.0
-
-
-assert_equal(goods_war_bonus(make_new_state().goods_types[1], PHASE_PEACE),
-             0.0)
-assert_equal(goods_war_bonus(make_new_state().goods_types[1], PHASE_WAR),
-             0.25)
-
-
-def is_sanctioned_now(goods: GoodsType, game_phase: str) -> bool:
-    """Check whether sanctions stop a goods type from being sold.
-
-    Args:
-        goods: The goods type.
-        game_phase: One of the PHASE_ constants.
-
-    Returns:
-        True if it is a sanctioned goods type and the war has started.
-    """
-    return goods.is_sanctioned and is_wartime(game_phase)
-
-
-assert_equal(is_sanctioned_now(make_new_state().goods_types[2], PHASE_PEACE),
-             False)
-assert_equal(is_sanctioned_now(make_new_state().goods_types[2], PHASE_WAR),
-             True)
 
 
 def war_units_sold(units_sold: int, goods_types: list[GoodsType]) -> int:
@@ -3467,6 +3543,7 @@ def start_war(state: State) -> None:
     state.news_feed = add_news(state.news_feed, SANCTIONS_NEWS)
     state.news_feed = add_news(state.news_feed, WAR_START_NEWS)
     send_email(state, EMAIL_WAR)
+    send_email(state, EMAIL_CRASH)
 
 
 def run_war_economy(state: State, interval_ms: int) -> None:
@@ -3527,9 +3604,11 @@ assert_equal(state_after_war_economy(make_nearly_threatened_state()).threat,
              MAX_THREAT)
 assert_equal(state_after_war_economy(
     make_nearly_threatened_state()).news_feed[0], SIRENS_NEWS)
-# The war email arrives when the war starts.
-assert_equal(state_after_war_economy(make_veteran_state()).inbox[0].key,
+# The war email arrives when the war starts, then the sanctions crash email.
+assert_equal(state_after_war_economy(make_veteran_state()).inbox[1].key,
              EMAIL_WAR)
+assert_equal(state_after_war_economy(make_veteran_state()).inbox[0].key,
+             EMAIL_CRASH)
 # The briefing email arrives unread, and wave 1 waits for it to be read.
 assert_equal(is_email_unread(state_after_war_economy(
     make_nearly_threatened_state()).inbox, EMAIL_FIRST_WAVE), True)
@@ -3843,6 +3922,69 @@ assert_equal(total_research_market_bonus(
 
 
 # ---------------------------------------------------------------------------
+# War: sanctions and the workarounds that get around them
+# ---------------------------------------------------------------------------
+
+def is_sanctioned_now(goods: GoodsType, research: list[Research],
+                      game_phase: str) -> bool:
+    """Check whether sanctions stop a goods type from being sold.
+
+    Args:
+        goods: The goods type.
+        research: Every research project.
+        game_phase: One of the PHASE_ constants.
+
+    Returns:
+        True if it is a sanctioned goods type, the war has started, and
+        the Parallel Imports Scheme hasn't been researched.
+    """
+    return (goods.is_sanctioned and is_wartime(game_phase)
+            and not is_research_done(research, PARALLEL_IMPORTS))
+
+
+assert_equal(is_sanctioned_now(make_new_state().goods_types[2],
+                               make_new_state().research, PHASE_PEACE), False)
+assert_equal(is_sanctioned_now(make_new_state().goods_types[2],
+                               make_war_state().research, PHASE_WAR), True)
+# Parallel imports bring Electronics back.
+assert_equal(is_sanctioned_now(make_new_state().goods_types[2],
+                               make_workaround_state().research, PHASE_WAR),
+             False)
+# Household Goods are never sanctioned.
+assert_equal(is_sanctioned_now(make_new_state().goods_types[0],
+                               make_war_state().research, PHASE_WAR), False)
+
+
+def sanctions_multiplier(research: list[Research], game_phase: str) -> float:
+    """Find what sanctions multiply all income by.
+
+    Args:
+        research: Every research project.
+        game_phase: One of the PHASE_ constants.
+
+    Returns:
+        1.0 before the war; from then on SANCTIONS_INCOME_MULTIPLIER plus
+        the recovery of each completed workaround.
+    """
+    if not is_wartime(game_phase):
+        return 1.0
+    total = SANCTIONS_INCOME_MULTIPLIER
+    for project in research:
+        if project.is_done:
+            total = total + project.sanction_recovery
+    return total
+
+
+assert_equal(sanctions_multiplier(make_new_state().research, PHASE_PEACE),
+             1.0)
+assert_equal(sanctions_multiplier(make_war_state().research, PHASE_WAR),
+             SANCTIONS_INCOME_MULTIPLIER)
+assert_equal(round(sanctions_multiplier(make_workaround_state().research,
+                                        PHASE_WAR), 2),
+             round(SANCTIONS_INCOME_MULTIPLIER + 3 * WORKAROUND_RECOVERY, 2))
+
+
+# ---------------------------------------------------------------------------
 # Acquisitions: companies that give goods bonuses, customers, and loyalty
 # ---------------------------------------------------------------------------
 
@@ -4020,11 +4162,9 @@ def goods_income_bonus(goods: GoodsType, research: list[Research],
         game_phase: One of the PHASE_ constants.
 
     Returns:
-        Its owned suppliers' bonus, plus each completed research for it,
-        plus its wartime bonus.
+        Its owned suppliers' bonus, plus each completed research for it.
     """
-    total = (supplier_bonus(companies, goods.name)
-             + goods_war_bonus(goods, game_phase))
+    total = supplier_bonus(companies, goods.name)
     for project in research:
         if project.is_done and project.goods_name == goods.name:
             total = total + project.goods_bonus
@@ -4040,9 +4180,9 @@ assert_equal(goods_income_bonus(
 assert_equal(goods_income_bonus(
     make_test_goods(True), [make_test_research("A", "", False)],
     [make_test_company(SECTOR_SUPPLIER, 0.25, True)], PHASE_PEACE), 0.25)
-# Canned Food gets +25% in wartime even without its supplier.
+# The war gives no free bonus: Canned Food still needs its supplier.
 assert_equal(goods_income_bonus(make_new_state().goods_types[1], [], [],
-                                PHASE_WAR), 0.25)
+                                PHASE_WAR), 0.0)
 
 
 def total_goods_income_bonus(state: State) -> float:
@@ -4067,8 +4207,8 @@ assert_equal(total_goods_income_bonus(make_new_state()), 0.0)
 assert_equal(total_goods_income_bonus(make_owner_state(2)), 0.0)
 assert_equal(total_goods_income_bonus(make_state_with_income_bonuses()),
              0.15)
-# In wartime, Household Goods gets +10% and War Supplies gets nothing.
-assert_equal(round(total_goods_income_bonus(make_war_state()), 2), 0.1)
+# In wartime, goods without a supplier still earn no bonus.
+assert_equal(total_goods_income_bonus(make_war_state()), 0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -4841,22 +4981,48 @@ assert_equal(calculate_total_bonus(make_artifact_state()), 0.1)
 
 
 def calculate_income(units_sold: int, sale_price: float,
-                     total_bonus: float) -> float:
+                     total_bonus: float, multiplier: float) -> float:
     """Calculate the money earned from a tick's sales.
 
     Args:
         units_sold: The number of units sold.
         sale_price: The price of one unit.
         total_bonus: The income bonus as a fraction.
+        multiplier: What sanctions multiply income by (1.0 in peace).
 
     Returns:
         The income from these sales.
     """
-    return units_sold * sale_price * (1 + total_bonus)
+    return units_sold * sale_price * (1 + total_bonus) * multiplier
 
 
-assert_equal(calculate_income(4, 10.0, 0.0), 40.0)
-assert_equal(calculate_income(4, 10.0, 0.5), 60.0)
+assert_equal(calculate_income(4, 10.0, 0.0, 1.0), 40.0)
+assert_equal(calculate_income(4, 10.0, 0.5, 1.0), 60.0)
+assert_equal(calculate_income(4, 10.0, 0.5, 0.5), 30.0)
+
+
+def example_income_ratio(state: State) -> float:
+    """Compare one sale's income with the pre-war example's (for tests).
+
+    Args:
+        state: The State to compare.
+
+    Returns:
+        Its income per sale divided by make_prewar_tycoon_state's.
+    """
+    prewar = calculate_income(1, 1.0, calculate_total_bonus(
+        make_prewar_tycoon_state()), 1.0)
+    return calculate_income(1, 1.0, calculate_total_bonus(state),
+                            sanctions_multiplier(state.research,
+                                                 state.game_phase)) / prewar
+
+
+# The worked example in the constants block: the war crashes income to
+# about 47% of pre-war, and the workarounds plus the war goods suppliers
+# lift it to about 1.5x.
+assert_equal(round(example_income_ratio(make_crashed_tycoon_state()), 2),
+             0.47)
+assert_equal(round(example_income_ratio(make_war_tycoon_state()), 1), 1.5)
 
 
 def max_income_per_tick(state: State) -> float:
@@ -4870,7 +5036,9 @@ def max_income_per_tick(state: State) -> float:
     """
     return calculate_income(effective_delivery_capacity(state),
                             calculate_sale_price(state.markup),
-                            calculate_total_bonus(state))
+                            calculate_total_bonus(state),
+                            sanctions_multiplier(state.research,
+                                                 state.game_phase))
 
 
 assert_equal(max_income_per_tick(make_new_state()),
@@ -5021,7 +5189,9 @@ def run_selling(state: State) -> None:
         calculate_demand(state.loyalty, current_market_size(state)),
     )
     income = calculate_income(units, calculate_sale_price(state.markup),
-                              calculate_total_bonus(state))
+                              calculate_total_bonus(state),
+                              sanctions_multiplier(state.research,
+                                                   state.game_phase))
     state.goods_in_stock = state.goods_in_stock - units
     state.money = state.money + income
     state.total_earned = state.total_earned + income
@@ -5572,13 +5742,16 @@ def percent_text(fraction: float) -> str:
         fraction: The fraction, where 0.5 means 50%.
 
     Returns:
-        The text, such as "+50%".
+        The text, such as "+50%" or "-50%".
     """
+    if fraction < 0:
+        return str(round(fraction * 100)) + "%"
     return "+" + str(round(fraction * 100)) + "%"
 
 
 assert_equal(percent_text(0.5), "+50%")
 assert_equal(percent_text(0.0), "+0%")
+assert_equal(percent_text(-0.5), "-50%")
 
 
 def artifact_percent_text(fraction: float) -> str:
@@ -5677,6 +5850,11 @@ def describe_research_effect(project: Research) -> str:
     if project.goods_name != "":
         text = (text + percent_text(project.goods_bonus) + " "
                 + project.goods_name + " income, ")
+    if project.sanction_recovery != 0:
+        text = (text + percent_text(project.sanction_recovery)
+                + " income under sanctions, ")
+    if project.name == PARALLEL_IMPORTS:
+        text = text + "sanctioned goods can be sold, "
     return text[:-2]
 
 
@@ -5684,6 +5862,8 @@ assert_equal(describe_research_effect(make_test_research("A", "", False)),
              "+10% stocking, +20% delivery, +10 market size, "
              + "+50% Test income")
 assert_equal(describe_research_effect(make_new_state().research[4]), "")
+assert_equal(describe_research_effect(make_new_state().research[14]),
+             "+15% income under sanctions, sanctioned goods can be sold")
 
 
 def research_unlock_text(project: Research, state: State) -> str:
@@ -5738,6 +5918,9 @@ assert_equal(research_summary(make_new_state().research[0], make_new_state()),
              "Stat · +10% stocking")
 assert_equal(research_summary(make_new_state().research[4], make_new_state()),
              "Unlock · Unlocks: Imported Luxuries (goods)")
+assert_equal(research_summary(make_new_state().research[15],
+                              make_new_state()),
+             "Workaround · +15% income under sanctions")
 
 
 def controls_signature(state: State) -> str:
@@ -5941,6 +6124,10 @@ def active_effect_lines(state: State) -> list[str]:
         if company.is_owned and company.sector != SECTOR_SUPPLIER:
             lines.append(company.emoji + " " + company.name + ": "
                          + describe_company_effect(company))
+    if is_wartime(state.game_phase):
+        multiplier = sanctions_multiplier(state.research, state.game_phase)
+        lines.append("🚫 Sanctions: " + percent_text(multiplier - 1)
+                     + " income")
     return lines
 
 
@@ -5954,6 +6141,10 @@ assert_equal(active_effect_lines(make_state_with_income_bonuses()),
               "💬 Aggressive Upselling: +15% income, -8 loyalty target"])
 assert_equal(active_effect_lines(make_owner_state(7)),
              ["📦 Boxly Logistics: +50 market size"])
+assert_equal(active_effect_lines(make_war_state())[-1],
+             "🚫 Sanctions: -50% income")
+assert_equal(active_effect_lines(make_workaround_state())[-1],
+             "🚫 Sanctions: -5% income")
 
 
 def build_effect_tags(state: State) -> Div:
@@ -6835,7 +7026,7 @@ def build_goods_row(goods: GoodsType, state: State) -> Div:
         A check row for the goods type.
     """
     name_text = goods.emoji + " " + goods.name
-    if is_sanctioned_now(goods, state.game_phase):
+    if is_sanctioned_now(goods, state.research, state.game_phase):
         return Div(Span("🚫"), Span(name_text),
                    Span("Sanctioned: can't be sold", classes="muted"),
                    classes="check-row")
