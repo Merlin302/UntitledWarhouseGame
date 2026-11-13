@@ -159,14 +159,17 @@ off what is done and name the exact function or field that satisfies it.
       `artifact_from_row`, and `make_new_state` copy them
 - [x] Uses Drafter — _where:_ `main.py`, `start_server(make_new_state())`
 - [x] Any technique not covered in the course is explained in a comment or
-      docstring — _where:_ `# ADVANCED:` comments at the top of `main.py`
-      (Drafter site settings, `set_browser_history`), `THEME_CSS` (CSS
-      styling), `build_chip` (`classes=`), `build_game_clock`
-      (Clock), `tick` (Fragment), `build_start_content` (RemovePersistent),
-      `build_top_bar` (Div ids), `build_buy_amount_controls` (Argument),
-      `roll_strike` (`random.random`), `roll_rarity`, `roll_artifact_row`,
-      `roll_prompt`, `roll_wave_choices` (`random.randint`), `parse_bet` (`.isascii`), and
-      `save_goods` / `save_policies` (default parameter values `= False`)
+      docstring — _where:_ the full list, with one explanation each, is
+      `docs/advanced_techniques.md`. Each technique has exactly one
+      `# ADVANCED:` comment in `main.py`: top of the file (Drafter site
+      settings, `set_browser_history`), `THEME_CSS` (CSS, `classes=`),
+      `build_top_bar` (Div / Span, `id=`), `tick` (Fragment),
+      `build_game_clock` (Clock), `build_start_content` (RemovePersistent),
+      `build_buy_amount_controls` (Argument), `roll_strike`
+      (`random.random`), `roll_wave_choices` (`random.randint`),
+      `parse_bet` (`.isascii`), `research_summary` (`.capitalize`),
+      `save_goods` (default parameter values), and the test below
+      `add_news` (list repetition)
 
 ## Code quality
 

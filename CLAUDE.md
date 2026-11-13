@@ -27,6 +27,10 @@ to a TA. Read this whole file before every task.
 - **Keep `REQUIREMENTS.md` updated**: a checklist mapping each assignment
   requirement to the exact function/field that satisfies it. I'll use it for my
   video and to double-check before submitting.
+- **Keep `docs/advanced_techniques.md` updated**: the running list of
+  techniques the course hasn't covered. Explain each technique once, in
+  one `# ADVANCED:` comment at the place the list names, and add no
+  comment for later uses of the same technique.
 - **Keep `docs/playtest_issues.md` updated**: add issues noticed while
   play-testing (yours or mine), and move fixed ones to "Resolved".
 

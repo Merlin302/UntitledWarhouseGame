@@ -3241,6 +3241,8 @@ def add_news(news_feed: list[str], headline: str) -> list[str]:
 
 
 assert_equal(add_news(["old"], "new"), ["new", "old"])
+# ADVANCED: A list times a number repeats it: ["x"] * 3 is
+# ["x", "x", "x"]. Tests use it to build long sample lists quickly.
 assert_equal(len(add_news(["x"] * MAX_NEWS_ITEMS, "new")), MAX_NEWS_ITEMS)
 
 
@@ -5921,8 +5923,6 @@ def roll_rarity() -> str:
     Returns:
         One of the RARITY_ constants.
     """
-    # ADVANCED: random.randint(a, b) picks a whole number from a to b,
-    # including both ends.
     return rarity_for_roll(random.randint(1, total_rarity_weight()))
 
 
@@ -5960,7 +5960,6 @@ def roll_artifact_row(rarity: str) -> list:
         One row from ARTIFACT_ROWS.
     """
     rows = artifact_rows_of_rarity(rarity)
-    # ADVANCED: random.randint picks a random valid index into rows.
     return rows[random.randint(0, len(rows) - 1)]
 
 
@@ -7050,7 +7049,6 @@ def roll_prompt(difficulty: str) -> str:
     Returns:
         The prompt the player must type.
     """
-    # ADVANCED: random.randint picks a random valid index into a prompt list.
     if difficulty == DIFFICULTY_HARD:
         index = random.randint(0, len(HARD_PROMPTS) - 1)
         return swap_hard_characters(HARD_PROMPTS[index])
@@ -7465,6 +7463,8 @@ def research_summary(project: Research, state: State) -> str:
     effect = describe_research_effect(project)
     if effect == "":
         effect = research_unlock_text(project, state)
+    # ADVANCED: .capitalize() returns a copy of the string with its first
+    # letter in upper case ("stat" -> "Stat").
     return project.category.capitalize() + " · " + effect
 
 
@@ -7528,8 +7528,6 @@ def build_chip(label: str, value: str, chip_classes: str) -> Div:
     Returns:
         A Div holding the label and the value.
     """
-    # ADVANCED: classes= gives a component CSS class names. THEME_CSS uses
-    # those names to pick its colors, size, and position.
     return Div(Span(label, classes="chip-label"),
                Span(value, classes="chip-value"), classes=chip_classes)
 
@@ -8399,8 +8397,9 @@ def build_top_bar(state: State) -> Div:
     return Div(
         Div(Header(state.company_name, 1), build_nav(state),
             classes="topbar-row"),
-        # ADVANCED: A Div groups components. Its id is the name a Fragment
-        # uses to find and replace just this part of the page.
+        # ADVANCED: A Div groups components into a block (a Span groups them
+        # inside one line). Its id is the name a Fragment uses to find and
+        # replace just this part of the page.
         Div(build_live_numbers(state), id="live_numbers"),
         classes=top_bar_classes(state.current_page),
     )
@@ -9550,8 +9549,6 @@ assert_equal(save_goods(make_war_state(), False, False, True,
                         False).state.goods_types[2].is_selling, False)
 
 
-# ADVANCED: "= False" is a default value, as in save_goods, in case the
-# page ever leaves this CheckBox out.
 @route
 def save_policies(state: State, unpaid_overtime: bool,
                   aggressive_upselling: bool, route_quotas: bool,
