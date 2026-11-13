@@ -26,9 +26,10 @@ pass.
 | 14 | 2026-11-13, E1 | Balance | Company costs and bonuses in `COMPANY_ROWS` are guesses. Supplier bonuses match the old free goods bonuses, so early income is lower than before until suppliers are bought. | deferred |
 | 16 | 2026-11-13, E2 | Balance | Sanctions now cut income by 80%. Every workaround plus the war goods suppliers only gets back to about 1.05x pre-war income; the 1.5x target relies on artifacts, food acquisitions, and policies, which isn't measured yet. Workaround costs (8000 / 12000 / 18000) are guesses. | deferred |
 | 17 | 2026-11-13, E2 | UI | The "Income bonus" chip doesn't include the sanctions cut; it shows only in the "🚫 Sanctions" effect tag. | open |
-| 18 | 2026-11-13, E3 | Balance | Opinion numbers are guesses: start 60, company costs 2-25 opinion (all 15 cost 157 in total), contributions +10 for Ŧ2000 (x1.5 each), Government supply 2 units/tick for +0.1 each, policy drains 0.05-0.15/s. | deferred |
+| 18 | 2026-11-13, E3 | Balance | Opinion numbers are guesses: start 60, company costs -15 to 25 opinion (all 16 cost 152 in total), contributions +10 for Ŧ2000 (x1.5 each), Government supply 2 units/tick for +0.1 each, policy drains 0.05-0.15/s. | deferred |
 | 20 | 2026-11-13, E3 | UI | The Government Relations card and the Acquisitions note are drawn on click, so they don't show live opinion; the chip does. | open |
 | 21 | 2026-11-13, opinion rework | Balance | Government supply takes its units before selling, so it competes with sales for stock, and it is per tick, so a faster tick speed (Admin upgrade) will also speed it up. | open |
+| 22 | 2026-11-13, arms bailouts | Balance | Bailout upkeep (Bronik Ŧ8/s, Zhuzh Ŧ12/s, Kovalev Ŧ10/s) and the cheaper bailout prices are guesses, and wartime income is low after the 80% sanctions cut. Upkeep that can't be paid is skipped (no debt, no penalty), so it can never ruin the player. | deferred |
 
 ## Resolved
 

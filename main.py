@@ -311,70 +311,90 @@ SECTOR_MEDIA = "media"
 # target points for media, the fraction of confiscations shielded for
 # banks), the goods type a supplier supplies ("" for other sectors), the
 # research it requires (NO_REQUIREMENT if none), whether it only comes up
-# for sale once the war starts (its foreign owners are fleeing), and the
+# for sale once the war starts (its foreign owners are fleeing), the
 # Government opinion it costs (every acquisition needs the State's
-# blessing).
+# blessing; a negative cost means the Government is grateful), its upkeep
+# in money per second (arms bailouts: the company keeps them running), and
+# the company that must be owned first ("" for none).
+#
+# Arms bailouts: Bronik's CEO emails an offer once the Defense Procurement
+# License is researched. Buying Bronik raises opinion, and the Government
+# then warns that further arms bailouts (Zhuzh, Kovalev) cost opinion.
 #
 # Wartime food target: with every Canned Food supplier (Tushonka, Gourmond,
 # Brunsvik) and every Canned Food research (Canned Food Jingle Campaign,
 # Dynamic Goods Pricing, Expiry Date Flexibility Study), Canned Food earns
 # +55% income. Reaching it sends John Johnson's food empire email.
+BRONIK_ARMOR = "Bronik Armor Factory"
 COMPANY_ROWS = [
     ["Cleanex Home Products", "🧴",
      "Makes one soap and forty labels for it.",
      SECTOR_SUPPLIER, 1500.0, 0.05, HOUSEHOLD_GOODS, NO_REQUIREMENT,
-     False, 2.0],
+     False, 2.0, 0.0, ""],
     ["Tushonka Canning Co.", "🥫",
      "Own the cans, own the soup, own the supply chain of soup.",
      SECTOR_SUPPLIER, 4000.0, 0.10, CANNED_FOOD, NO_REQUIREMENT,
-     False, 5.0],
+     False, 5.0, 0.0, ""],
     ["Voltik Electronics Plant", "🔌",
      "Every television is tested by being switched on once.",
      SECTOR_SUPPLIER, 8000.0, 0.15, ELECTRONICS, NO_REQUIREMENT,
-     False, 5.0],
+     False, 5.0, 0.0, ""],
     ["Granit Arms Works", "🏭",
      "Its brochure says 'agricultural machinery'. Its machinery does not.",
      SECTOR_SUPPLIER, 15000.0, 1.00, WAR_SUPPLIES, NO_REQUIREMENT,
-     False, 10.0],
+     False, 10.0, 0.0, ""],
     ["Maison Lux Importers", "👜",
      "Handbags with a waiting list and a customs problem.",
      SECTOR_SUPPLIER, 12000.0, 0.25, IMPORTED_LUXURIES, IMPORT_LICENSES,
-     False, 5.0],
-    ["Bronik Armor Factory", "🦺",
-     "Formerly made raincoats. The pattern barely changed.",
-     SECTOR_SUPPLIER, 25000.0, 0.60, BODY_ARMOR, DEFENSE_LICENSE,
-     False, 10.0],
+     False, 5.0, 0.0, ""],
+    [BRONIK_ARMOR, "🦺",
+     "Formerly made raincoats. Now makes body armor, and losses.",
+     SECTOR_SUPPLIER, 10000.0, 0.60, BODY_ARMOR, DEFENSE_LICENSE,
+     False, -15.0, 8.0, ""],
     ["Zhuzh Drone Works", "🛸",
-     "A toy company that read the news and pivoted.",
-     SECTOR_SUPPLIER, 35000.0, 0.80, DRONE_COMPONENTS, DEFENSE_LICENSE,
-     False, 10.0],
+     "A toy company that read the news and pivoted. Payroll is due Friday.",
+     SECTOR_SUPPLIER, 15000.0, 0.80, DRONE_COMPONENTS, DEFENSE_LICENSE,
+     False, 15.0, 12.0, BRONIK_ARMOR],
     ["Boxly Logistics", "📦",
      "Buy the competition, then politely forget it ever existed.",
-     SECTOR_LOGISTICS, 25000.0, 50, "", NO_REQUIREMENT, False, 10.0],
+     SECTOR_LOGISTICS, 25000.0, 50, "", NO_REQUIREMENT,
+     False, 10.0, 0.0, ""],
     ["Varnia Today", "📰",
      "A newspaper with strong opinions, soon to be yours.",
-     SECTOR_MEDIA, 10000.0, 5, "", NO_REQUIREMENT, False, 15.0],
+     SECTOR_MEDIA, 10000.0, 5, "", NO_REQUIREMENT,
+     False, 15.0, 0.0, ""],
     ["Narodny Savings Bank", "🏦",
      "Has never lost a deposit, mostly by never returning one.",
-     SECTOR_BANK, 20000.0, 0.25, "", NO_REQUIREMENT, False, 10.0],
+     SECTOR_BANK, 20000.0, 0.25, "", NO_REQUIREMENT,
+     False, 10.0, 0.0, ""],
     ["Gourmond Foods Varnia", "🧀",
      "Its Swiss owners left a note: 'back after the war'.",
      SECTOR_SUPPLIER, 12000.0, 0.10, CANNED_FOOD, NO_REQUIREMENT,
-     True, 10.0],
+     True, 10.0, 0.0, ""],
     ["Brunsvik Preserves", "🫙",
      "Pickles, jam, and a CEO who now lives abroad.",
      SECTOR_SUPPLIER, 8000.0, 0.05, CANNED_FOOD, NO_REQUIREMENT,
-     True, 5.0],
+     True, 5.0, 0.0, ""],
     ["ParcelPro", "🏃",
      "Its foreign owners left in a hurry. Their customers did not.",
-     SECTOR_LOGISTICS, 30000.0, 40, "", NO_REQUIREMENT, True, 15.0],
+     SECTOR_LOGISTICS, 30000.0, 40, "", NO_REQUIREMENT,
+     True, 15.0, 0.0, ""],
     ["Ozonix Marketplace", "🛒",
      "Patriotic duty requires that we own the second-biggest marketplace.",
-     SECTOR_LOGISTICS, 60000.0, 60, "", NO_REQUIREMENT, True, 25.0],
+     SECTOR_LOGISTICS, 60000.0, 60, "", NO_REQUIREMENT,
+     True, 25.0, 0.0, ""],
     ["Cayman Trust of Varnia", "🏝️",
      "Headquartered on a beach. Answers the phone only in July.",
-     SECTOR_BANK, 30000.0, 0.25, "", SHELL_COMPANY, False, 20.0],
+     SECTOR_BANK, 30000.0, 0.25, "", SHELL_COMPANY,
+     False, 20.0, 0.0, ""],
+    ["Kovalev Shell Works", "🧨",
+     "Has produced one artillery shell since 1989. It was excellent.",
+     SECTOR_SUPPLIER, 12000.0, 0.50, WAR_SUPPLIES, DEFENSE_LICENSE,
+     False, 15.0, 10.0, BRONIK_ARMOR],
 ]
+# Upkeep is never paid out of the last UPKEEP_RESERVE of money, so the
+# company can always restock (unpaid upkeep is simply skipped).
+UPKEEP_RESERVE = 100.0
 
 # ---------------------------------------------------------------------------
 # War: numbers for the war (W1: the war economy)
@@ -516,6 +536,7 @@ BRIEFING_THREAT = 50.0
 SENDER_ADVISOR = "John Johnson, Senior Advisor"
 SENDER_HQ = "Corporate HQ"
 SENDER_GOVERNMENT = "Government of the " + HOME_COUNTRY
+SENDER_BRONIK = "Viktor Bronik, CEO, " + BRONIK_ARMOR
 
 # Trigger keys: send_email(state, key) sends the template with that key.
 EMAIL_WELCOME = "welcome"
@@ -527,6 +548,8 @@ EMAIL_ACQUISITION = "acquisition"
 EMAIL_CRASH = "crash"
 EMAIL_FOOD_EMPIRE = "food empire"
 EMAIL_LOW_OPINION = "low opinion"
+EMAIL_BAILOUT_OFFER = "bailout offer"
+EMAIL_BAILOUT_WARNING = "bailout warning"
 
 # Each row: trigger key, sender, subject, body, and whether it can be sent
 # more than once. "\n" in a body starts a new line on the page.
@@ -674,6 +697,37 @@ EMAIL_ROWS = [
      + "contributions are accepted on the Business page and are entirely "
      + "voluntary, in the sense that you may choose the amount, provided "
      + "it is the amount we choose.",
+     False],
+    [EMAIL_BAILOUT_OFFER, SENDER_BRONIK,
+     "An acquisition opportunity (please read before Friday)",
+     "Dear future owner,\n\n"
+     + "Congratulations on your Defense Procurement License. I write as "
+     + "the CEO of " + BRONIK_ARMOR + ", the nation's leading maker of "
+     + "body armor, and until recently of raincoats.\n\n"
+     + "We have orders from the army, a factory full of workers, and no "
+     + "money to pay any of them. The army pays in 'promissory notes'. "
+     + "The bank stopped answering after the second note.\n\n"
+     + "I offer you the whole company for a reasonable sum. You would "
+     + "also cover our running costs, as we have none of our own. In "
+     + "return: every vest you sell earns more, and the Ministry of "
+     + "Defense, which very much needs us to stay open, would be "
+     + "grateful to whoever keeps us open. Gratitude from the Ministry "
+     + "is rare. I have seen it once.\n\n"
+     + "You will find us on your Acquisitions page.\n\n"
+     + "With hope, and an overdue electricity bill,\nViktor Bronik",
+     False],
+    [EMAIL_BAILOUT_WARNING, SENDER_GOVERNMENT,
+     "RE: your rescue of the arms industry",
+     "Citizen-Enterprise,\n\n"
+     + "The Ministry of Defense thanks you for saving " + BRONIK_ARMOR
+     + ". Its production lines are vital to the war effort, and so, "
+     + "for now, are you.\n\n"
+     + "Please note: the rest of the arms industry is a matter of "
+     + "national security. Further arms acquisitions will require the "
+     + "State's blessing, priced in its opinion of you, like any other "
+     + "acquisition. The State also expects every factory you buy to "
+     + "stay open, at your expense.\n\n"
+     + "Thank you for your continued patriotism.",
      False],
 ]
 
@@ -1359,7 +1413,11 @@ class Company:
         required_research: Research needed for it to appear ("" = none).
         requires_war: Whether it only comes up for sale once the war
             starts.
-        opinion_cost: The Government opinion it costs to acquire.
+        opinion_cost: The Government opinion it costs to acquire
+            (negative: the Government's opinion rises instead).
+        upkeep: Money it costs per second while owned (arms bailouts).
+        required_company: A company that must be owned before this one
+            comes up for sale ("" for none).
         is_owned: Whether the player has acquired it.
     """
     name: str
@@ -1372,6 +1430,8 @@ class Company:
     required_research: str
     requires_war: bool
     opinion_cost: float
+    upkeep: float
+    required_company: str
     is_owned: bool
 
 
@@ -1641,7 +1701,7 @@ def make_starting_companies() -> list[Company]:
     for row in COMPANY_ROWS:
         companies.append(Company(row[0], row[1], row[2], row[3], row[4],
                                  row[5], row[6], row[7], row[8], row[9],
-                                 False))
+                                 row[10], row[11], False))
     return companies
 
 
@@ -1772,7 +1832,7 @@ def make_test_company(sector: str, effect_amount: float,
         goods_name = "Test"
     return Company("Test Co.", "C", "Testing.", sector, 100.0,
                    effect_amount, goods_name, NO_REQUIREMENT, False, 5.0,
-                   is_owned)
+                   0.0, "", is_owned)
 
 
 def make_owner_state(company_index: int) -> State:
@@ -1817,6 +1877,39 @@ def expected_after_buying_cleanex() -> State:
     state.news_feed = add_news(state.news_feed,
                                acquisition_headline(state.companies[0]))
     send_email(state, EMAIL_ACQUISITION)
+    return state
+
+
+def make_bailout_state() -> State:
+    """Build a war State on the Acquisitions page that can buy arms makers.
+
+    Returns:
+        A war State with the Defense Procurement License done, 50000
+        money, and 10 units in stock.
+    """
+    state = make_war_state()
+    state.research[8].is_done = True
+    state.money = 50000.0
+    state.goods_in_stock = 10
+    state.current_page = PAGE_ACQUISITIONS
+    return state
+
+
+def expected_after_buying_bronik() -> State:
+    """Build the State expected after the bailout of Bronik Armor Factory.
+
+    Returns:
+        The bailout State owning Bronik: money paid, opinion raised, the
+        headline posted, and the acquisition and warning emails sent.
+    """
+    state = make_bailout_state()
+    state.money = 50000.0 - COMPANY_ROWS[5][4]
+    state.government_opinion = STARTING_OPINION - COMPANY_ROWS[5][9]
+    state.companies[5].is_owned = True
+    state.news_feed = add_news(state.news_feed,
+                               acquisition_headline(state.companies[5]))
+    send_email(state, EMAIL_ACQUISITION)
+    send_email(state, EMAIL_BAILOUT_WARNING)
     return state
 
 
@@ -4354,9 +4447,10 @@ assert_equal(is_food_empire_complete(make_food_empire_state()), True)
 def run_email_triggers(state: State) -> None:
     """Send the emails that depend on game progress; called every tick.
 
-    Checked here: research available, the food empire, and low Government
-    opinion. The war emails are sent by start_war and run_intermission,
-    and the welcome email by start_game.
+    Checked here: research available, the food empire, low Government
+    opinion, and the arms bailout offer (once the Defense Procurement
+    License is done). The war emails are sent by start_war and
+    run_intermission, and the welcome email by start_game.
 
     Args:
         state: The game state to update.
@@ -4371,6 +4465,9 @@ def run_email_triggers(state: State) -> None:
     if (EMAIL_LOW_OPINION not in sent
             and state.government_opinion < LOW_OPINION_WARNING):
         send_email(state, EMAIL_LOW_OPINION)
+    if (EMAIL_BAILOUT_OFFER not in sent
+            and is_research_done(state.research, DEFENSE_LICENSE)):
+        send_email(state, EMAIL_BAILOUT_OFFER)
 
 
 def state_after_email_triggers(state: State) -> State:
@@ -4397,6 +4494,8 @@ assert_equal(state_after_email_triggers(
     make_food_empire_state()).inbox[0].key, EMAIL_FOOD_EMPIRE)
 assert_equal(state_after_email_triggers(
     make_distrusted_state()).inbox[0].key, EMAIL_LOW_OPINION)
+assert_equal(state_after_email_triggers(
+    make_bailout_state()).inbox[0].key, EMAIL_BAILOUT_OFFER)
 
 
 def safe_money_required(cost: float, goods_in_stock: int) -> float:
@@ -4645,40 +4744,76 @@ assert_equal(supplier_bonus(make_owner_state(1).companies, CANNED_FOOD),
              0.10)
 
 
-def is_company_for_sale(company: Company, research: list[Research],
-                        game_phase: str) -> bool:
+def is_company_owned(companies: list[Company], name: str) -> bool:
+    """Search the companies for one by name and check if it is owned.
+
+    Args:
+        companies: Every company.
+        name: The name of the company to look for.
+
+    Returns:
+        True if a company with that name exists and is owned.
+    """
+    for company in companies:
+        if company.name == name:
+            return company.is_owned
+    return False
+
+
+assert_equal(is_company_owned(make_owner_state(5).companies, BRONIK_ARMOR),
+             True)
+assert_equal(is_company_owned(make_new_state().companies, BRONIK_ARMOR),
+             False)
+assert_equal(is_company_owned(make_new_state().companies, "Nobody"), False)
+
+
+def is_company_for_sale(company: Company, companies: list[Company],
+                        research: list[Research], game_phase: str) -> bool:
     """Check whether a company is shown on the Acquisitions list.
 
     Args:
         company: The company to check.
+        companies: Every company, to look up the required company.
         research: Every research project.
         game_phase: One of the PHASE_ constants.
 
     Returns:
-        True if it isn't owned yet, its required research is done, and
-        (for a fleeing wartime company) the war has started.
+        True if it isn't owned yet, its required research is done, its
+        required company (if any) is owned, and (for a fleeing wartime
+        company) the war has started.
     """
     return (not company.is_owned
             and is_requirement_met(company.required_research, research)
+            and (company.required_company == ""
+                 or is_company_owned(companies, company.required_company))
             and (not company.requires_war or is_wartime(game_phase)))
 
 
-assert_equal(is_company_for_sale(make_new_state().companies[0], [],
+assert_equal(is_company_for_sale(make_new_state().companies[0], [], [],
                                  PHASE_PEACE), True)
-assert_equal(is_company_for_sale(make_owner_state(0).companies[0], [],
+assert_equal(is_company_for_sale(make_owner_state(0).companies[0], [], [],
                                  PHASE_PEACE), False)
 # Maison Lux Importers needs the Import Licenses research (index 4).
-assert_equal(is_company_for_sale(make_new_state().companies[4],
+assert_equal(is_company_for_sale(make_new_state().companies[4], [],
                                  make_new_state().research, PHASE_PEACE),
              False)
 assert_equal(is_company_for_sale(
-    make_new_state().companies[4],
+    make_new_state().companies[4], [],
     make_finished_research_state(4).research, PHASE_PEACE), True)
 # Gourmond Foods (index 10) only comes up for sale once the war starts.
-assert_equal(is_company_for_sale(make_new_state().companies[10], [],
+assert_equal(is_company_for_sale(make_new_state().companies[10], [], [],
                                  PHASE_PEACE), False)
-assert_equal(is_company_for_sale(make_new_state().companies[10], [],
+assert_equal(is_company_for_sale(make_new_state().companies[10], [], [],
                                  PHASE_WAR), True)
+# Zhuzh Drone Works (index 6) only comes up once Bronik is rescued.
+assert_equal(is_company_for_sale(make_bailout_state().companies[6],
+                                 make_bailout_state().companies,
+                                 make_bailout_state().research, PHASE_WAR),
+             False)
+assert_equal(is_company_for_sale(make_new_state().companies[6],
+                                 make_owner_state(5).companies,
+                                 make_bailout_state().research, PHASE_WAR),
+             True)
 
 
 def can_buy_company(state: State, company_index: int) -> bool:
@@ -4697,7 +4832,8 @@ def can_buy_company(state: State, company_index: int) -> bool:
         return False
     company = state.companies[company_index]
     required = safe_money_required(company.cost, state.goods_in_stock)
-    return (is_company_for_sale(company, state.research, state.game_phase)
+    return (is_company_for_sale(company, state.companies, state.research,
+                                state.game_phase)
             and state.government_opinion >= company.opinion_cost
             and required <= state.money)
 
@@ -4734,7 +4870,9 @@ assert_equal(can_buy_company(expected_after_buying_cleanex(), 0), False)
 def acquire_company(state: State, company_index: int) -> None:
     """Pay for a company in money and opinion, mark it owned, announce it.
 
-    The first acquisition also sends an email explaining the sectors.
+    The first acquisition also sends an email explaining the sectors, and
+    the first arms bailout (a company with upkeep) sends the Government's
+    warning that further ones cost opinion.
 
     Args:
         state: The game state to update.
@@ -4746,6 +4884,76 @@ def acquire_company(state: State, company_index: int) -> None:
     company.is_owned = True
     state.news_feed = add_news(state.news_feed, acquisition_headline(company))
     send_email(state, EMAIL_ACQUISITION)
+    if company.upkeep > 0:
+        send_email(state, EMAIL_BAILOUT_WARNING)
+
+
+def total_company_upkeep(companies: list[Company]) -> float:
+    """Add up the upkeep of every owned company.
+
+    Args:
+        companies: Every company.
+
+    Returns:
+        The money owed per second.
+    """
+    total = 0.0
+    for company in companies:
+        if company.is_owned:
+            total = total + company.upkeep
+    return total
+
+
+assert_equal(total_company_upkeep(make_new_state().companies), 0.0)
+assert_equal(total_company_upkeep(make_owner_state(5).companies),
+             COMPANY_ROWS[5][10])
+
+
+def upkeep_payment(money: float, upkeep_due: float) -> float:
+    """Find how much upkeep can be paid without touching the reserve.
+
+    Args:
+        money: The company's money.
+        upkeep_due: The upkeep owed this tick.
+
+    Returns:
+        The upkeep due, or less so that UPKEEP_RESERVE is kept.
+    """
+    return min(upkeep_due, max(0.0, money - UPKEEP_RESERVE))
+
+
+assert_equal(upkeep_payment(1000.0, 8.0), 8.0)
+assert_equal(upkeep_payment(UPKEEP_RESERVE + 3.0, 8.0), 3.0)
+assert_equal(upkeep_payment(50.0, 8.0), 0.0)
+
+
+def run_company_upkeep(state: State, interval_ms: int) -> None:
+    """Pay the upkeep of owned companies for one tick.
+
+    Args:
+        state: The game state to update.
+        interval_ms: The length of one tick in milliseconds.
+    """
+    upkeep_due = total_company_upkeep(state.companies) * interval_ms / 1000
+    state.money = state.money - upkeep_payment(state.money, upkeep_due)
+
+
+def state_after_upkeep(state: State) -> State:
+    """Run one 1000 ms tick of company upkeep and return the State.
+
+    Args:
+        state: The State to update.
+
+    Returns:
+        The same State, after run_company_upkeep.
+    """
+    run_company_upkeep(state, 1000)
+    return state
+
+
+assert_equal(state_after_upkeep(expected_after_buying_bronik()).money,
+             expected_after_buying_bronik().money - COMPANY_ROWS[5][10])
+assert_equal(state_after_upkeep(make_bailout_state()).money, 50000.0)
 
 
 def describe_company_effect(company: Company) -> str:
@@ -6760,6 +6968,9 @@ def active_effect_lines(state: State) -> list[str]:
             lines.append("🏛️ Supplying the Government: "
                          + str(GOVERNMENT_SUPPLY_UNITS_PER_TICK)
                          + " units/tick")
+    upkeep = total_company_upkeep(state.companies)
+    if upkeep > 0:
+        lines.append("💸 Bailout upkeep: -" + format_money(upkeep) + "/s")
     return lines
 
 
@@ -6777,6 +6988,8 @@ assert_equal(active_effect_lines(make_war_state())[-1],
              "🚫 Sanctions: -80% income")
 assert_equal(active_effect_lines(make_workaround_state())[-1],
              "🚫 Sanctions: -35% income")
+assert_equal(active_effect_lines(expected_after_buying_bronik())[-1],
+             "💸 Bailout upkeep: -Ŧ8.00/s")
 assert_equal(active_effect_lines(make_supplier_state(10))[-1],
              "🏛️ Supplying the Government: "
              + str(GOVERNMENT_SUPPLY_UNITS_PER_TICK) + " units/tick")
@@ -7837,6 +8050,44 @@ def build_acquisitions_link() -> Div:
     )
 
 
+def opinion_cost_text(opinion_cost: float) -> str:
+    """Describe a company's opinion cost for its Acquire button.
+
+    Args:
+        opinion_cost: The opinion it costs (negative: opinion it earns).
+
+    Returns:
+        Text like "+ 5 opinion", or "(Gov. +15 opinion)" for a rescue the
+        Government is grateful for.
+    """
+    if opinion_cost < 0:
+        return "(Gov. +" + str(round(-opinion_cost)) + " opinion)"
+    return "+ " + str(round(opinion_cost)) + " opinion"
+
+
+assert_equal(opinion_cost_text(5.0), "+ 5 opinion")
+assert_equal(opinion_cost_text(-15.0), "(Gov. +15 opinion)")
+
+
+def upkeep_text(company: Company) -> str:
+    """Describe a company's upkeep, for the Acquisitions page.
+
+    Args:
+        company: The company to describe.
+
+    Returns:
+        Text like " · bailout upkeep Ŧ8.00/s", or "" with no upkeep.
+    """
+    if company.upkeep > 0:
+        return " · bailout upkeep " + format_money(company.upkeep) + "/s"
+    return ""
+
+
+assert_equal(upkeep_text(make_new_state().companies[0]), "")
+assert_equal(upkeep_text(make_new_state().companies[5]),
+             " · bailout upkeep Ŧ8.00/s")
+
+
 def build_company_row(company: Company, company_index: int) -> Div:
     """Build one company that is for sale and its Acquire button.
 
@@ -7855,9 +8106,10 @@ def build_company_row(company: Company, company_index: int) -> Div:
         Div(Div(company.name, classes="item-name"),
             Div(company.description, classes="muted"),
             Div(company.sector.capitalize() + " · "
-                + describe_company_effect(company), classes="muted")),
-        Button("Acquire: " + format_money(company.cost) + " + "
-               + str(round(company.opinion_cost)) + " opinion",
+                + describe_company_effect(company)
+                + upkeep_text(company), classes="muted")),
+        Button("Acquire: " + format_money(company.cost) + " "
+               + opinion_cost_text(company.opinion_cost),
                "buy_company", [Argument("company_index", company_index)]),
         classes="buy-row",
     )
@@ -7877,7 +8129,8 @@ def build_company_list(state: State) -> Div:
             Div("Every acquisition needs the Government's blessing, "
                 + "paid in opinion (the 🏛️ chip).", classes="muted")]
     for company_index, company in enumerate(state.companies):
-        if is_company_for_sale(company, state.research, state.game_phase):
+        if is_company_for_sale(company, state.companies, state.research,
+                               state.game_phase):
             rows.append(build_company_row(company, company_index))
     if len(rows) == 2:
         rows.append(Div("Nothing for sale. Research may shake a few "
@@ -7898,7 +8151,8 @@ def build_owned_companies(state: State) -> Div:
     for company in state.companies:
         if company.is_owned:
             lines.append(company.emoji + " " + company.name + ": "
-                         + describe_company_effect(company))
+                         + describe_company_effect(company)
+                         + upkeep_text(company))
     if len(lines) == 0:
         return Div(build_card_head("Owned", []),
                    Div("No companies yet. Suppliers are a good start.",
@@ -8788,6 +9042,9 @@ assert_equal(buy_company(make_acquisitions_state(), 0),
 # Too expensive (Granit Arms Works costs 15000): nothing changes.
 assert_equal(buy_company(make_acquisitions_state(), 3),
              make_expected_acquisitions_page(make_acquisitions_state()))
+# Rescuing Bronik raises opinion and sends the Government's warning.
+assert_equal(buy_company(make_bailout_state(), 5),
+             make_expected_acquisitions_page(expected_after_buying_bronik()))
 # Already owned: it can't be bought (or paid for) twice.
 assert_equal(buy_company(expected_after_buying_cleanex(), 0),
              make_expected_acquisitions_page(expected_after_buying_cleanex()))
@@ -9322,6 +9579,7 @@ def tick(state: State) -> Fragment:
     run_selling(state)
     run_war_economy(state, tick_interval(state))
     run_policy_opinion_drain(state, tick_interval(state))
+    run_company_upkeep(state, tick_interval(state))
     run_loyalty_drift(state)
     run_email_triggers(state)
     state.tick_count = state.tick_count + 1

@@ -231,6 +231,19 @@ bonus. Companies with a `required_research` are hidden until it is done;
 Brunsvik Preserves, ParcelPro, Ozonix) only come up for sale once the war
 starts. The Acquire buttons sit outside `#live_area`.
 
+**Arms bailouts:** some arms makers are failing and must be kept running:
+`Company.upkeep` is money per second while owned (`run_company_upkeep` in
+the tick; `upkeep_payment` never touches the last `UPKEEP_RESERVE`, so
+unpaid upkeep is skipped). Once the Defense Procurement License is done,
+Bronik Armor Factory's CEO emails an offer (`EMAIL_BAILOUT_OFFER`, from
+`run_email_triggers`). Bronik has a negative `opinion_cost`, so rescuing it
+raises opinion, and `acquire_company` then sends the Government's warning
+(`EMAIL_BAILOUT_WARNING`, on the first purchase of a company with upkeep).
+Zhuzh Drone Works and Kovalev Shell Works have `required_company` =
+Bronik (`is_company_for_sale` checks `is_company_owned`), so they only
+appear after the rescue, and they cost opinion like other acquisitions.
+The Company page shows a "💸 Bailout upkeep" effect tag.
+
 **Wartime food (no free bonus):** Canned Food earns more in wartime only
 through what the player buys: the fleeing food suppliers (Gourmond,
 Brunsvik) plus war research Dynamic Goods Pricing and Expiry Date

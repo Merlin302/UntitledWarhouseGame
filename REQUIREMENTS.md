@@ -98,7 +98,10 @@ off what is done and name the exact function or field that satisfies it.
       `government_supply_units` (opinion maxed), `run_government_supply`
       (switched on in wartime), `build_government_card` (supply
       unlocked, on or off), `toggle_government_supply` (unlocked),
-      `describe_policy` (opinion drain), `end_wave`
+      `describe_policy` (opinion drain), `acquire_company` (arms
+      bailout warning), `is_company_for_sale` (required company),
+      `opinion_cost_text` (Government grateful), `upkeep_text`
+      (bailout), `upkeep_payment` (reserve), `end_wave`
       (confiscation wave), `make_contribution` (can contribute),
       `build_opinion_chip` (low opinion), `is_food_empire_complete`
       (missing supplier or research), `run_email_triggers` (food
@@ -124,7 +127,9 @@ off what is done and name the exact function or field that satisfies it.
       income each completed workaround wins back;
       `is_food_empire_complete` loops over `state.companies` and
       `state.research` to check every canned food source is owned;
-      `total_policy_opinion_drain` loops over `state.policies`
+      `total_policy_opinion_drain` loops over `state.policies`;
+      `total_company_upkeep` and `is_company_owned` loop over
+      `state.companies`
 - [x] Legitimate purpose (entertainment: it's a game) — _where:_ the whole site
 - [x] No global variables; only ALL_CAPS constants, never mutated — _where:_
       constants block; `make_starting_items`, `make_starting_goods`,
