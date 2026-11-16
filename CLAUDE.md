@@ -103,7 +103,8 @@ other than `@dataclass` and `@route`, try/except, generators, JavaScript.
   plus a re-rendered copy can run at the same time. Make sure exactly ONE
   clock is ever ticking, including when the player switches pages. Verify
   this works before building more on top of it.
-- Base tick interval: 1 tick every 3000 ms (the Admin upgrade will speed this
+- Base tick interval: 1 tick every 667 ms (`TICK_INTERVAL_MS`, about 1.5
+  ticks per second; the Admin upgrade will speed this
   up later, so read the interval from State/a helper, not a hard-coded value).
 - Keep all code in `main.py` unless you confirm that Drafter's GitHub Pages
   deployment supports importing other local `.py` files.
@@ -419,8 +420,9 @@ Adjacency bonuses come in a later phase.
 
 **Casino page:** deliberately silly games of chance/skill using in-game money.
 First game: a typing test — pick a difficulty (SelectBox), type the prompt
-(TextArea), reward based on accuracy and speed (time measured with the tick
-or a Drafter timer). Easy = lowercase common words; hard = full quotes with
+(TextArea), reward based on accuracy and speed (real seconds between
+start and submit: `current_time` reads the clock; `settle_typing_round`
+takes the time as an argument so it stays testable). Easy = lowercase common words; hard = full quotes with
 character swaps (a→@, and→&, 0↔O).
 
 **Later phases (don't build yet, but don't block them):** Invest → Company

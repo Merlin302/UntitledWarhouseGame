@@ -24,6 +24,7 @@ add a row here and one `# ADVANCED:` comment.
 | 12 | `.capitalize()` | Returns a copy of a string with its first letter in upper case (`"stat"` → `"Stat"`). | `research_summary` | `build_altitude_summary`, `build_company_row` |
 | 13 | Default parameter values (`= False`) | A parameter with `= False` uses `False` when no value is sent. A locked goods type has no CheckBox, so the browser sends nothing for it. | `save_goods` | `save_policies` |
 | 14 | List repetition (`[x] * n`) | A list times a number repeats it: `["x"] * 3` is `["x", "x", "x"]`. Used in tests to build long sample lists. | test below `add_news` | tests for `state_after_emails`, `build_wave`, `spawn_attackers` |
+| 15 | The `time` module (`time.time()`) | Reads the computer's clock in seconds. Subtracting two readings gives how long something took (here, how long a typing test took). | the `import time` line | `current_time` |
 
 ## On the course's "not covered" list, but not used
 

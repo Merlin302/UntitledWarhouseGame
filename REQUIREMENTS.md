@@ -169,7 +169,7 @@ off what is done and name the exact function or field that satisfies it.
       (`random.random`), `roll_wave_choices` (`random.randint`),
       `parse_bet` (`.isascii`), `research_summary` (`.capitalize`),
       `save_goods` (default parameter values), and the test below
-      `add_news` (list repetition)
+      `add_news` (list repetition), the `import time` line (the clock)
 
 ## Code quality
 
@@ -187,7 +187,10 @@ off what is done and name the exact function or field that satisfies it.
       function `calculate_payout` is pure and tested;
       `roll_wave_choices` and `generate_next_wave` are random helpers
       (docstrings say so); `build_wave` is pure and tested with fixed
-      rolls, and `start_next_wave` is tested with a stored wave
+      rolls, and `start_next_wave` is tested with a stored wave;
+      `submit_typing_round` reads the real clock (its docstring says so),
+      so only its no-round path is tested there, and the scoring is
+      tested below `settle_typing_round` with fixed clock readings
 - [x] Lines under 80 characters (hard limit 120)
 - [x] Type hints on every function header
 - [x] A Google-format docstring as the first line of every function body

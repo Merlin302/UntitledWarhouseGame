@@ -1,4 +1,6 @@
 import random
+# ADVANCED: The time module reads the computer's clock (see current_time).
+import time
 from dataclasses import dataclass
 from drafter import *
 
@@ -1613,12 +1615,12 @@ class TypingRound:
         prompt: The text to type; empty when no round is running.
         difficulty: One of the DIFFICULTY_ constants.
         bet: The money already paid to enter this round.
-        start_tick: The value of State.tick_count when the round began.
+        start_time: The clock reading (in seconds) when the round began.
     """
     prompt: str
     difficulty: str
     bet: int
-    start_tick: int
+    start_time: float
 
 
 @dataclass
@@ -1667,7 +1669,7 @@ class State:
         expeditions_bought: Expeditions ever bought; raises their price.
         last_expedition_finds: One line per artifact from the last batch.
         controls_signature: Summary of the buttons the last tick drew.
-        tick_count: Ticks since the game began; times the typing test.
+        tick_count: Ticks since the game began; dates each email.
         typing_round: The casino typing test in progress, if any.
         last_casino_result: The message from the latest casino action.
         research: Every research project and whether it is done.
@@ -1746,7 +1748,7 @@ def make_no_typing_round() -> TypingRound:
     Returns:
         A TypingRound with an empty prompt.
     """
-    return TypingRound("", DIFFICULTY_EASY, 0, 0)
+    return TypingRound("", DIFFICULTY_EASY, 0, 0.0)
 
 
 def make_starting_items() -> list[BuyItem]:
@@ -2155,8 +2157,14 @@ def make_test_artifact(name: str, income_bonus: float, copies: int,
                     slot)
 
 
+# The clock reading (in seconds) at which test typing rounds begin.
+TEST_START_TIME = 1000.0
+
+
 def make_typing_state() -> State:
-    """Build a Casino page State three ticks into a typing round.
+    """Build a Casino page State with a typing round running.
+
+    The round began at the clock reading TEST_START_TIME.
 
     Returns:
         A State with Ŧ400 left after betting 100 on the easy prompt "hello".
@@ -2164,8 +2172,8 @@ def make_typing_state() -> State:
     state = make_new_state()
     state.current_page = PAGE_CASINO
     state.money = 400.0
-    state.tick_count = 3
-    state.typing_round = TypingRound("hello", DIFFICULTY_EASY, 100, 0)
+    state.typing_round = TypingRound("hello", DIFFICULTY_EASY, 100,
+                                     TEST_START_TIME)
     return state
 
 
@@ -3808,7 +3816,9 @@ assert_equal(state_after_confiscation(make_armed_state()).war_goods_sold,
 def is_wartime(game_phase: str) -> bool:
     """Check whether the war has started (it may already be over).
 
-    Sanctions and wartime bonuses stay after the war ends.
+    War research, war companies, and the War page stay after the war
+    ends. Sanctions do not: sanctions_multiplier lifts them once the war
+    is over.
 
     Args:
         game_phase: One of the PHASE_ constants.
@@ -5204,6 +5214,27 @@ assert_equal(safe_money_required(800.0, 5), 800.0)
 assert_equal(safe_money_required(800.0, 0), 800.0 + UNIT_COST)
 
 
+def is_valid_index(index: int, count: int) -> bool:
+    """Check that a position from a Button really exists in a list.
+
+    Buttons only send real positions, but a hand-typed URL could send any
+    number (Python would read a negative one from the end of the list).
+
+    Args:
+        index: The position to check.
+        count: How many items the list holds.
+
+    Returns:
+        True if 0 <= index < count.
+    """
+    return 0 <= index and index < count
+
+
+assert_equal(is_valid_index(0, 3), True)
+assert_equal(is_valid_index(3, 3), False)
+assert_equal(is_valid_index(-1, 3), False)
+
+
 def can_buy_research(state: State, research_index: int) -> bool:
     """Check whether a research project can be bought right now.
 
@@ -5212,8 +5243,10 @@ def can_buy_research(state: State, research_index: int) -> bool:
         research_index: The project's position in state.research.
 
     Returns:
-        True if it is available and the player can afford it.
+        True if it exists, is available, and the player can afford it.
     """
+    if not is_valid_index(research_index, len(state.research)):
+        return False
     project = state.research[research_index]
     required = safe_money_required(project.cost, state.goods_in_stock)
     available = is_research_available(project, state.research,
@@ -5224,6 +5257,7 @@ def can_buy_research(state: State, research_index: int) -> bool:
 assert_equal(can_buy_research(make_research_state(), 0), True)
 assert_equal(can_buy_research(make_poor_research_state(), 0), False)
 assert_equal(can_buy_research(make_new_state(), 0), False)
+assert_equal(can_buy_research(make_research_state(), 99), False)
 
 
 def can_buy_defense(state: State, defense_index: int) -> bool:
@@ -5236,8 +5270,11 @@ def can_buy_defense(state: State, defense_index: int) -> bool:
         defense_index: The equipment's position in state.defenses.
 
     Returns:
-        True if the war has started and the player can afford it.
+        True if the equipment exists, the war has started, and the
+        player can afford it.
     """
+    if not is_valid_index(defense_index, len(state.defenses)):
+        return False
     cost = state.defenses[defense_index].cost
     required = safe_money_required(cost, state.goods_in_stock)
     return is_wartime(state.game_phase) and required <= state.money
@@ -5246,6 +5283,7 @@ def can_buy_defense(state: State, defense_index: int) -> bool:
 assert_equal(can_buy_defense(make_rich_war_state(), 0), True)
 assert_equal(can_buy_defense(make_war_state(), 0), False)
 assert_equal(can_buy_defense(make_rich_state(), 0), False)
+assert_equal(can_buy_defense(make_rich_war_state(), -1), False)
 
 
 def complete_research(state: State, research_index: int) -> None:
@@ -5532,7 +5570,7 @@ def can_buy_company(state: State, company_index: int) -> bool:
         its opinion cost, and the player can afford it (keeping enough
         money to restock an empty warehouse).
     """
-    if company_index < 0 or company_index >= len(state.companies):
+    if not is_valid_index(company_index, len(state.companies)):
         return False
     company = state.companies[company_index]
     required = safe_money_required(company.cost, state.goods_in_stock)
@@ -7088,21 +7126,34 @@ assert_equal(score_accuracy("abcd", "ABCD"), 0.0)
 assert_equal(score_accuracy("", ""), 0.0)
 
 
-def elapsed_seconds(ticks_passed: int, interval_ms: int) -> float:
-    """Convert a number of game ticks into seconds.
+def current_time() -> float:
+    """Read the computer's clock.
 
-    Args:
-        ticks_passed: How many ticks went by.
-        interval_ms: The milliseconds between ticks.
+    The answer changes every time, so it has no unit test; the functions
+    that use it take the time as an argument instead.
 
     Returns:
-        The elapsed time in seconds.
+        The seconds since a fixed moment in 1970 (only differences
+        between two readings matter).
     """
-    return ticks_passed * interval_ms / 1000
+    return time.time()
 
 
-assert_equal(elapsed_seconds(3, 1000), 3.0)
-assert_equal(elapsed_seconds(0, 667), 0.0)
+def elapsed_seconds(start_time: float, now: float) -> float:
+    """Find how many seconds passed between two clock readings.
+
+    Args:
+        start_time: The earlier clock reading, in seconds.
+        now: The later clock reading, in seconds.
+
+    Returns:
+        The elapsed time in seconds, never below 0.
+    """
+    return max(0.0, now - start_time)
+
+
+assert_equal(elapsed_seconds(1000.0, 1002.5), 2.5)
+assert_equal(elapsed_seconds(1000.0, 999.0), 0.0)
 
 
 def words_per_minute(character_count: int, seconds: float) -> float:
@@ -7230,28 +7281,6 @@ assert_equal(can_place_bet(401, 500.0, 5), False)
 # Within the 80% cap, but only 10 would be left for restocking.
 assert_equal(can_place_bet(40, 50.0, 0), False)
 assert_equal(can_place_bet(35, 50.0, 0), True)
-
-
-def settle_typing_round(state: State, typed_text: str) -> None:
-    """Score the running round, pay the player, and end the round.
-
-    Tested through the submit_typing_round route.
-
-    Args:
-        state: The current game state; its money and round are updated.
-        typed_text: What the player typed.
-    """
-    typing_round = state.typing_round
-    seconds = elapsed_seconds(state.tick_count - typing_round.start_tick,
-                              tick_interval(state))
-    accuracy = score_accuracy(typing_round.prompt, typed_text)
-    speed = words_per_minute(len(typed_text.strip()), seconds)
-    payout = calculate_payout(typing_round.bet, accuracy, speed,
-                              typing_round.difficulty)
-    state.money = state.money + payout
-    state.last_casino_result = describe_typing_result(
-        accuracy, speed, typing_round.bet, payout)
-    state.typing_round = make_no_typing_round()
 
 
 # ---------------------------------------------------------------------------
@@ -9324,6 +9353,52 @@ assert_equal(describe_typing_result(0.5, 30.0, 100, 150.0),
              "Accuracy 50%, 30 WPM. Bet Ŧ100.00, paid Ŧ150.00.")
 
 
+def settle_typing_round(state: State, typed_text: str, now: float) -> None:
+    """Score the running round, pay the player, and end the round.
+
+    Taking the time as an argument keeps this function testable.
+
+    Args:
+        state: The current game state; its money and round are updated.
+        typed_text: What the player typed.
+        now: The clock reading (in seconds) when the player submitted.
+    """
+    typing_round = state.typing_round
+    seconds = elapsed_seconds(typing_round.start_time, now)
+    accuracy = score_accuracy(typing_round.prompt, typed_text)
+    speed = words_per_minute(len(typed_text.strip()), seconds)
+    payout = calculate_payout(typing_round.bet, accuracy, speed,
+                              typing_round.difficulty)
+    state.money = state.money + payout
+    state.last_casino_result = describe_typing_result(
+        accuracy, speed, typing_round.bet, payout)
+    state.typing_round = make_no_typing_round()
+
+
+def state_after_settling(typed_text: str, seconds: float) -> State:
+    """Settle the test typing round a given number of seconds after it began.
+
+    Args:
+        typed_text: What the player typed.
+        seconds: How long after TEST_START_TIME the player submitted.
+
+    Returns:
+        The typing State after settle_typing_round.
+    """
+    state = make_typing_state()
+    settle_typing_round(state, typed_text, TEST_START_TIME + seconds)
+    return state
+
+
+# 5 characters in 2 seconds is 30 WPM, the x1 speed tier.
+assert_equal(state_after_settling("hello", 2.0),
+             expected_after_typing(
+                 150.0, "Accuracy 100%, 30 WPM. Bet Ŧ100.00, paid Ŧ150.00."))
+assert_equal(state_after_settling("nope", 2.0),
+             expected_after_typing(
+                 0.0, "Accuracy 0%, 24 WPM. Bet Ŧ100.00, paid Ŧ0.00."))
+
+
 def build_casino_setup_form() -> Div:
     """Build the form that starts a typing test.
 
@@ -10079,7 +10154,7 @@ def start_typing_round(state: State, difficulty: str, bet: str) -> Page:
     if can_place_bet(bet_amount, state.money, state.goods_in_stock):
         state.money = state.money - bet_amount
         state.typing_round = TypingRound(roll_prompt(difficulty), difficulty,
-                                         bet_amount, state.tick_count)
+                                         bet_amount, current_time())
         state.last_casino_result = ""
     else:
         state.last_casino_result = INVALID_BET_MESSAGE
@@ -10102,6 +10177,9 @@ assert_equal(start_typing_round(make_typing_state(), DIFFICULTY_HARD, "50"),
 def submit_typing_round(state: State, typed_text: str) -> Page:
     """Score the typing test and pay out the winnings.
 
+    Reads the real clock (current_time), so only the "no round running"
+    path is tested here; the scoring is tested below settle_typing_round.
+
     Args:
         state: The current game state.
         typed_text: What the player typed.
@@ -10110,17 +10188,10 @@ def submit_typing_round(state: State, typed_text: str) -> Page:
         The refreshed Casino page.
     """
     if state.typing_round.prompt != "":
-        settle_typing_round(state, typed_text)
+        settle_typing_round(state, typed_text, current_time())
     return casino_page(state)
 
 
-# 5 characters in 3 ticks (2.001 seconds) is about 30 WPM, the x1 tier.
-assert_equal(submit_typing_round(make_typing_state(), "hello"),
-             make_expected_casino_page(expected_after_typing(
-                 150.0, "Accuracy 100%, 30 WPM. Bet Ŧ100.00, paid Ŧ150.00.")))
-assert_equal(submit_typing_round(make_typing_state(), "nope"),
-             make_expected_casino_page(expected_after_typing(
-                 0.0, "Accuracy 0%, 24 WPM. Bet Ŧ100.00, paid Ŧ0.00.")))
 # With no round running, a stray submit changes nothing.
 assert_equal(submit_typing_round(make_casino_view_state(""), "hello"),
              make_expected_casino_page(make_casino_view_state("")))
@@ -10159,6 +10230,8 @@ def buy_item(state: State, item_index: int) -> Page:
     Returns:
         The refreshed company page.
     """
+    if not is_valid_index(item_index, len(state.buy_items)):
+        return company_page(state)
     item = state.buy_items[item_index]
     quantity = purchase_quantity(item, state.buy_amount)
     if can_afford(item, quantity, state.money, state.goods_in_stock):
@@ -10173,6 +10246,9 @@ assert_equal(buy_item(make_new_state(), 1),
              make_expected_company_page(expected_after_buying_van()))
 assert_equal(buy_item(make_broke_state(), 1),
              make_expected_company_page(make_broke_state()))
+# No item at that position: nothing changes.
+assert_equal(buy_item(make_new_state(), 99),
+             make_expected_company_page(make_new_state()))
 assert_equal(buy_item(make_nearly_stranded_state(), 1),
              make_expected_company_page(make_nearly_stranded_state()))
 
