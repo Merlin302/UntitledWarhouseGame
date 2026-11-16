@@ -424,13 +424,16 @@ PHASE_PEACE = "peace"
 PHASE_WAR = "war"
 PHASE_WAR_OVER = "war_over"
 
-HOME_COUNTRY = "Republic of Varnia"
-ENEMY_COUNTRY = "Kalyxian Federation"
+# The player's warehouse is in HOME_COUNTRY, which starts the war by
+# invading ENEMY_COUNTRY (both fictional).
+HOME_COUNTRY = "Kalyxian Federation"
+ENEMY_COUNTRY = "Republic of Varnia"
 
 # Lifetime earnings at which the war breaks out.
 WAR_START_EARNED = 40000.0
-WAR_START_NEWS = ("BREAKING: The " + ENEMY_COUNTRY + " invades the "
-                  + HOME_COUNTRY + "! Markets 'mildly concerned'.")
+WAR_START_NEWS = ("BREAKING: The " + HOME_COUNTRY + " begins a 'special "
+                  + "intervention' in the " + ENEMY_COUNTRY
+                  + "! Markets 'mildly concerned'.")
 SANCTIONS_NEWS = ("Sanctions ban electronics and luxury imports; "
                   + "analysts expect profits to 'drop 80%, at minimum'.")
 SIRENS_NEWS = ("Air raid sirens sound citywide. Read the briefing in your "
@@ -500,52 +503,54 @@ BOSS_HP_MULTIPLIER = 1.5
 # How long the defenders have to destroy a wave, in real time.
 WAVE_DURATION_MS = 30000
 
-KALIBAR_NAME = 'BGM-14 "Kalibar" cruise missile'
-MIRV_NAME = '"Sarmatt" MIRV warhead'
+TOMAHOCK_NAME = 'BGM-190 "Tomahock" cruise missile'
+MIRV_NAME = '"Minuteguy" MIRV warhead'
 # Each row: name, emoji, altitude, the altitude every second attacker of
 # this kind flies at instead, base HP, its era (1-3), its pick weight in
 # that era (0 = only ever spawned), and what it spawns: the attacker's
 # name ("" for none), how many, and after how many ms. A spawner that is
 # still alive when its timer runs out adds those attackers to the wave.
 ATTACKER_ROWS = [
-    ['9M456 "Pengvin" drone', "🛩️", ALTITUDE_LOW, ALTITUDE_LOW, 30.0, 1, 5,
-     "", 0, 0],
-    ['Shahid-136 "Lawnmower" drone', "🛵", ALTITUDE_LOW, ALTITUDE_MEDIUM,
+    ['FP-1 "Lyuty" long-range drone', "🛩️", ALTITUDE_LOW, ALTITUDE_LOW,
+     30.0, 1, 5, "", 0, 0],
+    ['"Baba Yoga" bomber drone', "🧹", ALTITUDE_LOW, ALTITUDE_MEDIUM,
      40.0, 1, 4, "", 0, 0],
-    ['"Garage Kalibar" homemade cruise missile', "🧨", ALTITUDE_MEDIUM,
+    ['R-360 "Neptoon" homemade cruise missile', "🧨", ALTITUDE_MEDIUM,
      ALTITUDE_LOW, 60.0, 1, 3, "", 0, 0],
-    ['Kh-47 "Kinzhul" hypersonic missile', "☄️", ALTITUDE_HIGH,
+    ['"Storm Shadoe" cruise missile', "☄️", ALTITUDE_HIGH,
      ALTITUDE_MEDIUM, 150.0, 1, 1, "", 0, 0],
-    ['Su-43 "Flanqer" fighter jet', "⚔️", ALTITUDE_HIGH, ALTITUDE_MEDIUM,
-     250.0, 2, 2, "", 0, 0],
-    ['B-95 "Mishka" bomber', "✈️", ALTITUDE_HIGH, ALTITUDE_HIGH, 400.0, 2, 2,
-     "", 0, 0],
-    [KALIBAR_NAME, "🚀", ALTITUDE_MEDIUM, ALTITUDE_LOW, 120.0, 2, 5, "", 0, 0],
-    ['BM-31 "Smerch-less" guided rocket', "🎆", ALTITUDE_LOW, ALTITUDE_LOW,
+    ['LoM-16SM "Fighting Falkon" fighter jet', "⚔️", ALTITUDE_HIGH,
+     ALTITUDE_MEDIUM, 250.0, 2, 2, "", 0, 0],
+    ['B-25H "Stratofortless" bomber', "✈️", ALTITUDE_HIGH, ALTITUDE_HIGH,
+     400.0, 2, 2, "", 0, 0],
+    [TOMAHOCK_NAME, "🚀", ALTITUDE_MEDIUM, ALTITUDE_LOW, 120.0, 2, 5, "", 0, 0],
+    ['M-124 "GLMRS" guided rocket', "🎆", ALTITUDE_LOW, ALTITUDE_LOW,
      90.0, 2, 3, "", 0, 0],
-    ['Il-67 "Kandid" missile transport', "🛬", ALTITUDE_HIGH, ALTITUDE_HIGH,
-     350.0, 2, 1, KALIBAR_NAME, 3, 10000],
-    ['Kh-101 "Ghostwriter" stealth cruise missile', "🥷", ALTITUDE_MEDIUM,
+    ['C-71 "Rapid Draggin" missile transport', "🛬", ALTITUDE_HIGH,
+     ALTITUDE_HIGH, 350.0, 2, 1, TOMAHOCK_NAME, 3, 10000],
+    ['AGM-185 "JASSN" stealth cruise missile', "🥷", ALTITUDE_MEDIUM,
      ALTITUDE_LOW, 300.0, 3, 5, "", 0, 0],
     ['"Project Unobtanium" experimental weapon', "🧪", ALTITUDE_LOW,
      ALTITUDE_HIGH, 500.0, 3, 2, "", 0, 0],
-    ['RS-32 "Sarmatt" ICBM', "🌠", ALTITUDE_HIGH, ALTITUDE_HIGH, 1200.0, 3, 1,
-     MIRV_NAME, 4, 8000],
+    ['LGM-31 "Minuteguy" ICBM', "🌠", ALTITUDE_HIGH, ALTITUDE_HIGH,
+     1200.0, 3, 1, MIRV_NAME, 4, 8000],
     [MIRV_NAME, "💣", ALTITUDE_MEDIUM, ALTITUDE_LOW, 250.0, 3, 0, "", 0, 0],
 ]
 
 # Each row: name, emoji, cost, damage per second against high, medium,
 # and low altitude attackers, how many the company owns at the start, and
 # whether it is foreign-made. Each kind comes in a domestic and a foreign
-# version: the foreign one is always better, but buying it lowers the
-# Government's opinion by OPINION_LOSS_PER_FOREIGN_DEFENSE.
+# version (Chinese-made, sold under British-sounding names): the foreign
+# one is always better, but buying it lowers the Government's opinion by
+# OPINION_LOSS_PER_FOREIGN_DEFENSE, since the Government wants the money
+# to go to the domestic arms industry.
 DEFENSE_ROWS = [
     ['9K92 "Zhalo" MANPADS', "🧍", 1500.0, 0.0, 8.0, 15.0, 2, False],
-    ['FIM-29 "Stingur" MANPADS', "🎯", 2000.0, 0.0, 11.0, 21.0, 0, True],
+    ['QW-2 "Starstruck" MANPADS', "🎯", 2000.0, 0.0, 11.0, 21.0, 0, True],
     ['MyG-29 "Fulcrumb" fighter', "🛫", 5000.0, 12.0, 12.0, 6.0, 0, False],
-    ['LoM-16SM "Fighting Falkon"', "🦅", 6500.0, 17.0, 17.0, 8.0, 0, True],
+    ['J-11 "Shenfighter Tempest"', "🦅", 6500.0, 17.0, 17.0, 8.0, 0, True],
     ['Z-300 "Grumbler" SAM', "🗼", 8000.0, 40.0, 10.0, 0.0, 0, False],
-    ['MIN-400 "Loyalist" SAM', "🛡️", 10000.0, 56.0, 14.0, 0.0, 0, True],
+    ['HQ-9 "Sky Shield" SAM', "🛡️", 10000.0, 56.0, 14.0, 0.0, 0, True],
 ]
 OPINION_LOSS_PER_FOREIGN_DEFENSE = 2.0
 
@@ -563,10 +568,11 @@ MAX_ITEMS_LOST_PER_WAVE = 5
 # --- W3: the end of the war ---
 PAGE_WAR_REPORT = "war_report"
 # The war is won by repelling the last (boss) wave.
-WAR_WON_NEWS = ("CEASEFIRE: The " + ENEMY_COUNTRY + " withdraws! The "
-                + "warehouse is declared a 'national hero'.")
-WAR_LOST_NEWS = ("CEASEFIRE: The " + HOME_COUNTRY + " signs a humiliating "
-                 + "treaty. The warehouse is blamed 'for vibes'.")
+WAR_WON_NEWS = ("CEASEFIRE: The " + ENEMY_COUNTRY + " agrees to "
+                + "'negotiations'! The warehouse is declared a 'national "
+                + "hero'.")
+WAR_LOST_NEWS = ("CEASEFIRE: The " + HOME_COUNTRY + " withdraws 'as a "
+                 + "goodwill gesture'. The warehouse is blamed 'for vibes'.")
 SANCTIONS_LIFTED_NEWS = ("Sanctions lifted! Electronics return to shelves "
                          + "'as if nothing happened'.")
 
@@ -675,35 +681,38 @@ EMAIL_ROWS = [
      + "matter.\n\nCorporate HQ",
      False],
     [EMAIL_WAR, SENDER_GOVERNMENT,
-     "NOTICE: a state of war now exists",
+     "NOTICE: a special intervention has begun",
      "Citizen-Enterprise,\n\n"
-     + "The " + ENEMY_COUNTRY + " has invaded the " + HOME_COUNTRY
-     + ". You are instructed to remain calm and operational.\n\n"
+     + "The " + HOME_COUNTRY + " has begun a special intervention in the "
+     + ENEMY_COUNTRY + ". It is not a war, and you will not call it one. "
+     + "You are instructed to remain calm and operational.\n\n"
      + "Effective immediately:\n"
      + "- Goods marked 🚫 Sanctioned on the Business page may not be "
      + "sold.\n"
      + "- All other trade will be sanctioned by the rest of the world. "
      + "The Government has no comment on this.\n"
      + "- A Defense Procurement License is available in your Research "
-     + "Lab. War goods sold decide who wins the war. They also make your "
-     + "warehouse more interesting to the enemy.\n\n"
-     + "A War page has been issued to you. Thank you for your continued "
-     + "existence.",
+     + "Lab. War goods keep the intervention supplied. They also make "
+     + "your warehouse more interesting to the enemy.\n\n"
+     + "A War page has been issued to you. It is called the War page for "
+     + "reasons of brevity. Thank you for your continued existence.",
      False],
     [EMAIL_FIRST_WAVE, SENDER_ADVISOR,
      "URGENT: things in the sky (read before wave 1)",
      "The threat meter is half full, so here is everything I know about "
      + "air defense. The enemy will not attack until you have opened this "
      + "email. I asked; they were surprisingly reasonable about it.\n\n"
-     + "- The " + ENEMY_COUNTRY + " attacks in " + str(WAVE_COUNT)
-     + " waves, in three eras of ever sillier weapons. You start each "
+     + "- The " + ENEMY_COUNTRY + " is striking back, in "
+     + str(WAVE_COUNT) + " waves and three eras of ever sillier weapons, "
+     + "more and more of them sent by its friends abroad. You start each "
      + "wave yourself, with the button on the War page. The War page "
      + "also previews the next wave.\n"
      + "- While you wait, the threat meter fills and cuts your profit. "
      + "Starting a wave empties it. Selling war goods fills it faster.\n"
      + "- Attackers fly high, medium, or low. Each defense is good at "
-     + "some altitudes and useless at others. Foreign defenses are "
-     + "better, but the Government notices who you buy from.\n"
+     + "some altitudes and useless at others. Imported defenses are "
+     + "better, but the Government would rather you funded the domestic "
+     + "arms industry, and it notices who you buy from.\n"
      + "- Shoot down every attacker before the wave's timer runs out, or "
      + "the survivors destroy stock and equipment and cut production.\n"
      + "- Every " + str(BOSS_WAVE_EVERY) + "th wave is a boss wave. The "
@@ -4124,9 +4133,9 @@ assert_equal(make_attacker(ATTACKER_ROWS[2], 0, 2.0).altitude,
              ALTITUDE_MEDIUM)
 assert_equal(make_attacker(ATTACKER_ROWS[2], 1, 2.0).altitude, ALTITUDE_LOW)
 assert_equal(make_attacker(ATTACKER_ROWS[2], 1, 2.0).hp, 120.0)
-# The missile transport spawns Kalibars.
+# The missile transport spawns Tomahocks.
 assert_equal(make_attacker(ATTACKER_ROWS[8], 0, 1.0).spawn_name,
-             KALIBAR_NAME)
+             TOMAHOCK_NAME)
 
 
 def build_wave(wave_number: int, rolls: list[int]) -> list[Attacker]:
@@ -4156,7 +4165,7 @@ assert_equal(build_wave(1, [0, 0, 0])[0], make_attacker(ATTACKER_ROWS[0], 0,
 assert_equal(len(build_wave(1, [0, 0, 0])), 3)
 # Era 2 rolls 0 and 14 pick the fighter jet and the missile transport.
 assert_equal(build_wave(11, [0, 14])[1].name,
-             'Il-67 "Kandid" missile transport')
+             'C-71 "Rapid Draggin" missile transport')
 assert_equal(len(build_wave(WAVE_COUNT, [0] * attacker_count(WAVE_COUNT))),
              attacker_count(WAVE_COUNT))
 

@@ -309,8 +309,12 @@ by the constants and is tested below `calculate_income`
 **The War (phase W1 built: war economy):** `State.game_phase` goes
 peace -> war -> war_over (`PHASE_` constants). The war starts when
 total_earned reaches `WAR_START_EARNED` (`start_war`, run by
-`run_war_economy` in the tick), posting headlines. The Kalyxian Federation
-invades the Republic of Varnia (fictional). In wartime, sanctioned goods
+`run_war_economy` in the tick), posting headlines. The player's country,
+the Kalyxian Federation (`HOME_COUNTRY`), is the invader: it begins a
+"special intervention" in the Republic of Varnia (`ENEMY_COUNTRY`; both
+fictional), and Varnia and its friends abroad strike back at the
+warehouse. The economy reflects that: the world sanctions the player's
+country, foreign owners flee, and the Government is hostile. In wartime, sanctioned goods
 (`GoodsType.is_sanctioned`: Electronics, Imported Luxuries) are shown as
 "🚫 Sanctioned" and forced off until the Parallel Imports Scheme is
 researched or the war ends, and all income is cut (see Sanctions crash).
@@ -351,21 +355,25 @@ counts, spawner warning, boss requirement and progress); `start_wave`
 moves it into `attackers` and empties the meter. Randomness is isolated
 in `roll_wave_choices` (one weighted roll per attacker); `build_wave`
 (pure, tested) turns rolls into attackers with `pick_row_index`.
-`ATTACKER_ROWS` (columns: era, pick weight, spawn): era 1 Pengvin drones,
-Shahid "Lawnmower" drones, "Garage Kalibar" homemade cruise missiles, a
-rare Kinzhul hypersonic; era 2 Flanqer fighters, Mishka bombers, Kalibar
-cruise missiles, Smerch-less guided rockets, the Il-67 Kandid missile
-transport (spawner); era 3 Ghostwriter stealth cruise missiles, Project
-Unobtanium experimental weapons, the Sarmatt ICBM (spawner; MIRV warheads
-have weight 0, spawned only). **Spawners:** `run_spawners` (in `run_wave`)
+`ATTACKER_ROWS` (columns: era, pick weight, spawn; spoofs of the
+defender's and its allies' weapons): era 1 "Lyuty" long-range drones,
+"Baba Yoga" bomber drones, "Neptoon" homemade cruise missiles, a rare
+"Storm Shadoe"; era 2 "Fighting Falkon" fighters, "Stratofortless"
+bombers, "Tomahock" cruise missiles, "GLMRS" guided rockets, the
+"Rapid Draggin" missile transport (spawner); era 3 "JASSN" stealth cruise
+missiles, Project Unobtanium experimental weapons, the "Minuteguy" ICBM
+(spawner; MIRV warheads have weight 0, spawned only). **Spawners:** `run_spawners` (in `run_wave`)
 counts down `Attacker.spawn_ms_left` of living spawners; when it runs out,
 `spawn_attackers` adds `spawn_count` x `spawn_name`, never past
 `MAX_ATTACKERS` (generated waves stop at `MAX_GENERATED_ATTACKERS` to
 leave room). `DEFENSE_ROWS` (bought any time, kept between waves, flat
 cost): each kind has a domestic and a better foreign version
 (`DefenseEquipment.is_foreign`; buying foreign costs
-`OPINION_LOSS_PER_FOREIGN_DEFENSE` opinion in `buy_defense`): Zhalo /
-Stingur MANPADS, Fulcrumb / LoM-16SM fighters, Grumbler / MIN-400 SAMs;
+`OPINION_LOSS_PER_FOREIGN_DEFENSE` opinion in `buy_defense`, since the
+Government wants the domestic arms industry funded; foreign gear is
+Chinese-made with British-sounding names): Zhalo / QW-2 "Starstruck"
+MANPADS, Fulcrumb / J-11 "Shenfighter Tempest" fighters, Grumbler /
+HQ-9 "Sky Shield" SAMs;
 2 Zhalo MANPADS at the start. A wave lasts `WAVE_DURATION_MS /
 DEBUG_WAR_SPEED` real ms (spawn timers are sped up too). `run_wave`: each
 altitude's damage hits the first living attacker there, leftovers carry
